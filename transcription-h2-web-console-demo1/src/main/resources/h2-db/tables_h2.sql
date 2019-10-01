@@ -28,6 +28,8 @@ DROP TABLE IF EXISTS UsersTranscriptions;
 DROP TABLE IF EXISTS transcribefilelog;
 DROP TABLE IF EXISTS USER_SESSIONS;
 DROP TABLE IF EXISTS user_sessions_attributes;
+DROP TABLE IF EXISTS REGISTEREDUSERS;
+
 
 CREATE TABLE QRTZ_CALENDARS (
   SCHED_NAME VARCHAR(120) NOT NULL,
@@ -290,7 +292,8 @@ CREATE TABLE registeredUsers (
   username VARCHAR(100) not null,
   password VARCHAR(50) not null,
   email VARCHAR(100) not null,
-  primary key (userid)
+  primary key (id),
+  foreign key (username,email) references users (username,email)
 );
 
 

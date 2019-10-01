@@ -19,7 +19,6 @@ import org.springframework.context.annotation.ComponentScan;
 @EnableAutoConfiguration
 @SpringBootApplication
 @ComponentScan("com.c3trTranscibe.*")
-
 public class TranscribtionH2WebDemoApp extends SpringBootServletInitializer {
 
 	

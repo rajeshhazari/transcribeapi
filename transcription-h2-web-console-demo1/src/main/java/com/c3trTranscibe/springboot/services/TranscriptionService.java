@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 
 import com.c3trTranscibe.springboot.model.TranscriptionResponse;
 
+import edu.cmu.sphinx.api.Configuration;
+
 /**
  * @author rajesh
  *
@@ -24,6 +26,8 @@ public class TranscriptionService {
 	
 	@Autowired
 	Environment env;
+	@Autowired
+	Configuration configuration;
 	
 	
 	public TranscriptionResponse transcribeAudio(File audioFile) {

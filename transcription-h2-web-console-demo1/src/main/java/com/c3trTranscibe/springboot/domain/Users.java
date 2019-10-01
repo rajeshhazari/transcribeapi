@@ -1,6 +1,4 @@
-package com.c3trTranscibe.springboot.model;
-
-import java.util.Date;
+package com.c3trTranscibe.springboot.domain;
 
 public class Users {
 	private String username;
@@ -13,7 +11,7 @@ public class Users {
 	private boolean verified;
 	private boolean locked;
 	private String zipcode;
-	public String password;
+	private String password;
 	
 	
 	

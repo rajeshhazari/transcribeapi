@@ -41,11 +41,11 @@ public class AppWebSecurityConfig extends WebSecurityConfigurerAdapter {
 		// configure AuthenticationManager so that it knows from where to load
 		// user for matching credentials
 		// Use BCryptPasswordEncoder
-		//auth.userDetailsService(jwtUserDetailsService).passwordEncoder(passwordEncoder());
-		auth.inMemoryAuthentication()
-        .withUser("user")
-        .password(passwordEncoder().encode("password"))
-        .authorities("ROLE_USER");
+		auth.userDetailsService(jwtUserDetailsService).passwordEncoder(passwordEncoder());
+		/*
+		 * auth.inMemoryAuthentication() .withUser("user")
+		 * .password(passwordEncoder().encode("password")) .authorities("ROLE_USER");
+		 */
 	}
 	
 	@Bean
@@ -62,17 +62,16 @@ public class AppWebSecurityConfig extends WebSecurityConfigurerAdapter {
 	
 	@Override
 	protected void configure(HttpSecurity httpSecurity) throws Exception {
-		httpSecurity.cors().and()
-		// We don't need CSRF for this example
-		.csrf().disable()
+		httpSecurity.cors()
 		// dont authenticate this particular request
-		.authorizeRequests().antMatchers("/authenticate","api/public").permitAll().
+		.and().authorizeRequests().antMatchers("/api/v1/authenticate","api/v1/registration","api/v1/public/**").permitAll().
 		// all other requests need to be authenticated
-		anyRequest().authenticated().and().
+		anyRequest().authenticated()
 		// make sure we use stateless session; session won't be used to
 		// store user's state.
-		exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint).and().sessionManagement()
-		.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+		.and().exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint)
+		.and().sessionManagement()
+		.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED);
 		// Add a filter to validate the tokens with every request
 		httpSecurity.addFilterBefore((Filter) jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 	}

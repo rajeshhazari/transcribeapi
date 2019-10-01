@@ -1,8 +1,7 @@
 package com.example.test;
 
 import java.net.URI;
-
-import javax.xml.bind.DatatypeConverter;
+import java.util.Base64;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,9 +18,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.keygen.Base64StringKeyGenerator;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
@@ -35,6 +34,8 @@ public class GlobalExceptionHandlerIntegrationTest {
 	
 	private final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandlerIntegrationTest.class);
 
+	@Autowired
+	Base64StringKeyGenerator base64StringKeyGenerator;
 	
 	public static final String ISO8601_DATE_REGEX =
 	        "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$";
@@ -60,7 +61,7 @@ public class GlobalExceptionHandlerIntegrationTest {
 	    public void invalidUrl_returnsHttp404() throws Exception {
 	    	 HttpHeaders headers = new HttpHeaders();
 	    	//setting up the HTTP Basic Authentication header value
-	         String authorizationHeader = "Basic " + DatatypeConverter.printBase64Binary(("rajesh" + ":" + "admin#@!79").getBytes());
+	         String authorizationHeader = "Basic " + Base64.getEncoder().encodeToString(("rajesh" + ":" + "admin#@!79").getBytes());
 	         headers.add("Authorization", authorizationHeader);
 	         headers.add("Accept", MediaType.APPLICATION_JSON_VALUE);
 	        RequestBuilder requestBuilder = getGetRequestBuilder("/does-not-exist");

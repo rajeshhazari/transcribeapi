@@ -5,20 +5,20 @@ package com.c3trTranscibe.springboot.services;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCrypt;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.c3trTranscibe.springboot.model.Users;
+import com.c3trTranscibe.springboot.domain.UserDTO;
+import com.c3trTranscibe.springboot.domain.Users;
 import com.c3trTranscibe.springboot.model.repository.RegisteredUser;
 import com.c3trTranscibe.springboot.repository.UserRepository;
 /**
@@ -38,6 +38,10 @@ public class JwtUserDetailsService implements UserDetailsService {
 	Environment env;
 	
 	@Autowired
+	private PasswordEncoder bcryptEncoder;
+
+	
+	@Autowired
 	private UserRepository userRepo;
 	
 	private String email;
@@ -48,13 +52,25 @@ public class JwtUserDetailsService implements UserDetailsService {
 	
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-		if ("admin".equals(username)) {
-			return new User("admin", "Tanushg!@#8579",
-					new ArrayList<>());
-		} else {
+		Users user = userRepo.findByUsername(username);
+		if (user == null) {
 			throw new UsernameNotFoundException("User not found with username: " + username);
 		}
+		return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(),
+				new ArrayList<>());
+	}
 	
+	/**
+	 * 
+	 * @param user
+	 * @return
+	 */
+	public Users save(UserDTO user) {
+		Users newUser = new Users();
+		newUser.setUsername(user.getUsername());
+		newUser.setPassword(bcryptEncoder.encode(user.getPassword()));
+		return userRepo.save(newUser);
+	}
 		
 		
 		/**
@@ -182,10 +198,6 @@ public class JwtUserDetailsService implements UserDetailsService {
 		
 		
 		
-		
-		
-	}
-	
 	
 	
 	
