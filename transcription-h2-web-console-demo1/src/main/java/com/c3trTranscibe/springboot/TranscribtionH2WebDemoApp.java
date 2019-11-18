@@ -14,6 +14,8 @@ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.data.jdbc.repository.config.EnableJdbcAuditing;
+import org.springframework.data.jdbc.repository.config.EnableJdbcRepositories;
 
 
 @EnableAutoConfiguration
@@ -26,12 +28,15 @@ public class TranscribtionH2WebDemoApp extends SpringBootServletInitializer {
 
 	public static void main(String[] args) throws Exception {
 		new TranscribtionH2WebDemoApp().configure(new SpringApplicationBuilder(TranscribtionH2WebDemoApp.class))
-				.bannerMode(Banner.Mode.OFF).web(WebApplicationType.SERVLET).run(args);
+				.bannerMode(Banner.Mode.OFF)
+				.web(WebApplicationType.SERVLET)
+				.logStartupInfo(true)
+				.run(args);
 	}
 	// org.springframework.boot.web.servlet.context.
 	
 	@Bean
-	public CommandLineRunner commandLineRunner(ApplicationContext ctx) {
+	public CommandLineRunner commandLineRunner(ApplicationContext ctx) { 
 		return args -> {
 
 			logger.debug("Let's inspect the beans provided by Spring Boot:");

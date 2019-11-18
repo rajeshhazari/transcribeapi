@@ -24,10 +24,12 @@ import io.jsonwebtoken.SignatureAlgorithm;
  */
 @Component
 public class AppJwtTokenUtil  implements Serializable {
+	
+	//Validity in seconds
 	public static final long JWT_TOKEN_VALIDITY = 5 * 60 * 60;
 
 
-	@Value("${jwt.secret}")
+	@Value("${app.jwt.secret}")
 	private String secret;
 	//retrieve username from jwt token
 	public String getUsernameFromToken(String token) {

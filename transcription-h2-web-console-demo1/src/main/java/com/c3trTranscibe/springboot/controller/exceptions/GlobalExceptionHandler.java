@@ -1,7 +1,8 @@
 package com.c3trTranscibe.springboot.controller.exceptions;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
+import org.apache.tomcat.util.http.fileupload.FileUploadBase.FileSizeLimitExceededException;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +14,7 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-	 @ExceptionHandler(NoHandlerFoundException.class)
+	 	@ExceptionHandler(NoHandlerFoundException.class)
 	    @ResponseStatus(HttpStatus.NOT_FOUND)
 	    public ApiError noHandlerFoundException(
 	            NoHandlerFoundException ex) {
@@ -23,10 +24,16 @@ public class GlobalExceptionHandler {
 	        return new ApiError(code, message);
 	    }
 	 
-	 @ExceptionHandler(ResourceNotFoundException.class)
-     public ResponseEntity<?> resourceNotFoundException(ResourceNotFoundException ex, HttpRequest request) {
-         ApiError errorDetails = new ApiError(HttpStatus.NOT_FOUND.value(), ex.getMessage(),Instant.now());
-         return new ResponseEntity<>(errorDetails, HttpStatus.NOT_FOUND);
+	 @ExceptionHandler({ResourceNotFoundException.class,Exception.class})
+     public ResponseEntity<ApiError> resourceNotFoundException(ResourceNotFoundException ex, HttpRequest request) {
+         ApiError errorDetails = new ApiError(HttpStatus.NOT_FOUND.value(), ex.getMessage(),LocalDateTime.now());
+         return new ResponseEntity<ApiError>(errorDetails, HttpStatus.NOT_FOUND);
+     }
+	 
+	 @ExceptionHandler({FileSizeLimitExceededException.class})
+     public ResponseEntity<ApiError> fileploadMaxLimitException(FileSizeLimitExceededException ex, HttpRequest request) {
+         ApiError errorDetails = new ApiError(HttpStatus.NOT_ACCEPTABLE.value(), ex.getMessage(),LocalDateTime.now());
+         return new ResponseEntity<ApiError>(errorDetails, HttpStatus.NOT_ACCEPTABLE);
      }
 	 
 }

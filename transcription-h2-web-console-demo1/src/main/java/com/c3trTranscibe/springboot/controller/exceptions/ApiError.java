@@ -1,25 +1,46 @@
 package com.c3trTranscibe.springboot.controller.exceptions;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+
+import org.springframework.http.HttpStatus;
 
 
 public class ApiError {
 
     private int code;
     private String message;
-    private Instant timestamp;
+    private LocalDateTime timestamp;
+    private String debugMessage;
 
     public ApiError(int code, String message) {
         this.code = code;
         this.message = message;
-        this.timestamp = Instant.now();
+        this.timestamp = LocalDateTime.now();
     }
 
-    public ApiError(int code, String message, Instant timestamp) {
+    public ApiError(int code, String message, LocalDateTime timestamp) {
         this.code = code;
         this.message = message;
         this.timestamp = timestamp;
     }
+    
+    ApiError(HttpStatus status, Throwable ex) {
+        this();
+        this.code = status.value();
+        this.message = "Unexpected error";
+        this.debugMessage = ex.getLocalizedMessage();
+    }
+
+    ApiError(HttpStatus status, String message, Throwable ex) {
+        this();
+        this.code = status.value();
+        this.message = message;
+        this.debugMessage = ex.getLocalizedMessage();
+    }
+	public ApiError() {
+		// TODO Auto-generated constructor stub
+	}
 
 	/**
 	 * @return the code
@@ -52,14 +73,14 @@ public class ApiError {
 	/**
 	 * @return the timestamp
 	 */
-	public Instant getTimestamp() {
+	public LocalDateTime getTimestamp() {
 		return timestamp;
 	}
 
 	/**
 	 * @param timestamp the timestamp to set
 	 */
-	public void setTimestamp(Instant timestamp) {
+	public void setTimestamp(LocalDateTime timestamp) {
 		this.timestamp = timestamp;
 	}
 

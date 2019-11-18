@@ -278,6 +278,7 @@ ALTER TABLE QRTZ_TRIGGERS ADD
   lastName VARCHAR(50) not null,
   zipcode VARCHAR(50) not null,
   email VARCHAR(100) not null,
+  phoneNumber VARCHAR(10),
   active boolean default false,
   disabled boolean default false,
   verified boolean default false,

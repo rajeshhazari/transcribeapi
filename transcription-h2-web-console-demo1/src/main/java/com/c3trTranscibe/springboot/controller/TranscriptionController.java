@@ -20,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
@@ -48,7 +49,7 @@ public class TranscriptionController {
 	
 	
 	
-	 @RequestMapping( value= "/transcribeReqId" ,  produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	 @RequestMapping( value= "/transcribeReqId" , method=RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
 	  public Map<String,Object> getTranscribeReqId(HttpServletRequest req, HttpServletResponse res) {
 	    Map<String,Object> resp = new HashMap<String,Object>();
 	    	resp.put("reqid", UUID.randomUUID().toString());
@@ -56,10 +57,10 @@ public class TranscriptionController {
 	  }
 	 
 	 
-    //Angular xample
+    //Angular example
     //http://jsfiddle.net/danialfarid/tqgr7pur/
     @PostMapping("/transcribe")
-    public ResponseEntity<TranscriptionResponse> getTranscription(@RequestPart("meta-data") final String metaData,@RequestParam("fname")   @NotNull @NotBlank  final String fname,
+    public ResponseEntity<TranscriptionResponse> getTranscription(@RequestPart("metaData") final String metaData ,@RequestParam("fname")   @NotNull @NotBlank  final String fname,
             //@RequestParam("file") MultipartFile[] file) throws IOException {
     	    @RequestParam("file") final MultipartFile file) throws JsonParseException, JsonMappingException, IOException {  
     	logger.debug("Upload: {}", fname);

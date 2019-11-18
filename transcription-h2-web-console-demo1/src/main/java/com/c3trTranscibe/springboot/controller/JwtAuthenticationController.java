@@ -35,29 +35,45 @@ import com.c3trTranscibe.springboot.model.JwtResponse;
 import com.c3trTranscibe.springboot.model.repository.RegisteredUser;
 import com.c3trTranscibe.springboot.services.JwtUserDetailsService;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+
 /**
  * @author rajesh
  *
  */
 @RestController
 @CrossOrigin
+@Api(value="TranscriptionLoginController", description="Authentication of users in to Transcription service")
 public class JwtAuthenticationController {
 
 	private final Logger logger = LoggerFactory.getLogger(JwtAuthenticationController.class);
 
-	@Autowired
-	private AuthenticationManager authenticationManager;
+	/*
+	 * @Autowired private AuthenticationManager daoAuthenticationManager;
+	 */
 
 	@Autowired
 	private AppJwtTokenUtil jwtTokenUtil;
 
 	@Autowired
 	private JwtUserDetailsService jwtUserDetailsService;
-
 	
-	@RequestMapping(value = "/authenticate", method = RequestMethod.POST)
+	
+	@ApiOperation(value = "Authenticate to api service", response = JwtResponse.class)
+	@ApiResponses(value = {
+	        @ApiResponse(code = 200, message = "Successfully retrieved list"),
+	        @ApiResponse(code = 401, message = "You are not authorized to login."),
+	        @ApiResponse(code = 403, message = "Accessing the resource you were trying to reach is forbidden"),
+	        @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
+	}
+	)
+	
+	@RequestMapping(value = "/authenticate", method = RequestMethod.POST, produces = "application/json")
 	public ResponseEntity<?> createAuthenticationToken(@RequestBody UserDTO authenticationRequest) throws Exception {
-
+		
 		authenticate(authenticationRequest.getUsername(), authenticationRequest.getPassword());
 
 		final UserDetails userDetails = jwtUserDetailsService.loadUserByUsername(authenticationRequest.getUsername());
@@ -67,35 +83,40 @@ public class JwtAuthenticationController {
 		return ResponseEntity.ok(new JwtResponse(token));
 	}
 
-	@RequestMapping(value = "/register", method = RequestMethod.POST)
-	public ResponseEntity<?> saveUser(@RequestBody UserDTO user) throws Exception {
-		return ResponseEntity.ok(jwtUserDetailsService.save(user));
-	}
+	
 
 	private void authenticate(String username, String password) throws Exception {
 		try {
-			authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+			//daoAuthenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+			final UserDetails userDetails = jwtUserDetailsService.loadUserByUsername(username);
 		} catch (DisabledException e) {
 			throw new Exception("USER_DISABLED", e);
 		} catch (BadCredentialsException e) {
 			throw new Exception("INVALID_CREDENTIALS", e);
 		}
 	}
+	
+	@RequestMapping(value = "/register", method = RequestMethod.POST, produces = "application/jon")
+	public ResponseEntity<?> saveUser(@RequestBody UserDTO user) throws Exception {
+		return ResponseEntity.ok(jwtUserDetailsService.save(user));
+	}
+	
+	
 
 	@RequestMapping(method = RequestMethod.POST, value = "/resetpwd" , produces = "application/jon")
-	public Map<String,String> resetPassword(@RequestBody RegisteredUser userDetails) {
+	public Map<String,String> resetPassword(@RequestBody RegisteredUser registeredUser) {
 		//statsd.incrementCounter(userHTTPPOST);
 
 		final Map<String,String> res = new HashMap<>();
 		logger.info("POST request : \"/reset\"");
 
-		if (userDetails.getEmail() == null) {
+		if (registeredUser.getEmail() == null) {
 			logger.error("Credentials should not be empty");
 			res.put("RESPONSE", "User email not provided");
 			return res;
 		}
 
-		logger.debug("Reset password for Email id request received : " + userDetails.getEmail());
+		logger.debug("Reset password for Email id request received : " + registeredUser.getEmail());
 
 
 		/*
@@ -105,8 +126,8 @@ public class JwtAuthenticationController {
 		 * .withCredentials(new InstanceProfileCredentialsProvider(false)).build();
 		 */
 
-		String resetEmail = userDetails.getEmail();
-		String resetEmail1 = userDetails.getEmail();
+		String resetEmail = registeredUser.getEmail();
+		String resetEmail1 = registeredUser.getEmail();
 		logger.info("Reset Email: " + resetEmail);
 		logger.info("Reset Email: " + resetEmail1);
 
@@ -184,7 +205,7 @@ public class JwtAuthenticationController {
 	}
 	
 	
-	@GetMapping(value = "/token",produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	@GetMapping(value = "/session",produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
 	  public Map<String,String> token(HttpSession session) {
 	    return Collections.singletonMap("token", session.getId());
 	  }

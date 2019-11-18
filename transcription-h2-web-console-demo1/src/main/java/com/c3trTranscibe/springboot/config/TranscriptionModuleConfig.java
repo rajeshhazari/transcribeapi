@@ -5,20 +5,30 @@ package com.c3trTranscibe.springboot.config;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.concurrent.Executor;
 
 import javax.sql.DataSource;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jdbc.repository.config.EnableJdbcAuditing;
+import org.springframework.data.jdbc.repository.config.EnableJdbcRepositories;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcOperations;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.transaction.PlatformTransactionManager;
 
 /**
  * @author rajesh
  *
  */
 @Configuration
+@EnableJdbcRepositories("com.c3trTranscibe.springboot")
+ 
 public class TranscriptionModuleConfig {
 
 	
@@ -37,6 +47,16 @@ public class TranscriptionModuleConfig {
 	
 	
 	@Bean
+    NamedParameterJdbcOperations operations() { 
+        return new NamedParameterJdbcTemplate(getH2DataSource());
+    }
+
+    @Bean
+    PlatformTransactionManager transactionManager() { 
+        return new DataSourceTransactionManager(getH2DataSource());
+	}
+	
+	@Bean
 	public edu.cmu.sphinx.api.Configuration getAudioTranscribeConfiguration() {
 		edu.cmu.sphinx.api.Configuration configuration = new edu.cmu.sphinx.api.Configuration();
 
@@ -53,5 +73,15 @@ public class TranscriptionModuleConfig {
 		return SecureRandom.getInstance("SHA1PRNG");
 		
 	}
-
+	
+	 @Bean(name = "asyncExecutor")
+	    public Executor asyncExecutor() {
+	        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+	        executor.setCorePoolSize(5);
+	        executor.setMaxPoolSize(5);
+	        executor.setQueueCapacity(100);
+	        executor.setThreadNamePrefix("AsynchThread-");
+	        executor.initialize();
+	        return executor;
+	    }
 }

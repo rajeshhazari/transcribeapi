@@ -5,6 +5,7 @@ package com.c3trTranscibe.springboot.services;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +21,7 @@ import org.springframework.stereotype.Service;
 import com.c3trTranscibe.springboot.domain.UserDTO;
 import com.c3trTranscibe.springboot.domain.Users;
 import com.c3trTranscibe.springboot.model.repository.RegisteredUser;
-import com.c3trTranscibe.springboot.repository.UserRepository;
+import com.c3trTranscibe.springboot.repository.UsersRepository;
 /**
  * @author rajesh
  *
@@ -42,7 +43,7 @@ public class JwtUserDetailsService implements UserDetailsService {
 
 	
 	@Autowired
-	private UserRepository userRepo;
+	private UsersRepository usersRepo;
 	
 	private String email;
 	private String password;
@@ -52,10 +53,21 @@ public class JwtUserDetailsService implements UserDetailsService {
 	
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-		Users user = userRepo.findByUsername(username);
+		Optional<Users> user = usersRepo.findByUsername(username);
+		
 		if (user == null) {
 			throw new UsernameNotFoundException("User not found with username: " + username);
-		}
+		};
+		
+		/*
+		 * List<Users> userList = userRepo.findByUsername(username); 
+		 * Users userresp = null; 
+		 * for (Users user : userList) { 
+		 * userresp = user; 
+		 * if (user == null) {
+		 * throw new UsernameNotFoundException("User not found with username: " +
+		 * username); } }
+		 */
 		return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(),
 				new ArrayList<>());
 	}
@@ -69,7 +81,7 @@ public class JwtUserDetailsService implements UserDetailsService {
 		Users newUser = new Users();
 		newUser.setUsername(user.getUsername());
 		newUser.setPassword(bcryptEncoder.encode(user.getPassword()));
-		return userRepo.save(newUser);
+		return usersRepo.save(newUser);
 	}
 		
 		
@@ -209,7 +221,7 @@ public class JwtUserDetailsService implements UserDetailsService {
 	public boolean checkPassword(RegisteredUser userDetails) {
 		logger.info("Checking password");
 		logger.debug(" checking password for user :: %s",userDetails.getEmail());
-		ArrayList<Users> dbList = new ArrayList<>((Collection<? extends Users>) userRepo.findAll());
+		ArrayList<Users> dbList = new ArrayList<>((Collection<? extends Users>) usersRepo.findAll());
 
 		for (Users user : dbList) {
 			if (user.getEmailAddress().equals(userDetails.getEmail())) {
@@ -236,7 +248,7 @@ public class JwtUserDetailsService implements UserDetailsService {
 		logger.debug("Password salt : " + password);
 		userData.setPassword(password);
 
-		userRepo.save(userData);
+		usersRepo.save(userData);
 		return true;
 	}
 		

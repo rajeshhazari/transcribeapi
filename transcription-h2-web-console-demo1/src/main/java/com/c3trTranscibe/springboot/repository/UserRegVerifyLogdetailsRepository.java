@@ -6,7 +6,7 @@ package com.c3trTranscibe.springboot.repository;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
-import com.c3trTranscibe.springboot.model.Users;
+import com.c3trTranscibe.springboot.domain.Users;
 
 /**
  * @author rajesh
