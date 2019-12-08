@@ -20,15 +20,15 @@ DROP TABLE IF EXISTS QRTZ_BLOB_TRIGGERS;
 DROP TABLE IF EXISTS QRTZ_TRIGGERS;
 DROP TABLE IF EXISTS QRTZ_JOB_DETAILS;
 DROP TABLE IF EXISTS QRTZ_CALENDARS;
-DROP TABLE IF EXISTS users;
-DROP TABLE IF EXISTS authorities;
-DROP TABLE IF EXISTS userregVerifylogdetials;
-DROP TABLE IF EXISTS userregistrationslogdetials;
-DROP TABLE IF EXISTS UsersTranscriptions;
-DROP TABLE IF EXISTS transcribefilelog;
+DROP TABLE IF EXISTS APPUSERS;
+DROP TABLE IF EXISTS AUTHORITIES;
+DROP TABLE IF EXISTS USERREGVERIFYLOGDETIALS;
+DROP TABLE IF EXISTS USERREGISTRATIONSLOGDETIALS;
+DROP TABLE IF EXISTS USERSTRANSCRIPTIONS;
+DROP TABLE IF EXISTS TRANSCRIBEFILELOG;
 DROP TABLE IF EXISTS USER_SESSIONS;
-DROP TABLE IF EXISTS user_sessions_attributes;
-DROP TABLE IF EXISTS REGISTEREDUSERS;
+DROP TABLE IF EXISTS USER_SESSIONS_ATTRIBUTES;
+DROP TABLE IF EXISTS REGISTEREDAPPUSERS;
 
 
 CREATE TABLE QRTZ_CALENDARS (
@@ -270,14 +270,14 @@ ALTER TABLE QRTZ_TRIGGERS ADD
   );
 
   --ALTER SEQUENCE Cast1_id_seq RESTART WITH 100;
-  CREATE TABLE users (
+  CREATE TABLE APPUSERS(
   userid identity not null auto_increment,
-  username VARCHAR(100) not null,
+  username VARCHAR(100) not null unique ,
   password VARCHAR(50) not null,
-  first_name VARCHAR(50) not null,
+  first_name VARCHAR(50) not null unique ,
   last_name VARCHAR(50) not null,
   zipcode VARCHAR(50) not null,
-  email VARCHAR(100) not null,
+  email VARCHAR(100) not null unique ,
   phone_number VARCHAR(10),
   active boolean default false,
   disabled boolean default false,
@@ -288,24 +288,24 @@ ALTER TABLE QRTZ_TRIGGERS ADD
   primary key (userid)
 );
 
-CREATE TABLE registeredUsers (
+CREATE TABLE REGISTEREDAPPUSERS(
   id identity not null auto_increment,
   username VARCHAR(100) not null,
   password VARCHAR(50) not null,
   email VARCHAR(100) not null,
   primary key (id),
-  foreign key (username,email) references users (username,email)
+  foreign key (username,email) references APPUSERS(username,email)
 );
 
 
- CREATE TABLE authorities (
+ CREATE TABLE AUTHORITIES (
   auth_id identity not null auto_increment,
   username VARCHAR(256),
   authority VARCHAR(256),
   primary key (auth_id)
 );
 
-CREATE TABLE userregVerifylogdetials (
+CREATE TABLE USERREGVERIFYLOGDETIALS (
   id identity not null auto_increment,
   username VARCHAR(100) not null,  
   disabled boolean default false,
@@ -318,7 +318,7 @@ CREATE TABLE userregVerifylogdetials (
   verfication_date timestamp , primary key (id)
 );
 
-CREATE TABLE userregistrationslogdetials (
+CREATE TABLE USERREGISTRATIONSLOGDETIALS (
   id identity not null auto_increment,
   username VARCHAR(100) not null,
   firstName VARCHAR(50) not null,
@@ -337,7 +337,7 @@ CREATE TABLE userregistrationslogdetials (
   primary key (id)
 );
 
-CREATE TABLE UsersTranscriptions (
+CREATE TABLE USERSTRANSCRIPTIONS (
   log_id identity not null auto_increment,
   username VARCHAR(100) not null,
   email VARCHAR(100) not null,
@@ -352,7 +352,7 @@ CREATE TABLE UsersTranscriptions (
   transcribed_date timestamp default CURRENT_TIMESTAMP,
   uploaded_date timestamp default CURRENT_TIMESTAMP,
   primary key (log_id),
-  FOREIGN KEY (username,email,userid) REFERENCES USERS(username,email,userid)
+  FOREIGN KEY (username,email) REFERENCES APPUSERS(username,email)
 );
 
 --
@@ -364,19 +364,17 @@ CREATE TABLE UsersTranscriptions (
 --  primary key (did)
 --);
 
-ALTER TABLE UsersTranscriptions ADD
+ALTER TABLE USERSTRANSCRIPTIONS ADD
   CONSTRAINT FK_Users_Transcriptions_users FOREIGN KEY
   (
     username,
-    email,
-    userid
-  ) REFERENCES users (
+    email
+  ) REFERENCES APPUSERS(
     username,
-    email,
-    userid
+    email
   );
 
-  CREATE TABLE transcribefilelog (
+  CREATE TABLE TRANSCRIBEFILELOG (
   log_id identity not null auto_increment,
   username VARCHAR(100),
   file_name VARCHAR(256),

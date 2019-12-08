@@ -34,6 +34,8 @@ public interface UsersRepository extends CrudRepository<Users, Long>{
 	  
 	  @Query("select * from Users where upper(email) = upper(:email) and  upper(username) = upper(:username)  and disabled=true  ")
 	  Optional<Users> findByEmailAndUsernameAndDisabled(String email, String username);
+
+
 	  
 	
 }
