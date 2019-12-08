@@ -5,20 +5,29 @@ package com.c3trTranscibe.springboot.config;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
+import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
+import org.springframework.boot.web.server.ErrorPage;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.jdbc.repository.config.EnableJdbcAuditing;
 import org.springframework.data.jdbc.repository.config.EnableJdbcRepositories;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcOperations;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -28,10 +37,19 @@ import org.springframework.transaction.PlatformTransactionManager;
  */
 @Configuration
 @EnableJdbcRepositories("com.c3trTranscibe.springboot")
- 
+@EnableAsync
 public class TranscriptionModuleConfig {
 
 	
+	private static final Logger LOGGER = LoggerFactory.getLogger(TranscriptionModuleConfig.class);
+	
+
+	  @Value("${server.port}")
+	  private int port;
+	  
+	  @Value("${server.servlet.contextPath}")
+	  private String context;
+	  
 	@Bean
 	public DataSource getH2DataSource() {
 	EmbeddedDatabase db = new EmbeddedDatabaseBuilder()
@@ -84,4 +102,24 @@ public class TranscriptionModuleConfig {
 	        executor.initialize();
 	        return executor;
 	    }
+	 
+	 private Set<ErrorPage> pageHandlers;
+	  @PostConstruct
+	  private void init(){
+	      pageHandlers = new HashSet<ErrorPage>();
+	      pageHandlers.add(new ErrorPage(HttpStatus.NOT_FOUND,"/notfound.html"));
+	      pageHandlers.add(new ErrorPage(HttpStatus.FORBIDDEN,"/forbidden.html"));
+	  }
+	  
+	  
+	  @Bean
+	  public TomcatServletWebServerFactory servletContainer(){
+	      TomcatServletWebServerFactory factory = new TomcatServletWebServerFactory(context,port);
+	      LOGGER.info("Setting custom configuration for Mainstay:");
+	      LOGGER.info("Setting port to {}",port);
+	      LOGGER.info("Setting context to {}",context);
+	      factory.setErrorPages(pageHandlers);
+	      return factory;
+	  }
+	  
 }

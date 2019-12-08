@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.c3trTranscibe.springboot.services;
+package com.c3trTranscibe.springboot.services.email;
 
 
 import org.springframework.beans.factory.annotation.Autowired;

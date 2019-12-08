@@ -18,6 +18,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 
+import com.c3trTranscibe.springboot.services.JwtUserDetailsService;
+
 @Configuration
 @EnableWebSecurity
 public class AppWebSecurityConfig extends WebSecurityConfigurerAdapter {
@@ -25,10 +27,15 @@ public class AppWebSecurityConfig extends WebSecurityConfigurerAdapter {
 	private static final String[] AUTH_WHITELIST = {
             // -- swagger ui
             "/v2/api-docs",
+            "/actuator/**",
             "/swagger-resources/**",
-            "/swagger-ui.html**",
-            "/webjars/**","/authenticate/","/public/**","/h2-console/**","/", 
-			"/csrf"
+            "/api/v1/swagger-ui.html**",
+            "/api/v1/webjars/**",
+            "/api/v1/authenticate/",
+            "/api/v1/public/**",
+            "/api/v1/h2-console/**",
+            "/h2-console/**", 
+			"/api/v1/csrf"
             // other public endpoints of your API may be appended to this array
     };
 
@@ -36,18 +43,14 @@ public class AppWebSecurityConfig extends WebSecurityConfigurerAdapter {
 	private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
 	@Autowired
-	private UserDetailsService jwtUserDetailsService;
+	private JwtUserDetailsService jwtUserDetailsService;
 
 	 @Bean
      public AuthenticationManager authenticationManagerBean() throws Exception {
          return super.authenticationManagerBean();
      }
 
-	 @Bean
-	 @Override
-	 protected UserDetailsService userDetailsService() {
-		return jwtUserDetailsService;
-	}
+	 
 	 
 	 
 	@Bean
@@ -67,7 +70,7 @@ public class AppWebSecurityConfig extends WebSecurityConfigurerAdapter {
         .and()
 		.authorizeRequests()
 		.antMatchers(AUTH_WHITELIST).permitAll()
-		.antMatchers(HttpMethod.GET,"/actuator/**").permitAll()
+		.antMatchers(HttpMethod.GET,"/api/v1/actuator/**").permitAll()
 		.antMatchers("/api/v1/**").authenticated()
 		.and().exceptionHandling().authenticationEntryPoint(swaggerAuthenticationEntryPoint())
 		
@@ -105,10 +108,10 @@ public class AppWebSecurityConfig extends WebSecurityConfigurerAdapter {
 	 
 	 @Bean
 	 public DaoAuthenticationProvider daoAuthenticationProvider() {
-		 DaoAuthenticationProvider o = new DaoAuthenticationProvider();
-		 o.setPasswordEncoder(passwordEncoder());
-		 o.setUserDetailsService(jwtUserDetailsService);
-		 return o;
+		 DaoAuthenticationProvider daoProvider = new DaoAuthenticationProvider();
+		 daoProvider.setPasswordEncoder(passwordEncoder());
+		 daoProvider.setUserDetailsService(jwtUserDetailsService);
+		 return daoProvider;
 				 		
 	 }
 	/*

@@ -12,18 +12,28 @@ import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
+
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 import com.c3trTranscibe.springboot.model.TranscriptionResponse;
 
 import edu.cmu.sphinx.api.Configuration;
 import edu.cmu.sphinx.api.SpeechResult;
 import edu.cmu.sphinx.api.StreamSpeechRecognizer;
+import edu.cmu.sphinx.result.WordResult;
 
 /**
  * @author rajesh
@@ -40,6 +50,9 @@ public class TranscribitionService {
 
 	@Autowired
 	Configuration configuration;
+	
+	@Autowired
+	Executor asyncExecutor;
 
 	/**
 	 * 
@@ -53,23 +66,12 @@ public class TranscribitionService {
 		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(configuration);
 		InputStream stream = new FileInputStream(file);
 		recognizer.startRecognition(stream);
-		SpeechResult result;
-		List<String> wordList = new ArrayList<>();
-		String unformatted_transcribe_text = "";
-		while ((result = recognizer.getResult()) != null) {
-			logger.debug("Hypothesis: %s\n", result.getHypothesis());
-			unformatted_transcribe_text = result.getHypothesis();
-			 
-		}
-		result.getWords().stream().forEach(wordresult -> wordList.add(wordresult.getWord().toString()));
-		recognizer.stopRecognition();
-		recognizer = null;
-		if(null == transcribtionReqId) {
-			transcribtionReqId = String.valueOf(generateSecureRandomLong());
-		}
+		
+		Assert.hasText(transcribtionReqId, "Transcribtion request id is missing.");
+		
 		//TODO call formatting method/service
 		//return unformatted_transcribe_text;
-		return new TranscriptionResponse(unformatted_transcribe_text, Long.valueOf(transcribtionReqId), null, false, wordList);
+		return extractTranscribedTextFromSpeechRecognizer(recognizer, transcribtionReqId);
 	}
 
 
@@ -117,24 +119,24 @@ public class TranscribitionService {
 	 * @throws NoSuchAlgorithmException
 	 * @throws NoSuchProviderException
 	 * @throws IOException
+	 * @throws ExecutionException 
+	 * @throws InterruptedException 
+	 * @throws NumberFormatException 
 	 */
-	public TranscriptionResponse transcribeAudio(File audioFile) throws NoSuchAlgorithmException, NoSuchProviderException, IOException {
+	public TranscriptionResponse transcribeAudio(File audioFile, @NotNull @NotBlank String reqId) throws  IOException, ExecutionException {
 
 		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(configuration);
 		InputStream stream = new FileInputStream(audioFile);
 		recognizer.startRecognition(stream);
-		SpeechResult result;
-		while ((result = recognizer.getResult()) != null) {
-			logger.debug("Hypothesis: %s\n", result.getHypothesis());
-		}
-		String unformatted_transcribe_text = result.getHypothesis();
-		recognizer.stopRecognition();
+		
 		//TODO call formatting method/service
 		//return unformatted_transcribe_text;
-		return new TranscriptionResponse(unformatted_transcribe_text, Long.valueOf(generateSecureRandomLong()), null, false, null);
+		//wordsList = getWordsList(result.getWords());
+		return extractTranscribedTextFromSpeechRecognizer(recognizer, reqId);
 	}
 
 	
+
 	/**
 	 * Transcribe Video file
 	 * 
@@ -144,20 +146,52 @@ public class TranscribitionService {
 	 * @throws NoSuchAlgorithmException
 	 * @throws NoSuchProviderException
 	 */
-	public TranscriptionResponse transcribeVideo(File videoFile) throws IOException, NoSuchAlgorithmException, NoSuchProviderException {
+	public TranscriptionResponse transcribeVideo(File videoFile, String reqId) throws IOException, NoSuchAlgorithmException, NoSuchProviderException {
 
 		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(configuration);
 		InputStream stream = new FileInputStream(videoFile);
 		recognizer.startRecognition(stream);
+		
+		return  extractTranscribedTextFromSpeechRecognizer(recognizer, reqId);
+	}
+
+	@Async("asyncExecutor")
+	private List<String> getWordsList(List<WordResult> words) {
+		List<String> wordsList = new ArrayList<>();
+		words.forEach(ele -> wordsList.add(ele.getWord().toString()));
+		return wordsList;
+	}
+	
+	@Async("asyncExecutor")
+	private List<String> getWordsConfidenceDetails(List<WordResult> words) {
+		List<String> wordsList = new ArrayList<>();
+		words.stream().forEach(ele -> wordsList.add(ele.toString()));
+		return wordsList;
+	}
+	
+
+	@Async("asyncExecutor")
+	
+	private  TranscriptionResponse extractTranscribedTextFromSpeechRecognizer(StreamSpeechRecognizer recognizer, String reqId) {
+		
+		StringBuilder unformattedTranscribeText = new StringBuilder();
 		SpeechResult result;
-		while ((result = recognizer.getResult()) != null) {
-			logger.debug("Hypothesis: %s\n", result.getHypothesis());
+		List<String> wordsList = null;
+		List<String> wordConfList = null;
+        while ((result = recognizer.getResult()) != null) {
+        	//logger.debug("Hypothesis: {}\n", result.getHypothesis());
+			unformattedTranscribeText.append(result.getHypothesis());
+			unformattedTranscribeText.append(" ");
+			wordsList = getWordsList(result.getWords());
+			wordConfList = getWordsConfidenceDetails(result.getWords());
+			logger.debug("Best 3 hypothesis:");
+            for (String s : result.getNbest(3))
+            	logger.debug("Hypothesis: {}\n", s);
+
+			
 		}
-		String unformatted_transcribe_text = result.getHypothesis();
-		recognizer.stopRecognition();
-		//TODO call formatting method/service
-		//return unformatted_transcribe_text;
-		return new TranscriptionResponse(unformatted_transcribe_text, Long.valueOf(generateSecureRandomLong()), null, false, null);
+        recognizer.stopRecognition();
+        return new TranscriptionResponse(unformattedTranscribeText.toString(), reqId, null, false, wordsList);
 	}
 }
 
