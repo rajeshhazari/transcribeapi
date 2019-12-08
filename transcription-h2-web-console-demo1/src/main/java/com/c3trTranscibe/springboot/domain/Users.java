@@ -9,8 +9,7 @@ import lombok.Setter;
 
 @Table(value = "users")
 @AllArgsConstructor
-@Getter
-@Setter
+@lombok.Data
 public class Users {
 	@Id
 	private  Long userid;

@@ -64,7 +64,7 @@ public class JwtAuthenticationController {
 	
 	@ApiOperation(value = "Authenticate to api service", response = JwtResponse.class)
 	@ApiResponses(value = {
-	        @ApiResponse(code = 200, message = "Successfully retrieved list"),
+	        @ApiResponse(code = 200, message = "Successfully Authenticated."),
 	        @ApiResponse(code = 401, message = "You are not authorized to login."),
 	        @ApiResponse(code = 403, message = "Accessing the resource you were trying to reach is forbidden"),
 	        @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
@@ -84,7 +84,12 @@ public class JwtAuthenticationController {
 	}
 
 	
-
+	/**
+	 * 
+	 * @param username
+	 * @param password
+	 * @throws Exception
+	 */
 	private void authenticate(String username, String password) throws Exception {
 		try {
 			//daoAuthenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));

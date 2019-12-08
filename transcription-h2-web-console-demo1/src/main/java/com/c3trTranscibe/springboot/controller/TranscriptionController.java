@@ -2,7 +2,6 @@ package com.c3trTranscibe.springboot.controller;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -30,6 +29,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -37,15 +37,21 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.c3trTranscibe.springboot.model.TranscriptionResponse;
+import com.c3trTranscibe.springboot.model.TranscribtionResponse;
 import com.c3trTranscibe.springboot.services.TranscribitionService;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 
 /**
  *
  */
 @RestController
+@Api(value="TranscribtionController", description="Main Controller for Transcription service")
 public class TranscriptionController {
 	
 	
@@ -62,6 +68,7 @@ public class TranscriptionController {
 	
 	 @RequestMapping( value= "/transcribeReqId" , method=RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
 	  public Map<String,Object> getTranscribeReqId(HttpServletRequest req, HttpServletResponse res) {
+		 Assert.isNull(req.getSession(), "Invalid Session..");
 	    Map<String,Object> resp = new HashMap<String,Object>();
 	    	resp.put("reqid", UUID.randomUUID().toString());
 	    return resp;
@@ -70,16 +77,22 @@ public class TranscriptionController {
 	 
     //Angular example
     //http://jsfiddle.net/danialfarid/tqgr7pur/
+	 @ApiOperation(value = "Get Transcibtion response from the Audio/wav file ", response = TranscribtionResponse.class, tags = "getTranscribtion")
+	    @ApiResponses(value = { 
+	            @ApiResponse(code = 200, message = "Suceess|OK"),
+	            @ApiResponse(code = 401, message = "not authorized!"), 
+	            @ApiResponse(code = 403, message = "forbidden!!!"),
+	            @ApiResponse(code = 404, message = "not found!!!") })
     @PostMapping(path="/transcribe" , produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<TranscriptionResponse> getTranscription(@RequestParam("reqId")   @NotNull @NotBlank  final String reqId,
+    public ResponseEntity<TranscribtionResponse> getTranscribtion(@RequestParam("reqId")   @NotNull @NotBlank  final String reqId,
     		@RequestParam("fname")   @NotNull @NotBlank  final String fname,
             //@RequestParam("file") MultipartFile[] file) throws IOException {
     	    @RequestParam("file") final MultipartFile file,HttpServletRequest req, HttpServletResponse res) throws JsonParseException, JsonMappingException, IOException {  
     	logger.debug("Upload: {}", fname);
-    	TranscriptionResponse response = null;
+    	TranscribtionResponse response = null;
     	// MetaData document = objectMapper.readValue(metaData, MetaData.class);
     	if (Objects.isNull(file)){
-    		return new ResponseEntity<TranscriptionResponse>(response, HttpStatus.BAD_REQUEST);
+    		return new ResponseEntity<TranscribtionResponse>(response, HttpStatus.BAD_REQUEST);
     	}
         if (!Objects.isNull(file) && !file.isEmpty()) {
         	 	File convFile = convertMultipartFileToFile(file);
@@ -89,13 +102,13 @@ public class TranscriptionController {
 					// TODO Auto-generated catch block
 					logger.error("Exception occured while transcribe from service {}", e.getCause());
 					
-					return new ResponseEntity<TranscriptionResponse>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+					return new ResponseEntity<TranscribtionResponse>(response, HttpStatus.INTERNAL_SERVER_ERROR);
 				}
 			
             // store the bytes somewhere
-            return new ResponseEntity<TranscriptionResponse>(response, HttpStatus.ACCEPTED);
+            return new ResponseEntity<TranscribtionResponse>(response, HttpStatus.ACCEPTED);
         }
-        return new ResponseEntity<TranscriptionResponse>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<TranscribtionResponse>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     

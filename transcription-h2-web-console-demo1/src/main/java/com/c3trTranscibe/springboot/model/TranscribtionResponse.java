@@ -16,12 +16,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 @JsonIgnoreProperties(ignoreUnknown=true)
-@JsonPropertyOrder ({"ttoken","trancriptionId", "isFormatted", "text"})
-public final class TranscriptionResponse {
+@JsonPropertyOrder ({"ttoken","trancribtionId", "isFormatted", "text"})
+public final class TranscribtionResponse {
 
 	@NotEmpty
-	private String transcribeText = null;
-	private String  trancriptionId = null;
+	private String transcribedText = null;
+	private String  trancribtionId = null;
 	private String ttoken = null;
 	private boolean isFormatted = false;
 	private List<String> wordsList = null;
@@ -29,19 +29,19 @@ public final class TranscriptionResponse {
 
 	private void TranscriptionResponse() {}
 
-	public TranscriptionResponse(String text, String trancriptionId, String ttoken, boolean isFormatted, List<String> wordsList) {
+	public TranscribtionResponse(String text, String trancribtionId, String ttoken, boolean isFormatted, List<String> wordsList) {
 		super();
-		this.transcribeText = text;
-		this.trancriptionId = trancriptionId;
+		this.transcribedText = text;
+		this.trancribtionId = trancribtionId;
 		this.ttoken = ttoken;
 		this.isFormatted = isFormatted;
 		this.wordsList = wordsList;
 	}
 	
-	public TranscriptionResponse(String text, String trancriptionId, String ttoken, boolean isFormatted, List<String> wordsList, List<String> wordConfidenceList) {
+	public TranscribtionResponse(String text, String trancribtionId, String ttoken, boolean isFormatted, List<String> wordsList, List<String> wordConfidenceList) {
 		super();
-		this.transcribeText = text;
-		this.trancriptionId = trancriptionId;
+		this.transcribedText = text;
+		this.trancribtionId = trancribtionId;
 		this.ttoken = ttoken;
 		this.isFormatted = isFormatted;
 		this.wordsList = wordsList;

@@ -28,7 +28,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
-import com.c3trTranscibe.springboot.model.TranscriptionResponse;
+import com.c3trTranscibe.springboot.model.TranscribtionResponse;
 
 import edu.cmu.sphinx.api.Configuration;
 import edu.cmu.sphinx.api.SpeechResult;
@@ -60,7 +60,7 @@ public class TranscribitionService {
 	 * @return
 	 * @throws Exception
 	 */
-	public TranscriptionResponse transribeAudioforText(File file, String transcribtionReqId) throws Exception{
+	public TranscribtionResponse transribeAudioforText(File file, String transcribtionReqId) throws Exception{
 
 
 		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(configuration);
@@ -123,7 +123,7 @@ public class TranscribitionService {
 	 * @throws InterruptedException 
 	 * @throws NumberFormatException 
 	 */
-	public TranscriptionResponse transcribeAudio(File audioFile, @NotNull @NotBlank String reqId) throws  IOException, ExecutionException {
+	public TranscribtionResponse transcribeAudio(File audioFile, @NotNull @NotBlank String reqId) throws  IOException, ExecutionException {
 
 		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(configuration);
 		InputStream stream = new FileInputStream(audioFile);
@@ -146,7 +146,7 @@ public class TranscribitionService {
 	 * @throws NoSuchAlgorithmException
 	 * @throws NoSuchProviderException
 	 */
-	public TranscriptionResponse transcribeVideo(File videoFile, String reqId) throws IOException, NoSuchAlgorithmException, NoSuchProviderException {
+	public TranscribtionResponse transcribeVideo(File videoFile, String reqId) throws IOException, NoSuchAlgorithmException, NoSuchProviderException {
 
 		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(configuration);
 		InputStream stream = new FileInputStream(videoFile);
@@ -172,7 +172,7 @@ public class TranscribitionService {
 
 	@Async("asyncExecutor")
 	
-	private  TranscriptionResponse extractTranscribedTextFromSpeechRecognizer(StreamSpeechRecognizer recognizer, String reqId) {
+	private  TranscribtionResponse extractTranscribedTextFromSpeechRecognizer(StreamSpeechRecognizer recognizer, String reqId) {
 		
 		StringBuilder unformattedTranscribeText = new StringBuilder();
 		SpeechResult result;
@@ -191,7 +191,7 @@ public class TranscribitionService {
 			
 		}
         recognizer.stopRecognition();
-        return new TranscriptionResponse(unformattedTranscribeText.toString(), reqId, null, false, wordsList);
+        return new TranscribtionResponse(unformattedTranscribeText.toString(), reqId, null, false, wordsList);
 	}
 }
 
