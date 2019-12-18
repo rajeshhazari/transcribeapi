@@ -22,18 +22,18 @@ public interface UsersRepository extends CrudRepository<Users, Long>{
 	  @Query("select * from Users where upper(username) = upper(:username) ")
 	  Optional<Users> findByUsername(String username);
 	  
-	  @Query("select * from Users where upper(emailAddress) = upper(:emailAddress) and  upper(username) = upper(:username)  ")
-	  Optional<Users> findByUsernameAndEmail(String username);
+	  @Query("select * from Users where upper(email) = upper(:email) and  upper(username) = upper(:username)  ")
+	  Optional<Users> findByUsernameAndEmail(String email, String username);
 	  
-	  @Query("select * from Users where upper(emailAddress) = upper(:emailAddress) and  upper(username) = upper(:username)  and active=true ")
-	  List<Users> findByEmailAddressAndusernameAndActive(String emailAddress, String username);
+	  @Query("select * from Users where upper(email) = upper(:email) and  upper(username) = upper(:username)  and active=true ")
+	  List<Users> findByEmailAndusernameAndActive(String email, String username);
 	  
-	  @Query("select * from Users where upper(emailAddress) = upper(:emailAddress) and  upper(username) = upper(:username)  and active=false  ")
-	  Optional<Users> findByEmailAddressAndUsernameAndInactive(String emailAddress, String username);
+	  @Query("select * from Users where upper(email) = upper(:email)  and active=false  ")
+	  Optional<Users> findByEmailAndInactive(String email);
 	  
 	  
-	  @Query("select * from Users where upper(emailAddress) = upper(:emailAddress) and  upper(username) = upper(:username)  and disabled=true  ")
-	  Optional<Users> findByEmailAddressAndUsernameAndDisabled(String emailAddress, String username);
+	  @Query("select * from Users where upper(email) = upper(:email) and  upper(username) = upper(:username)  and disabled=true  ")
+	  Optional<Users> findByEmailAndUsernameAndDisabled(String email, String username);
 	  
 	
 }

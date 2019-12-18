@@ -6,11 +6,17 @@ package com.c3trTranscibe.springboot.model.repository;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
+import com.c3trTranscibe.springboot.domain.Users;
+
+import lombok.AllArgsConstructor;
+
 /**
  * @author rajesh
  *
  */
 @Table("registeredUsers")
+@AllArgsConstructor
+@lombok.Data
 public class RegisteredUser {
 
 	@Id
@@ -23,30 +29,6 @@ public class RegisteredUser {
 
 		this.email = email;
 		this.password = password;
-	}
-
-	public String getEmail() {
-		return email;
-	}
-
-	public void setEmail(String email) {
-		this.email = email;
-	}
-
-	public String getPassword() {
-		return password;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
-	}
-
-	public Integer getID() {
-		return ID;
-	}
-
-	public void setID(Integer iD) {
-		ID = iD;
 	}
 
 }

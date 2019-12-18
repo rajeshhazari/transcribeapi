@@ -3,13 +3,17 @@
  */
 package com.c3trTranscibe.springboot.controller;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,20 +21,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.c3trTranscibe.springboot.config.AppJwtTokenUtil;
 import com.c3trTranscibe.springboot.domain.UserDTO;
+import com.c3trTranscibe.springboot.domain.Users;
 import com.c3trTranscibe.springboot.model.JwtResponse;
 import com.c3trTranscibe.springboot.model.repository.RegisteredUser;
 import com.c3trTranscibe.springboot.services.JwtUserDetailsService;
@@ -72,7 +76,7 @@ public class JwtAuthenticationController {
 	)
 	
 	@RequestMapping(value = "/authenticate", method = RequestMethod.POST, produces = "application/json")
-	public ResponseEntity<?> createAuthenticationToken(@RequestBody UserDTO authenticationRequest) throws Exception {
+	public ResponseEntity<JwtResponse> createAuthenticationToken(@RequestBody UserDTO authenticationRequest) throws Exception {
 		
 		authenticate(authenticationRequest.getUsername(), authenticationRequest.getPassword());
 
@@ -80,7 +84,7 @@ public class JwtAuthenticationController {
 
 		final String token = jwtTokenUtil.generateToken(userDetails);
 
-		return ResponseEntity.ok(new JwtResponse(token));
+		return ResponseEntity.ok(new JwtResponse(token, userDetails.getUsername()));
 	}
 
 	
@@ -214,4 +218,22 @@ public class JwtAuthenticationController {
 	  public Map<String,String> token(HttpSession session) {
 	    return Collections.singletonMap("token", session.getId());
 	  }
+	
+	@GetMapping(value = "/confirmEmail",produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	  public Map<String,String> confirmEmail(@RequestParam("command")   @NotNull @NotBlank  final String command, @RequestParam("emailId")   @NotNull @NotBlank  final String emailId, 
+		  			HttpServletRequest req, HttpSession session) {
+	    String encryptedEmail = req.getParameter("emailId");
+	    String decodedEmail = new String(Base64.getUrlDecoder().decode(encryptedEmail), StandardCharsets.UTF_8);
+	    //TODO add a new methos to get user with his email id
+	    Optional<Users> user = jwtUserDetailsService.getUserByUsername(decodedEmail);
+			Map<String,String> resp = new HashMap<>();
+
+	    if (user.get().getEmail().equalsIgnoreCase(decodedEmail)) {
+	        user.get().setActive(true);
+	    }
+		resp.put("token", session.getId());
+	    resp.put("userName", user.get().getUsername());
+	    return resp;
+	  }
+	
 }

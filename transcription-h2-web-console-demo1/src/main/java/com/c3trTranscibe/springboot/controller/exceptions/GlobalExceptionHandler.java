@@ -8,11 +8,14 @@ import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.NoHandlerFoundException;
+
+import com.c3trTranscibe.springboot.repository.exceptions.UserNotFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -22,7 +25,7 @@ public class GlobalExceptionHandler {
 	    public ApiError noHandlerFoundException(
 	            NoHandlerFoundException ex) {
 
-	        int code = 1000;
+	        int code = HttpStatus.NOT_FOUND.value();
 	        String message = "No handler found for your request.";
 	        return new ApiError(code, message);
 	    }
@@ -46,5 +49,12 @@ public class GlobalExceptionHandler {
 	        return new ResponseEntity<Object>(
 	          "Access denied. Please Register.", new HttpHeaders(), HttpStatus.FORBIDDEN);
 	    }
+	 
+	 @ExceptionHandler({UserNotFoundException.class, UsernameNotFoundException.class})
+	 public ResponseEntity<ApiError> handleUserNotFounDexception(Exception uex, HttpRequest req){
+	 		final String message = "Email/Username Not found, please check your Email/Username";
+		 ApiError errorDetails = new ApiError(HttpStatus.INTERNAL_SERVER_ERROR.value(), message + uex.getMessage(),LocalDateTime.now());
+		 return new ResponseEntity<ApiError>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
+	 }
 	 
 }

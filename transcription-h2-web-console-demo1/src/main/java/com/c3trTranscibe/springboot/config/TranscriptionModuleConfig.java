@@ -50,6 +50,12 @@ public class TranscriptionModuleConfig {
 	  @Value("${server.servlet.contextPath}")
 	  private String context;
 	  
+	  @Value("${spring.datasource.schema}")
+	  private String schemaScript;
+	  
+	  @Value("${spring.datasource.schema}")
+	  private String inputDataScript;
+	  
 	@Bean
 	public DataSource getH2DataSource() {
 	EmbeddedDatabase db = new EmbeddedDatabaseBuilder()
@@ -57,8 +63,8 @@ public class TranscriptionModuleConfig {
 		     .setType(EmbeddedDatabaseType.H2)
 		     .setScriptEncoding("UTF-8")
 		     .ignoreFailedDrops(true)
-		     .addScript("h2-db/tables_h2.sql")
-		     .addScripts("h2-db/data-temp.sql")
+		     .addScript(schemaScript)
+		     .addScripts(inputDataScript)
 		     .build();
 	return db;
 	}
