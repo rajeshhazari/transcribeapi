@@ -1,0 +1,7 @@
+version: "1"
+services:
+  loop:
+    build: .
+    ports:
+      - "9010:9010"
+      - "8585:8585"
