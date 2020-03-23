@@ -12,10 +12,8 @@ import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -24,11 +22,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
-import com.c3trTranscibe.springboot.model.TranscribtionResponse;
+import com.c3trTranscibe.springboot.domain.TranscribtionResponse;
 
 import edu.cmu.sphinx.api.Configuration;
 import edu.cmu.sphinx.api.SpeechResult;
@@ -61,8 +60,9 @@ public class TranscribitionService {
 	 * @throws Exception
 	 */
 	public TranscribtionResponse transribeAudioforText(File file, String transcribtionReqId) throws Exception{
-
-
+		
+		SimpleAsyncTaskExecutor delegateExecutor =
+				new SimpleAsyncTaskExecutor();
 		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(configuration);
 		InputStream stream = new FileInputStream(file);
 		recognizer.startRecognition(stream);

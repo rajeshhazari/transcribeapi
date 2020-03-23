@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.boot.Banner;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.WebApplicationType;
@@ -21,6 +22,7 @@ import org.springframework.data.jdbc.repository.config.EnableJdbcRepositories;
 @EnableAutoConfiguration
 @SpringBootApplication
 @ComponentScan("com.c3trTranscibe.*")
+@EnableBatchProcessing
 public class TranscribtionH2WebDemoApp extends SpringBootServletInitializer {
 
 	

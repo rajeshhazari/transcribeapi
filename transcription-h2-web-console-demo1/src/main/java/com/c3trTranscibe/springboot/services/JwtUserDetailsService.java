@@ -8,10 +8,18 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.c3trTranscibe.springboot.model.AppJwtRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -20,10 +28,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.c3trTranscibe.springboot.domain.UserDTO;
-import com.c3trTranscibe.springboot.domain.Users;
-import com.c3trTranscibe.springboot.model.repository.RegisteredUser;
-import com.c3trTranscibe.springboot.repository.UsersRepository;
-import com.c3trTranscibe.springboot.repository.exceptions.UserNotFoundException;
+import com.c3trTranscibe.springboot.domain.AppUsers;
+import com.c3trTranscibe.springboot.domain.RegisteredUser;
+import com.c3trTranscibe.springboot.repository.AppusersRepository;
+import com.c3trTranscibe.springboot.exceptions.UserNotFoundException;
 /**
  * @author rajesh
  *
@@ -39,27 +47,34 @@ public class JwtUserDetailsService implements UserDetailsService {
 	
 	@Autowired
 	Environment env;
-	
+
 	@Autowired
 	private PasswordEncoder bcryptEncoder;
 
 	
 	@Autowired
-	private UsersRepository usersRepo;
+	private AppusersRepository usersRepo;
 	
 	private String email;
 	private String password;
 	public RegisteredUser userDetails;
-	public Users user;
+	public AppUsers user;
 	
 	
 	@Override
-	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-		Optional<Users> user = usersRepo.findByUsername(username);
-		
-		if (user == null) {
+	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException,BadCredentialsException {
+		//Optional<AppUsers> user = usersRepo.findByUsername(username);
+		AppUsers user = null;
+		try{
+			user = (AppUsers)usersRepo.findByEmail(username);
+		}catch (BadCredentialsException bex){
+			throw new BadCredentialsException("Bad credentials. Please check your username/password: " + username);
+		}
+		logger.debug("user retrived:: %s  for user %s",user ,username );
+		if (user.isLocked()) {
 			throw new UsernameNotFoundException("User not found with username: " + username);
 		};
+		
 		
 		/*
 		 * List<Users> userList = userRepo.findByUsername(username); 
@@ -70,15 +85,20 @@ public class JwtUserDetailsService implements UserDetailsService {
 		 * throw new UsernameNotFoundException("User not found with username: " +
 		 * username); } }
 		 */
-		return new org.springframework.security.core.userdetails.User(user.get().getUsername(), user.get().getPassword(),
+		//Principal authentication = new HttpTrace.Principal()
+		SecurityContext context = SecurityContextHolder.getContext();
+		Authentication authentication =
+				new UsernamePasswordAuthenticationToken(user.getEmail(),user.getPassword(), AuthorityUtils.createAuthorityList("ROLE_USER"));
+		context.setAuthentication(authentication);
+		return new User(user.getUsername(), user.getPassword(),
 				new ArrayList<>());
 	}
 
 
-	public Optional<Users> getUserByUsername(String username) throws UsernameNotFoundException {
-		Optional<Users> users = usersRepo.findByUsername(username);
+	public Optional<AppUsers> getUserByUsername(String username) throws UsernameNotFoundException {
+		Optional<AppUsers> user = usersRepo.findByUserName(username);
 
-		if (users == null) {
+		if (user == null) {
 			throw new UsernameNotFoundException("User not found with username: " + username);
 		};
 
@@ -91,7 +111,7 @@ public class JwtUserDetailsService implements UserDetailsService {
 		 * throw new UsernameNotFoundException("User not found with username: " +
 		 * username); } }
 		 */
-		return users;
+		return user;
 	}
 	
 	/**
@@ -100,24 +120,46 @@ public class JwtUserDetailsService implements UserDetailsService {
 	 * @return
 	 * @throws UserNotFoundException
 	 */
-	public Users getUserByEmail(String email) throws UserNotFoundException {
-		Optional<Users> user = usersRepo.findByEmailAndInactive(email);
+	public AppUsers getUserByEmailAndInactive(String email) throws UserNotFoundException {
+		Optional<AppUsers> user = usersRepo.findByEmailAndInactive(email);
 		
 		if (user == null) {
 			throw new UserNotFoundException("User not found with email: " + email);
 		};
 		return user.get();
 	}
-	
+
+	/**
+	 *
+	 * @param email
+	 * @return
+	 * @throws UserNotFoundException
+	 */
+	public AppUsers getUserByEmail(String email) throws UserNotFoundException {
+		List<AppUsers> user = usersRepo.findByEmail(email);
+
+		if (user == null) {
+			throw new UserNotFoundException("User not found with email: " + email);
+		};
+		return user.get(0);
+	}
+
 	/**
 	 * 
-	 * @param user
+	 * @param regUser
 	 * @return
 	 */
-	public Users save(UserDTO user) {
-		Users newUser = new Users();
-		newUser.setUsername(user.getUsername());
-		newUser.setPassword(bcryptEncoder.encode(user.getPassword()));
+	public AppUsers save(AppUsers regUser) {
+		AppUsers newUser = new AppUsers();
+		newUser.setUsername(regUser.getUsername());
+		newUser.setPassword(bcryptEncoder.encode(regUser.getPassword()));
+		newUser.setEmail(regUser.getEmail());
+		newUser.setFirstName(regUser.getFirstName());
+		newUser.setLastName(regUser.getLastName());
+		newUser.setUsername(regUser.getUsername());
+		newUser.setZipcode(regUser.getZipcode());
+
+		logger.debug("New User added - %s",regUser.getUsername());
 		return usersRepo.save(newUser);
 	}
 		
@@ -125,9 +167,9 @@ public class JwtUserDetailsService implements UserDetailsService {
 		/**
 		 * 
 		 * 
-		 * @RequestMapping(method = RequestMethod.POST, value = "/resetdemo")
-	public String reserPassword(@RequestBody RegisteredUser userDetails) {
-		statsd.incrementCounter(userHTTPPOST);
+		 * @RequestMapping(method = RequestMethod.POST, value = "/resetpwd")
+	public String resetPassword(@RequestBody RegisteredUser userDetails) {
+		//statsd.incrementCounter(userHTTPPOST);
 
 		logger.info("POST request : \"/reset\"");
 
@@ -145,22 +187,22 @@ public class JwtUserDetailsService implements UserDetailsService {
 			}
 		}
 
-		AmazonSNS snsClient = AmazonSNSClient.builder().withRegion("us-east-1")
-				.withCredentials(new InstanceProfileCredentialsProvider(false)).build();
-		AmazonSNS snsClient1 = AmazonSNSClient.builder().withRegion("us-east-1")
-				.withCredentials(new InstanceProfileCredentialsProvider(false)).build();
+		//AmazonSNS snsClient = AmazonSNSClient.builder().withRegion("us-east-1")
+		//		.withCredentials(new InstanceProfileCredentialsProvider(false)).build();
+		//AmazonSNS snsClient1 = AmazonSNSClient.builder().withRegion("us-east-1")
+		//		.withCredentials(new InstanceProfileCredentialsProvider(false)).build();
 
 		String resetEmail = userDetails.getEmail();
 		String resetEmail1 = userDetails.getEmail();
 		logger.info("Reset Email: " + resetEmail);
 		logger.info("Reset Email: " + resetEmail1);
 
-		PublishRequest publishRequest = new PublishRequest(topicArn, userDetails.getEmail());
-		PublishResult publishResult = snsClient.publish(publishRequest);
-		PublishRequest publishRequest1 = new PublishRequest(topicArn, userDetails.getEmail());
-		PublishResult publishResult1 = snsClient.publish(publishRequest1);
-		logger.info("SNS Publish Result: " + publishResult);
-
+		//PublishRequest publishRequest = new PublishRequest(topicArn, userDetails.getEmail());
+		//PublishResult publishResult = snsClient.publish(publishRequest);
+		//PublishRequest publishRequest1 = new PublishRequest(topicArn, userDetails.getEmail());
+		//PublishResult publishResult1 = snsClient.publish(publishRequest1);
+		//logger.info("SNS Publish Result: " + publishResult);
+		//TODO create password resent link and save to db and send an email to registered users email.
 		return "{\"RESPONSE\" : \"Password Reset Link was sent to your emailID\"}";
 
 	}
@@ -231,29 +273,35 @@ public class JwtUserDetailsService implements UserDetailsService {
 		
 		
 
-	public Users checkUserAlreadyPresent(RegisteredUser userDetails) {
+	public AppUsers checkUserAlreadyPresent(UserDTO userDetails) {
 		logger.info("Checking Email ID Already present");
-		List<Users> userList = usersRepo.findByEmailAndusernameAndActive(userDetails.getUsername(),userDetails.getEmail());
-		Optional<Users> userVal = Optional.empty();
-		for (Users user : userList) {
-			if (Objects.nonNull(user) && user.isActive() && userDetails.getEmail().equalsIgnoreCase(user.getEmail())) {
+		Optional<AppUsers> user = usersRepo.findByUsernameAndEmail(userDetails.getEmail(),userDetails.getEmail());
+
+		if(user.isPresent()){
+			AppUsers usertemp = user.get();
+			if (Objects.nonNull(user) && usertemp.isActive() && userDetails.getEmail().equalsIgnoreCase(usertemp.getEmail())) {
 				logger.debug("{}   : user already registered ", userDetails.getEmail());
-				return user;
+				return usertemp;
 			}
-			if (Objects.nonNull(user) && user.isDisabled() && userDetails.getEmail().equalsIgnoreCase(user.getEmail())) {
+			if (Objects.nonNull(user) && usertemp.isDisabled() && userDetails.getEmail().equalsIgnoreCase(usertemp.getEmail())) {
 				logger.debug("{}  :  user already registered and Disabled", userDetails.getEmail());
-				return user;
+				return usertemp;
 			}
-			if (Objects.nonNull(user) && user.isLocked() && userDetails.getEmail().equalsIgnoreCase(user.getEmail())) {
+			if (Objects.nonNull(user) && usertemp.isLocked() && userDetails.getEmail().equalsIgnoreCase(usertemp.getEmail())) {
 				logger.debug("{}  :  user already registered and id is locked.", userDetails.getEmail());
-				return user;
+				return usertemp;
 			}
-			if (Objects.nonNull(user) && user.isLocked() && userDetails.getEmail().equalsIgnoreCase(user.getEmail())) {
+			if (Objects.nonNull(user) && usertemp.isLocked() && userDetails.getEmail().equalsIgnoreCase(usertemp.getEmail())) {
 				logger.debug("{}  :  user already registered and id is locked.", userDetails.getEmail());
-				return user;
+				return usertemp;
 			}
+		}else{
+			//TODO handle the error message correctly here
+			logger.error("empty user details from DB, System Error. checkUserAlreadyPresent()", user.isPresent());
+			return null;
 		}
-		return userVal.get();
+		logger.error("System error occured checkUserAlreadyPresent()", user.isPresent());
+		return null;
 	}
 	
 	
@@ -263,10 +311,10 @@ public class JwtUserDetailsService implements UserDetailsService {
 	 * @param userDetails
 	 * @return
 	 */
-	public boolean checkPassword(RegisteredUser userDetails) {
+	public boolean checkPassword(AppJwtRequest userDetails) {
 		logger.info("Checking password");
-		logger.debug(" checking password for user :: %s",userDetails.getEmail());
-		Optional<Users> user = usersRepo.findByUsername(userDetails.getUsername());
+		logger.debug(" checking password for user :: %s",userDetails.getUsername());
+		Optional<AppUsers> user = usersRepo.findByUsername(userDetails.getUsername());
 		
 			if (Objects.nonNull(user) && user.isPresent()) {
 				// String password = BCrypt.hashpw(userDetails.getPassword(), BCrypt.gensalt());
@@ -286,7 +334,7 @@ public class JwtUserDetailsService implements UserDetailsService {
 	 * @param userData
 	 * @return
 	 */
-	public boolean registerUser(final Users userData) {
+	public boolean registerUser(final AppUsers userData) {
 
 		String password = BCrypt.hashpw(userData.getPassword(), BCrypt.gensalt());
 		logger.debug("Password salt : " + password);
@@ -313,4 +361,6 @@ public class JwtUserDetailsService implements UserDetailsService {
 	}
 	
 }
+
+//EnumSet APP_ROLES{ ROLE_ADMIN, ROLE_SUPER_USER, ROLE_APP_USER, ROLE_APP_PROMO_USER, ROLE_RESTRICTED_USER}
 

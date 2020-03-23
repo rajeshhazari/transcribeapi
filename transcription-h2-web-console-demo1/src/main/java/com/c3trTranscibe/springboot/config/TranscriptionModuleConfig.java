@@ -12,14 +12,19 @@ import java.util.concurrent.Executor;
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.ErrorPage;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jdbc.repository.config.EnableJdbcRepositories;
+import org.springframework.data.web.config.EnableSpringDataWebSupport;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcOperations;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -36,7 +41,7 @@ import org.springframework.transaction.PlatformTransactionManager;
  *
  */
 @Configuration
-@EnableJdbcRepositories("com.c3trTranscibe.springboot")
+@EnableJdbcRepositories("com.c3trTranscibe.springboot.repository")
 @EnableAsync
 public class TranscriptionModuleConfig {
 
@@ -56,7 +61,7 @@ public class TranscriptionModuleConfig {
 	  @Value("${spring.datasource.schema}")
 	  private String inputDataScript;
 	  
-	@Bean
+/*	@Bean
 	public DataSource getH2DataSource() {
 	EmbeddedDatabase db = new EmbeddedDatabaseBuilder()
 		     .generateUniqueName(true)
@@ -67,17 +72,18 @@ public class TranscriptionModuleConfig {
 		     .addScripts(inputDataScript)
 		     .build();
 	return db;
-	}
+	}*/
 	
-	
+	@Autowired
+	DataSource dataSource;
 	@Bean
     NamedParameterJdbcOperations operations() { 
-        return new NamedParameterJdbcTemplate(getH2DataSource());
+        return new NamedParameterJdbcTemplate(dataSource);
     }
 
     @Bean
     PlatformTransactionManager transactionManager() { 
-        return new DataSourceTransactionManager(getH2DataSource());
+        return new DataSourceTransactionManager(dataSource);
 	}
 	
 	@Bean
@@ -127,5 +133,12 @@ public class TranscriptionModuleConfig {
 	      factory.setErrorPages(pageHandlers);
 	      return factory;
 	  }
+	
+	@Bean
+	public ObjectMapper getObjectMapper() {
+		ObjectMapper mapper = new ObjectMapper();
+		mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+		return mapper;
+	}
 	  
 }

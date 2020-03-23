@@ -3,16 +3,22 @@
  */
 package com.c3trTranscibe.springboot.domain;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.relational.core.mapping.Table;
 
 /**
  * @author rajesh
  *
  */
-@Data
+@Table(value = "APPUSERS")
+@AllArgsConstructor
+@NoArgsConstructor
+@lombok.Data
 public class UserDTO {
 
-	private String username;
+	private String email;
 	private String password;
-	
+
 }

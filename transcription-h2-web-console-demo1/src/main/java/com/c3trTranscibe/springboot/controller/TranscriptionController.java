@@ -17,11 +17,13 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
+import com.c3trTranscibe.springboot.config.AppJwtTokenUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,15 +31,13 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.Assert;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.c3trTranscibe.springboot.model.TranscribtionResponse;
+import com.c3trTranscibe.springboot.domain.TranscribtionResponse;
 import com.c3trTranscibe.springboot.services.TranscribitionService;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -63,14 +63,30 @@ public class TranscriptionController {
 	
 	@Autowired
 	TranscribitionService tService;
-	
-	
-	
+
+
+    @ApiOperation(value = "Get Transcibtion id for current user ", response = Map.class, tags = "getTranscribeReqId")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Suceess|OK"),
+            @ApiResponse(code = 401, message = "not authorized!"),
+            @ApiResponse(code = 403, message = "forbidden!!!"),
+            @ApiResponse(code = 404, message = "not found!!!") })
+    @GetMapping(path="/transcribeReqId" , produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
 	 @RequestMapping( value= "/transcribeReqId" , method=RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
 	  public Map<String,Object> getTranscribeReqId(HttpServletRequest req, HttpServletResponse res) {
-		 Assert.isNull(req.getSession(), "Invalid Session..");
+         Authentication authentication = SecurityContextHolder.getContext()
+                 .getAuthentication();
+	     Assert.notNull(req.getSession().isNew(), "Invalid Session.., Please authenticate");
+		 /*Assert.notNull(req.getSession(), (req.getSession()) => {
+                 HttpSession ses = req.getSession();
+         });*/
+		 /*if(req.getSession().isNew()){
+		     res.setStatus(401);
+             res.addCookie(new Cookie("session", req.getSession().getId()));
+         }*/
 	    Map<String,Object> resp = new HashMap<String,Object>();
 	    	resp.put("reqid", UUID.randomUUID().toString());
+	    	res.addCookie(new Cookie("session", req.getSession().getId()));
 	    return resp;
 	  }
 	 
@@ -90,6 +106,11 @@ public class TranscriptionController {
     	    @RequestParam("file") final MultipartFile file,HttpServletRequest req, HttpServletResponse res) throws JsonParseException, JsonMappingException, IOException {  
     	logger.debug("Upload: {}", fname);
     	TranscribtionResponse response = null;
+         Authentication authentication = SecurityContextHolder.getContext()
+                 .getAuthentication();
+         AppJwtTokenUtil appJwtTokenUtil = new AppJwtTokenUtil();
+         String authHeader =    req.getHeader("");
+         appJwtTokenUtil.getUsernameFromToken(authHeader);
     	// MetaData document = objectMapper.readValue(metaData, MetaData.class);
     	if (Objects.isNull(file)){
     		return new ResponseEntity<TranscribtionResponse>(response, HttpStatus.BAD_REQUEST);

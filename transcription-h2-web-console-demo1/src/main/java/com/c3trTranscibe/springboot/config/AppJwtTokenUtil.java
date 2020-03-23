@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import com.c3trTranscibe.springboot.domain.UserDTO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -17,13 +18,15 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * @author rajesh
  *
 
  */
 @Component
-public class AppJwtTokenUtil  implements Serializable {
+public class AppJwtTokenUtil  {
 	
 	//Validity in seconds
 	public static final long JWT_TOKEN_VALIDITY = 5 * 60 * 60;
@@ -45,7 +48,7 @@ public class AppJwtTokenUtil  implements Serializable {
 	}
 	//for retrieveing any information from token we will need the secret key
 	private Claims getAllClaimsFromToken(String token) {
-		return Jwts.parser().setSigningKey(secret).parseClaimsJws(token).getBody();
+		return Jwts.parser().setSigningKey(secret.getBytes(UTF_8)).parseClaimsJws(token).getBody();
 	}
 	//check if the token has expired
 	private Boolean isTokenExpired(String token) {
@@ -53,9 +56,9 @@ public class AppJwtTokenUtil  implements Serializable {
 		return expiration.before(new Date());
 	}
 	//generate token for user
-	public String generateToken(UserDetails userDetails) {
+	public String generateToken(UserDTO userDetails) {
 		Map<String, Object> claims = new HashMap<>();
-		return doGenerateToken(claims, userDetails.getUsername());
+		return doGenerateToken(claims, userDetails.getEmail());
 	}
 	//while creating the token -
 	//1. Define  claims of the token, like Issuer, Expiration, Subject, and the ID
@@ -65,8 +68,14 @@ public class AppJwtTokenUtil  implements Serializable {
 	private String doGenerateToken(Map<String, Object> claims, String subject) {
 		return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
 				.setExpiration(new Date(System.currentTimeMillis() + JWT_TOKEN_VALIDITY * 1000))
-				.signWith(SignatureAlgorithm.HS512, secret).compact();
+				.signWith(SignatureAlgorithm.RS512, secret.getBytes(UTF_8)).compact();
 	}
+	//validate token
+	public Boolean validateToken(String token, UserDTO userDetails) {
+		final String username = getUsernameFromToken(token);
+		return (username.equals(userDetails.getEmail()) && !isTokenExpired(token));
+	}
+
 	//validate token
 	public Boolean validateToken(String token, UserDetails userDetails) {
 		final String username = getUsernameFromToken(token);

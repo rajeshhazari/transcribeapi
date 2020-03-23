@@ -29,6 +29,7 @@ DROP TABLE IF EXISTS TRANSCRIBEFILELOG;
 DROP TABLE IF EXISTS USER_SESSIONS;
 DROP TABLE IF EXISTS USER_SESSIONS_ATTRIBUTES;
 DROP TABLE IF EXISTS REGISTEREDAPPUSERS;
+--DROP TABLE IF EXISTS USER;
 
 
 CREATE TABLE QRTZ_CALENDARS (
@@ -273,7 +274,7 @@ ALTER TABLE QRTZ_TRIGGERS ADD
   CREATE TABLE APPUSERS(
   userid identity not null auto_increment,
   username VARCHAR(100) not null unique ,
-  password VARCHAR(50) not null,
+  password VARCHAR(100) not null,
   first_name VARCHAR(50) not null unique ,
   last_name VARCHAR(50) not null,
   zipcode VARCHAR(50) not null,
@@ -288,11 +289,18 @@ ALTER TABLE QRTZ_TRIGGERS ADD
   primary key (userid)
 );
 
+
+--CREATE TABLE USER(
+--   id identity not null auto_increment,
+--   username VARCHAR(100) not null,
+--   password VARCHAR(50) not null,
+--   primary key (id)
+-- );
+
 CREATE TABLE REGISTEREDAPPUSERS(
   id identity not null auto_increment,
   username VARCHAR(100) not null,
-  password VARCHAR(50) not null,
-  email VARCHAR(100) not null,
+   email VARCHAR(100) not null,
   primary key (id),
   foreign key (username,email) references APPUSERS(username,email)
 );
@@ -342,13 +350,14 @@ CREATE TABLE USERSTRANSCRIPTIONS (
   username VARCHAR(100) not null,
   email VARCHAR(100) not null,
   transcription_req_id VARCHAR(100) not null,
+  transcribe_res_type VARCHAR(20) default 'application/json',
   file_name VARCHAR(100) not null,
   session_id VARCHAR(100) not null,
-  userid BIGINT,
+  userid Long,
   transcribed boolean default false,
   downloaded boolean default true,
-  transcribe_res_available_format VARCHAR(10) default 'application/json',
-  transcribe_res_downloaded_format VARCHAR(10) default 'application/json',
+  transcribe_res_available_format VARCHAR(20) default 'application/json',
+  transcribe_res_downloaded_format VARCHAR(20) default 'application/json',
   transcribed_date timestamp default CURRENT_TIMESTAMP,
   uploaded_date timestamp default CURRENT_TIMESTAMP,
   primary key (log_id),
@@ -379,7 +388,7 @@ ALTER TABLE USERSTRANSCRIPTIONS ADD
   username VARCHAR(100),
   file_name VARCHAR(256),
   session_id VARCHAR(256),
-  transcribe_req_id BIGINT,
+  transcribe_req_id Long,
   transcribe_res_type VARCHAR(20),
   
   primary key (log_id)

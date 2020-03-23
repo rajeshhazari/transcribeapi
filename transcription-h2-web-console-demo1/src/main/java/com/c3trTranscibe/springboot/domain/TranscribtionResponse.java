@@ -1,7 +1,7 @@
 /**
  *
  */
-package com.c3trTranscibe.springboot.model;
+package com.c3trTranscibe.springboot.domain;
 
 import java.util.List;
 

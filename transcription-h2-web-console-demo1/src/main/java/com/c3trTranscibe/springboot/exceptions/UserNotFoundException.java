@@ -1,4 +1,4 @@
-package com.c3trTranscibe.springboot.repository.exceptions;
+package com.c3trTranscibe.springboot.exceptions;
 
 import org.springframework.security.core.AuthenticationException;
 

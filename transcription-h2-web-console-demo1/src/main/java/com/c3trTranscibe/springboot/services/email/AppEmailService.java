@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
-import com.c3trTranscibe.springboot.domain.Users;
+import com.c3trTranscibe.springboot.domain.AppUsers;
 
 /**
  * @author rajesh
@@ -26,7 +26,7 @@ public class AppEmailService {
 	 * @param userReq
 	 * @return Boolean
 	 */
-	public Boolean sendPasswordRestEmail(Users userReq) {
+	public Boolean sendPasswordRestEmail(AppUsers userReq) {
 		
 		return true;
 	}

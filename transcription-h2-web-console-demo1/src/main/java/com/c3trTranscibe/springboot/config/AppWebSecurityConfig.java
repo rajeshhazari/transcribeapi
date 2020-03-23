@@ -31,16 +31,17 @@ public class AppWebSecurityConfig extends WebSecurityConfigurerAdapter {
 	
 	private static final String[] AUTH_WHITELIST = {
             // -- swagger ui
-            "/v2/api-docs",
-            "/actuator/**",
-            "/swagger-resources/**",
-            "/api/v1/swagger-ui.html**",
-            "/api/v1/webjars/**",
-            "/api/v1/authenticate/",
-            "/api/v1/public/**",
-            "/api/v1/h2-console/**",
-            "/h2-console/**", 
-			"/api/v1/csrf"
+			"/api/v1/actuator/**",
+			"/v2/api-docs",           // swagger
+			"/webjars/**",            // swagger-ui webjars
+			"/swagger-ui.html/**",  // swagger-ui resources
+			"/swagger-resources/**",
+			"/configuration/**",      // swagger configuration
+			"/webjars/**",
+			"/auth",
+			"/public/**",
+			"/h2-console/**",
+			"/csrf"
             // other public endpoints of your API may be appended to this array
     };
 
@@ -71,23 +72,20 @@ public class AppWebSecurityConfig extends WebSecurityConfigurerAdapter {
         // However we provide REST Services here, having an additional session would be absurd.
         // NOTICE: With this it is pointless to use the SecurityContextHolder of Spring-Security,
         //         as without session it won't keep Information there.
-        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
         .and()
-		.authorizeRequests()
-		.antMatchers("/").permitAll()
+		.authorizeRequests().antMatchers("/api/v1/").authenticated()
 		.antMatchers(AUTH_WHITELIST).permitAll()
-		.antMatchers(HttpMethod.GET,"/api/v1/actuator/**").permitAll()
-		.antMatchers("/api/v1/**").authenticated()
-		.and().exceptionHandling().authenticationEntryPoint(swaggerAuthenticationEntryPoint())
-		
-        .and()
-        .httpBasic()
+				.anyRequest().authenticated()
+				/*.and()
+				.exceptionHandling().authenticationEntryPoint(swaggerAuthenticationEntryPoint())*/
+
         .and()
 		.logout()
 		.deleteCookies("remove")
 		.invalidateHttpSession(true);
 
-		http.rememberMe().disable();
+		http.rememberMe();
 
 	}
 
@@ -98,28 +96,31 @@ public class AppWebSecurityConfig extends WebSecurityConfigurerAdapter {
 		auth.authenticationProvider(daoAuthenticationProvider());
 	}
 
-	
+
 	 @Override
 	    public void configure(WebSecurity web) throws Exception {
 		 	
 	        web.ignoring().antMatchers(AUTH_WHITELIST);
 	    }
 	 
-	 @Bean
+	/* @Bean
 	    public BasicAuthenticationEntryPoint swaggerAuthenticationEntryPoint() {
 	        BasicAuthenticationEntryPoint entryPoint = new BasicAuthenticationEntryPoint();
 	        entryPoint.setRealmName("Swagger Realm");
 	        return entryPoint;
-	    }
-	 
+	    }*/
+
+
 	 @Bean
 	 public DaoAuthenticationProvider daoAuthenticationProvider() {
 		 DaoAuthenticationProvider daoProvider = new DaoAuthenticationProvider();
-		 daoProvider.setPasswordEncoder(passwordEncoder());
 		 daoProvider.setUserDetailsService(jwtUserDetailsService);
+		 daoProvider.setPasswordEncoder(passwordEncoder());
 		 return daoProvider;
 				 		
 	 }
+	 
+	 
 	/*
 	 * @Bean
 	 * 

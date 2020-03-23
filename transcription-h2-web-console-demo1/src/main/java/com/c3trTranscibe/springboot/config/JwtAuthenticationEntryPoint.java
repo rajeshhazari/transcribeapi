@@ -34,7 +34,7 @@ private static final Logger LOGGER = LoggerFactory.getLogger(JwtAuthenticationEn
 			AuthenticationException authException) throws IOException {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		HttpSession session = request.getSession();
-		LOGGER.debug("session name :{}",request.getSession()); 
+		LOGGER.debug("session name :{}",request.getSession().isNew());
 		response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
 	}
 }
