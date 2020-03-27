@@ -9,9 +9,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.jdbc.repository.config.EnableJdbcRepositories;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcOperations;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -27,8 +27,8 @@ import java.security.SecureRandom;
  *
  */
 @Configuration
-@EnableJdbcRepositories("com.rajesh.transcribe.repository")
-public class TranscriptionModuleConfig {
+@EnableJdbcRepositories("com.rajesh.transcribe.transribeapi.api.repository")
+public class TranscriptionModuleConfig{
 
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(TranscriptionModuleConfig.class);
@@ -46,9 +46,11 @@ public class TranscriptionModuleConfig {
 	  @Value("${spring.datasource.data}")
 	  private String inputDataScript;
 	  
-	  @Autowired DataSource dataSource;
+	  @Autowired
+	  DataSource dataSource;
 	  
 	/*@Bean
+	@Profile("default")
 	public DataSource createH2DataSource() {
 	EmbeddedDatabase db = new EmbeddedDatabaseBuilder()
 		     .setType(EmbeddedDatabaseType.H2)
@@ -59,6 +61,11 @@ public class TranscriptionModuleConfig {
 	return db;
 	}*/
 	
+	@Bean
+	@Profile({"dev", "qa" , "prod"})
+	public DataSource getDataSource() {
+		return  dataSource;
+	}
 	
 	@Bean
     NamedParameterJdbcOperations operations() {
@@ -70,14 +77,22 @@ public class TranscriptionModuleConfig {
         return new DataSourceTransactionManager(dataSource);
 	}
 	
-	@Bean
+	@Bean(name = "sphinxConfiguration")
 	public edu.cmu.sphinx.api.Configuration getAudioTranscribeConfiguration() {
 		edu.cmu.sphinx.api.Configuration configuration = new edu.cmu.sphinx.api.Configuration();
 
         configuration.setAcousticModelPath("resource:/transcribe/models/en-us/en-us");
         configuration.setDictionaryPath("resource:/transcribe/models/en-us/cmudict-en-us.dict");
         configuration.setLanguageModelPath("resource:/transcribe/models/en-us/en-us.lm.bin");
-        return configuration;
+        
+        LOGGER.debug("sphinxConfiguration:: status:: ", configuration);
+		LOGGER.debug("sphinxConfiguration:: Language MOdel:: ", configuration.getLanguageModelPath());
+		LOGGER.debug("sphinxConfiguration:: AcousticModelPath:: ", configuration.getAcousticModelPath());
+		LOGGER.debug("sphinxConfiguration:: DictionaryPath:: ", configuration.getDictionaryPath());
+		LOGGER.debug("sphinxConfiguration:: GrammerPath:: ", configuration.getGrammarPath());
+		LOGGER.debug("sphinxConfiguration:: GrammerName:: ", configuration.getGrammarName());
+		
+		return configuration;
 	}
 
 	
@@ -100,7 +115,7 @@ public class TranscriptionModuleConfig {
 	    }*/
 	  
 	  
-	  @Bean
+	 /* @Bean
 	  public TomcatServletWebServerFactory servletContainer(){
 	      TomcatServletWebServerFactory factory = new TomcatServletWebServerFactory(context,port);
 	      LOGGER.info("Setting custom configuration for Mainstay:");
@@ -108,7 +123,7 @@ public class TranscriptionModuleConfig {
 	      LOGGER.info("Setting context to {}",context);
 	      //factory.setErrorPages(pageHandlers);
 	      return factory;
-	  }
+	  }*/
 	
 	@Bean
 	public ObjectMapper getObjectMapper() {

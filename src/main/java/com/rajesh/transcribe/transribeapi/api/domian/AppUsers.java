@@ -1,19 +1,18 @@
 package com.rajesh.transcribe.transribeapi.api.domian;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Table("APPUSERS")
-@AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class AppUsers {
+public class AppUsers implements Serializable {
 	@Id
 	private  Long userid;
 	private String username;
@@ -35,5 +34,6 @@ public class AppUsers {
 	@Column(value = "registered_date")
 	private LocalDateTime lastModified;
 	
-
+	
+	
 }

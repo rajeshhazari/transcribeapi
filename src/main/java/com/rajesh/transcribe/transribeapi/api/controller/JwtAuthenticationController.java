@@ -34,10 +34,10 @@ public class JwtAuthenticationController {
 	private JwtUtil jwtTokenUtil;
 
 	@Autowired
-	private JwtUserDetailsService userDetailsService;
+	private JwtUserDetailsService jwtUserDetailsService;
 
 	
-	@ApiOperation(value = "Authenticate to api service", response = AuthenticationResponse.class, httpMethod = "HttpMethod.POST")
+	@ApiOperation(value = "Authenticate to api service", response = AuthenticationResponse.class, httpMethod = "POST")
 	@ApiResponses(
 			value = {
 					@ApiResponse(code = 200, message = "Successfully Authenticated."),
@@ -60,7 +60,7 @@ public class JwtAuthenticationController {
 		}
 
 
-		final UserDetails userDetails = userDetailsService
+		final UserDetails userDetails = jwtUserDetailsService
 				.loadUserByUsername(authenticationRequest.getUsername());
 
 		final String jwt = jwtTokenUtil.generateToken(userDetails);

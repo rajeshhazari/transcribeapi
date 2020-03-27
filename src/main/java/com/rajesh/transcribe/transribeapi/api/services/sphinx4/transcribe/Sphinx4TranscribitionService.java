@@ -45,7 +45,7 @@ public class Sphinx4TranscribitionService {
     Environment env;
 
 	@Autowired
-    Configuration configuration;
+    Configuration sphinxConfiguration;
 	
 	@Autowired
 	Executor asyncExecutor;
@@ -60,7 +60,7 @@ public class Sphinx4TranscribitionService {
 		
 		SimpleAsyncTaskExecutor delegateExecutor =
 				new SimpleAsyncTaskExecutor();
-		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(configuration);
+		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(sphinxConfiguration);
 		InputStream stream = new FileInputStream(file);
 		recognizer.startRecognition(stream);
 		
@@ -122,7 +122,7 @@ public class Sphinx4TranscribitionService {
 	 */
 	public TranscribtionResponse transcribeAudio(File audioFile, @NotNull @NotBlank String reqId) throws  IOException, ExecutionException {
 
-		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(configuration);
+		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(sphinxConfiguration);
 		InputStream stream = new FileInputStream(audioFile);
 		recognizer.startRecognition(stream);
 		
@@ -145,7 +145,7 @@ public class Sphinx4TranscribitionService {
 	 */
 	public TranscribtionResponse transcribeVideo(File videoFile, String reqId) throws IOException, NoSuchAlgorithmException, NoSuchProviderException {
 
-		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(configuration);
+		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(sphinxConfiguration);
 		InputStream stream = new FileInputStream(videoFile);
 		recognizer.startRecognition(stream);
 		

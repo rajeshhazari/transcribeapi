@@ -106,11 +106,7 @@ public class Sphinx4TranscriptionController {
                                                                   @RequestParam("file") final MultipartFile file, HttpServletRequest req, HttpServletResponse res) throws JsonParseException, JsonMappingException, IOException {
     	logger.debug("Upload: {}", fname);
     	TranscribtionResponse response = null;
-         Authentication authentication = SecurityContextHolder.getContext()
-                 .getAuthentication();
-         String authHeader =    req.getHeader("");
-         jwtUtil.extractUsername(authHeader);
-    	// MetaData document = objectMapper.readValue(metaData, MetaData.class);
+         // MetaData document = objectMapper.readValue(metaData, MetaData.class);
     	if (Objects.isNull(file)){
     		return new ResponseEntity<TranscribtionResponse>(response, HttpStatus.BAD_REQUEST);
     	}
@@ -119,9 +115,9 @@ public class Sphinx4TranscriptionController {
 				try {
 					response = tService.transcribeAudio(convFile,reqId);
 				} catch (NumberFormatException | ExecutionException e) {
-					// TODO Auto-generated catch block
 					logger.error("Exception occured while transcribe from service {}", e.getCause());
-					
+					response.setTrancribtionId(reqId);
+					response.setTtoken("");
 					return new ResponseEntity<TranscribtionResponse>(response, HttpStatus.INTERNAL_SERVER_ERROR);
 				}
 			
@@ -130,9 +126,14 @@ public class Sphinx4TranscriptionController {
         }
         return new ResponseEntity<TranscribtionResponse>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
     
     
+    /**
+     *
+     * @param file
+     * @return
+     * @throws IOException
+     */
     private File convertMultipartFileToFile(MultipartFile file) throws IOException
     {    
         File convFile = new File(file.getOriginalFilename());
