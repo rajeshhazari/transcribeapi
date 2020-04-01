@@ -30,7 +30,7 @@ class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 			"/auth",
 			"/public/**",
 			"/h2-console/**",
-			"/csrf"
+			"/csrf/**"
 			// other public endpoints of your API may be appended to this array
 	};
 	

@@ -2,7 +2,7 @@ package com.rajesh.transcribe.transribeapi.api.controller.sphinx.transribe;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.rajesh.transcribe.transribeapi.api.models.sphinx4.TranscribtionResponse;
+import com.rajesh.transcribe.transribeapi.api.models.sphinx4.TranscribtionResponseDto;
 import com.rajesh.transcribe.transribeapi.api.services.sphinx4.transcribe.Sphinx4TranscribitionService;
 import com.rajesh.transcribe.transribeapi.api.util.JwtUtil;
 import io.swagger.annotations.Api;
@@ -18,7 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.util.Assert;
+import org.springframework.util.Base64Utils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -38,10 +38,10 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -63,6 +63,9 @@ public class Sphinx4TranscriptionController {
     
 	@Autowired
     JwtUtil jwtUtil;
+	
+	@Autowired
+    SecureRandom secureRandom;
 
     @ApiOperation(value = "Get Transcibtion id for current user ", response = Map.class, tags = "getTranscribeReqId")
     @ApiResponses(value = {
@@ -73,10 +76,10 @@ public class Sphinx4TranscriptionController {
             @ApiResponse(code = 404, message = "not found!!!") })
     @GetMapping(path="/transcribeReqId" , produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
 	 @RequestMapping( value= "/transcribeReqId" , method= RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-	  public Map<String,Object> getTranscribeReqId(HttpServletRequest req, HttpServletResponse res) {
+	  public Map<String,Object> getTranscribeReqId(HttpServletRequest req, HttpServletResponse res) throws NoSuchAlgorithmException {
          Authentication authentication = SecurityContextHolder.getContext()
                  .getAuthentication();
-	     Assert.notNull(req.getSession().isNew(), "Invalid Session.., Please authenticate");
+	     //Assert.notNull(req.getSession().isNew(), "Invalid Session.., Please authenticate");
 		 /*Assert.notNull(req.getSession(), (req.getSession()) => {
                  HttpSession ses = req.getSession();
          });*/
@@ -85,46 +88,58 @@ public class Sphinx4TranscriptionController {
              res.addCookie(new Cookie("session", req.getSession().getId()));
          }*/
 	    Map<String,Object> resp = new HashMap<String,Object>();
-	    	resp.put("reqid", UUID.randomUUID().toString());
-	    	res.addCookie(new Cookie("session", req.getSession().getId()));
+	    	resp.put("reqid", secureRandom.nextLong());
+        //generate a random number
+        String randomNum = Integer.valueOf(secureRandom.nextInt()).toString();
+    
+        //get its digest
+        MessageDigest sha = MessageDigest.getInstance("SHA-1");
+        byte[] result =  sha.digest(randomNum.getBytes());
+        final  String uid = Base64Utils.encodeToString(result);
+        res.addCookie(new Cookie("session", req.getSession().getId()));
+        resp.put("uid", uid);
 	    return resp;
 	  }
 	 
 	 
     //Angular example
     //http://jsfiddle.net/danialfarid/tqgr7pur/
-	 @ApiOperation(value = "Get Transcibtion response from the Audio/mp3/wav file ", response = TranscribtionResponse.class, tags = "getTranscribtion")
+	 @ApiOperation(value = "Get Transcibtion response from the Audio/mp3/wav file ", response = TranscribtionResponseDto.class, tags = "getTranscribtion")
 	    @ApiResponses(value = { 
 	            @ApiResponse(code = 200, message = "Suceess|OK"),
 	            @ApiResponse(code = 401, message = "not authorized!"), 
 	            @ApiResponse(code = 403, message = "forbidden!!!"),
 	            @ApiResponse(code = 404, message = "not found!!!") })
     @PostMapping(path="/transcribe" , produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<TranscribtionResponse> getTranscribtion(@RequestParam("reqId")   @NotNull @NotBlank final String reqId,
-                                                                  @RequestParam("fname")   @NotNull @NotBlank final String fname,
-                                                                  //@RequestParam("file") MultipartFile[] file) throws IOException {
-                                                                  @RequestParam("file") final MultipartFile file, HttpServletRequest req, HttpServletResponse res) throws JsonParseException, JsonMappingException, IOException {
+    public ResponseEntity<TranscribtionResponseDto> getTranscribtion(@RequestParam("reqId")   @NotNull @NotBlank final String reqId,
+                                                                     @RequestParam("fname")   @NotNull @NotBlank final String fname,
+                                                                     //@RequestParam("file") MultipartFile[] file) throws IOException {
+                                                                     @RequestParam("file") final MultipartFile file, HttpServletRequest req, HttpServletResponse res) throws JsonParseException, JsonMappingException, IOException {
     	logger.debug("Upload: {}", fname);
-    	TranscribtionResponse response = null;
+    	TranscribtionResponseDto response = new TranscribtionResponseDto();
          // MetaData document = objectMapper.readValue(metaData, MetaData.class);
-    	if (Objects.isNull(file)){
-    		return new ResponseEntity<TranscribtionResponse>(response, HttpStatus.BAD_REQUEST);
-    	}
-        if (!Objects.isNull(file) && !file.isEmpty()) {
-        	 	File convFile = convertMultipartFileToFile(file);
-				try {
-					response = tService.transcribeAudio(convFile,reqId);
-				} catch (NumberFormatException | ExecutionException e) {
-					logger.error("Exception occured while transcribe from service {}", e.getCause());
-					response.setTrancribtionId(reqId);
-					response.setTtoken("");
-					return new ResponseEntity<TranscribtionResponse>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+         response.setTrancribtionId(reqId);
+         response.setFname(fname);
+         if (Objects.isNull(file)){
+             res.setStatus(HttpStatus.BAD_REQUEST.value());
+             res.flushBuffer();
+             return new ResponseEntity<TranscribtionResponseDto>(response, HttpStatus.BAD_REQUEST);
+        }
+         if (!Objects.isNull(file) && !file.isEmpty()) {
+            File convFile = convertMultipartFileToFile(file);
+            try {
+                    response = tService.transribeAudioforText(convFile,reqId);
+                } catch (NumberFormatException | ExecutionException e) {
+                    logger.error("Exception occured while transcribe from service {}", e.getCause());
+					return new ResponseEntity<TranscribtionResponseDto>(response, HttpStatus.INTERNAL_SERVER_ERROR);
 				}
 			
             // store the bytes somewhere
-            return new ResponseEntity<TranscribtionResponse>(response, HttpStatus.ACCEPTED);
+             res.flushBuffer();
+             return new ResponseEntity<TranscribtionResponseDto>(response, HttpStatus.ACCEPTED);
         }
-        return new ResponseEntity<TranscribtionResponse>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+         res.flushBuffer();
+        return new ResponseEntity<TranscribtionResponseDto>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
     
     

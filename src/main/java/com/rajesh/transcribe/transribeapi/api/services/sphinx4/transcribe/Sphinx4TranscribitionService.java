@@ -3,7 +3,9 @@
  */
 package com.rajesh.transcribe.transribeapi.api.services.sphinx4.transcribe;
 
-import com.rajesh.transcribe.transribeapi.api.models.sphinx4.TranscribtionResponse;
+import com.rajesh.transcribe.transribeapi.api.domian.TranscribeFileLog;
+import com.rajesh.transcribe.transribeapi.api.models.sphinx4.TranscribtionResponseDto;
+import com.rajesh.transcribe.transribeapi.api.repository.TranscrbeFileLogRepo;
 import edu.cmu.sphinx.api.Configuration;
 import edu.cmu.sphinx.api.SpeechResult;
 import edu.cmu.sphinx.api.StreamSpeechRecognizer;
@@ -15,7 +17,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -49,6 +50,9 @@ public class Sphinx4TranscribitionService {
 	
 	@Autowired
 	Executor asyncExecutor;
+	
+	@Autowired
+	TranscrbeFileLogRepo tfLogRepo;
 
 	/**
 	 * 
@@ -56,19 +60,28 @@ public class Sphinx4TranscribitionService {
 	 * @return
 	 * @throws Exception
 	 */
-	public TranscribtionResponse transribeAudioforText(File file, String transcribtionReqId) throws Exception{
+	public TranscribtionResponseDto transribeAudioforText(File file, String transcribtionReqId) throws IOException, ExecutionException{
 		
 		SimpleAsyncTaskExecutor delegateExecutor =
 				new SimpleAsyncTaskExecutor();
 		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(sphinxConfiguration);
 		InputStream stream = new FileInputStream(file);
+		delegateExecutor.execute(() -> {
+			TranscribeFileLog tflog = new TranscribeFileLog();
+			tflog.setFileName(file.getName());
+			tflog.setTranscribeReqId(Long.parseLong(transcribtionReqId));
+			tflog.setTranscribeResType("application/json");
+			Long logid = tfLogRepo.save(tflog).getLogId();
+		});
+		TranscribtionResponseDto rdto = new TranscribtionResponseDto();
 		recognizer.startRecognition(stream);
-		
-		Assert.hasText(transcribtionReqId, "Transcribtion request id is missing.");
+		rdto = extractTranscribedTextFromSpeechRecognizer(recognizer, transcribtionReqId);
 		
 		//TODO call formatting method/service
 		//return unformatted_transcribe_text;
-		return extractTranscribedTextFromSpeechRecognizer(recognizer, transcribtionReqId);
+		//return extractTranscribedTextFromSpeechRecognizer(recognizer, transcribtionReqId);
+		//TranscribtionResponseDto rDto = responseDto.
+		return rdto;
 	}
 
 
@@ -120,7 +133,7 @@ public class Sphinx4TranscribitionService {
 	 * @throws InterruptedException 
 	 * @throws NumberFormatException 
 	 */
-	public TranscribtionResponse transcribeAudio(File audioFile, @NotNull @NotBlank String reqId) throws  IOException, ExecutionException {
+	public TranscribtionResponseDto transcribeAudio(File audioFile, @NotNull @NotBlank String reqId) throws  IOException, ExecutionException {
 
 		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(sphinxConfiguration);
 		InputStream stream = new FileInputStream(audioFile);
@@ -135,7 +148,7 @@ public class Sphinx4TranscribitionService {
 	
 
 	/**
-	 * Transcribe Video file
+	 * Transcribes Video file
 	 * 
 	 * @param videoFile
 	 * @return
@@ -143,7 +156,7 @@ public class Sphinx4TranscribitionService {
 	 * @throws NoSuchAlgorithmException
 	 * @throws NoSuchProviderException
 	 */
-	public TranscribtionResponse transcribeVideo(File videoFile, String reqId) throws IOException, NoSuchAlgorithmException, NoSuchProviderException {
+	public TranscribtionResponseDto transcribeVideo(File videoFile, String reqId) throws IOException, NoSuchAlgorithmException, NoSuchProviderException {
 
 		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(sphinxConfiguration);
 		InputStream stream = new FileInputStream(videoFile);
@@ -151,25 +164,40 @@ public class Sphinx4TranscribitionService {
 		
 		return  extractTranscribedTextFromSpeechRecognizer(recognizer, reqId);
 	}
-
-	@Async("asyncExecutor")
+	
+	/**
+	 *
+	 * @param words
+	 * @return
+	 */
+	@Async("appAsyncExecutor")
 	private List<String> getWordsList(List<WordResult> words) {
 		List<String> wordsList = new ArrayList<>();
 		words.forEach(ele -> wordsList.add(ele.getWord().toString()));
 		return wordsList;
 	}
 	
-	@Async("asyncExecutor")
+	/**
+	 *
+	 * @param words
+	 * @return
+	 */
+	@Async("appAsyncExecutor")
 	private List<String> getWordsConfidenceDetails(List<WordResult> words) {
 		List<String> wordsList = new ArrayList<>();
 		words.stream().forEach(ele -> wordsList.add(ele.toString()));
 		return wordsList;
 	}
 	
-
-	@Async("asyncExecutor")
 	
-	private  TranscribtionResponse extractTranscribedTextFromSpeechRecognizer(StreamSpeechRecognizer recognizer, String reqId) {
+	/**
+	 *
+	 * @param recognizer
+	 * @param reqId
+	 * @return TranscribtionResponseDto
+	 */
+	@Async
+	private TranscribtionResponseDto extractTranscribedTextFromSpeechRecognizer(StreamSpeechRecognizer recognizer, String reqId) {
 		
 		StringBuilder unformattedTranscribeText = new StringBuilder();
 		SpeechResult result;
@@ -188,7 +216,8 @@ public class Sphinx4TranscribitionService {
 			
 		}
         recognizer.stopRecognition();
-        return new TranscribtionResponse(unformattedTranscribeText.toString(), reqId, null, false, wordsList);
+        
+        return new TranscribtionResponseDto(unformattedTranscribeText.toString(), reqId, null, false, wordsList,null,null);
 	}
 }
 
