@@ -28,7 +28,7 @@ class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 			"/configuration/**",      // swagger configuration
 			"/auth/**",
 			"/public/**",
-			"/h2-console/*",
+			"/h2-console/**",
 			"/csrf/**"
 			// other public endpoints of your API may be appended to this array
 	};
