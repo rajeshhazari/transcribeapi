@@ -1,5 +1,5 @@
 insert into APPUSERS (username, password, active, first_name, last_name, email, zipcode) values ('rajeshhazari', 'admin321', true,'Rajesh', 'Hazari', 'rajeshhazari@gmail.com','27560');
-insert into APPUSERS (username, password, active, first_name, last_name, email, zipcode) values ('rajeshh', '$2a$10$SUM9YNdIuC1RQLR4lyosdeolpq3iU/T72noOJQx4XFyclWHLxAh/C', true,'dev','madvedi','rajesh_hazari@yahoo.com','27560');
+insert into APPUSERS (username, password, active, first_name, last_name, email, zipcode) values ('rajeshh', '$2a$10$JuqFvWlOf/AIbBvrhvkvfuNuCnnwudxDxTzeuqc3Gr3n6sTLniHsy', true,'dev','madvedi','rajesh_hazari@yahoo.com','27560');
 
 --insert into USER (username, password) values ('rajeshhazari', 'admin111' );
 

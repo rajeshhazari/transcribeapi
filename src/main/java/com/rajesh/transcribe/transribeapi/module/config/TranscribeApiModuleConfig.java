@@ -5,6 +5,7 @@ package com.rajesh.transcribe.transribeapi.module.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import org.apache.catalina.connector.Connector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,10 +29,10 @@ import java.security.SecureRandom;
  */
 @Configuration
 @EnableJdbcRepositories("com.rajesh.transcribe.transribeapi.api.repository")
-public class TranscriptionModuleConfig{
+public class TranscribeApiModuleConfig {
 
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(TranscriptionModuleConfig.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(TranscribeApiModuleConfig.class);
 	
 	  @Value("${server.port}")
 	  private int port;
@@ -129,6 +130,15 @@ public class TranscriptionModuleConfig{
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 		return mapper;
+	}
+	
+	private Connector redirectConnector() {
+		Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
+		connector.setScheme("http");
+		connector.setPort(port);
+		connector.setSecure(false);
+		connector.setRedirectPort(8443);
+		return connector;
 	}
 	  
 }

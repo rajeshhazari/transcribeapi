@@ -120,22 +120,20 @@ public class JwtUserDetailsService implements UserDetailsService {
         
     }
     
+    /**
+     *
+     * @param username
+     * @return
+     * @throws UsernameNotFoundException
+     */
     public Optional<AppUsers> getUserByUsername(String username) throws UsernameNotFoundException {
         Optional<AppUsers> user = userRepo.findByUsername(username);
         
         if (user == null) {
             throw new UsernameNotFoundException("User not found with username: " + username);
-        };
+        } else {
         
-        /*
-         * List<Users> userList = userRepo.findByUsername(username);
-         * Users userresp = null;
-         * for (Users user : userList) {
-         * userresp = user;
-         * if (user == null) {
-         * throw new UsernameNotFoundException("User not found with username: " +
-         * username); } }
-         */
+        }
         return user;
     }
     
@@ -186,5 +184,22 @@ public class JwtUserDetailsService implements UserDetailsService {
         
         logger.debug("New User added - %s",regUser.getUsername());
         return userRepo.save(newUser);
+    }
+    
+    /**
+     *
+     * TODO: Handle other use cases
+     *
+     * @param email
+     * @param appUser
+     * @return
+     */
+    public boolean activateUser(final String email, AppUsers appUser) {
+        appUser.setActive(true);
+        appUser =  userRepo.save(appUser);
+        if(appUser.isLocked()){
+            return false;
+        }
+        return true;
     }
 }

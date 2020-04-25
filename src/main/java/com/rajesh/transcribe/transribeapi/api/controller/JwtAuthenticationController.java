@@ -1,5 +1,6 @@
 package com.rajesh.transcribe.transribeapi.api.controller;
 
+import com.rajesh.transcribe.transribeapi.api.domian.AppUsers;
 import com.rajesh.transcribe.transribeapi.api.models.AuthenticationRequest;
 import com.rajesh.transcribe.transribeapi.api.models.AuthenticationResponse;
 import com.rajesh.transcribe.transribeapi.api.services.JwtUserDetailsService;
@@ -11,12 +12,24 @@ import io.swagger.annotations.ApiResponses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @CrossOrigin
@@ -29,7 +42,10 @@ public class JwtAuthenticationController {
 	
 	@Autowired
 	private AuthenticationManager authenticationManager;
-
+	
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+	
 	@Autowired
 	private JwtUtil jwtTokenUtil;
 
@@ -51,6 +67,10 @@ public class JwtAuthenticationController {
 	public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequest authenticationRequest) throws Exception {
 
 		try {
+			//byte[] decoded = java.util.Base64.getDecoder().decode();
+			logger.debug("encode passwd:: {}", java.util.Base64.getDecoder().decode(authenticationRequest.getPassword().getBytes()));
+			String hashedPassword = passwordEncoder.encode(authenticationRequest.getPassword());
+			logger.debug("hashedpasswd:: {}", hashedPassword);
 			authenticationManager.authenticate(
 					new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(), authenticationRequest.getPassword())
 			);
@@ -79,7 +99,7 @@ public class JwtAuthenticationController {
 		// statsd.incrementCounter(userHTTPPOST);
 		
 		final Map<String, String> res = new HashMap<>();
-		logger.info("POST request : \"/reset\"");
+		logger.info("POST request : "reset requested ");
 		
 		if (registeredUser.getEmail() == null) {
 			logger.error("Credentials should not be empty");
@@ -121,16 +141,17 @@ public class JwtAuthenticationController {
   
   
   /*
-   * @param auth
+   * TODO: Need to check if this is required as we have jwt token auth working
+   * * @param auth
    * @return
    *
-  @RequestMapping(
+   @RequestMapping(
       method = RequestMethod.POST,
       value = "/validateAuth",
       produces = "application/jon")
-  public Map<String, String> checkAuth(String auth, HttpServletRequest req) {
+  public java.util.Map<String, String> checkAuth(String auth, javax.servlet.http.HttpServletRequest req) {
 
-    Map<String, String> resp = new HashMap<>();
+    java.util.Map<String, String> resp = new java.util.HashMap<>();
 
     logger.info("Checking User's Basic Authentication");
 
@@ -138,7 +159,7 @@ public class JwtAuthenticationController {
     logger.debug("auth Parameter : " + auth);
     String authValue = encodedValue[1];
     logger.debug("auth Value after split :" + authValue);
-    byte[] decoded = Base64.getDecoder().decode(authValue.getBytes());
+    byte[] decoded = java.util.Base64.getDecoder().decode(authValue.getBytes());
     String email = null;
     String password = null;
     String decodedValue = new String(decoded);
@@ -149,14 +170,14 @@ public class JwtAuthenticationController {
       if (credentialValue.length < 2) {
         logger.error("Credentials should not be empty");
         resp.put("RESPONSE", "Credentials should not be empty");
-        resp.put("status", HttpStatus.BAD_REQUEST.name());
+        resp.put("status", org.springframework.http.HttpStatus.BAD_REQUEST.name());
         return resp;
       }
       email = credentialValue[0];
       password = credentialValue[1];
     } else {
       logger.info("User not registered, Please RegisteredUser");
-      resp.put("status", HttpStatus.NON_AUTHORITATIVE_INFORMATION.name());
+      resp.put("status", org.springframework.http.HttpStatus.NON_AUTHORITATIVE_INFORMATION.name());
       resp.put("RESPONSE", "Please RegisteredUser");
       return resp;
     }
@@ -168,15 +189,23 @@ public class JwtAuthenticationController {
       resp.put("RESPONSE", "Enter valid Credentials");
       return resp;
     }
-    RegisteredUser userDetails = new RegisteredUser();
-
-    resp.put("status", HttpStatus.OK.name());
-    resp.put("email", userDetails.getEmail());
-    resp.put("user", userDetails.getID().toString());
-    return resp;
-  }*/
+    AuthenticationRequest userDetails = new AuthenticationRequest();
 	
-	/*@GetMapping(value = "/confirmEmail", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    resp.put("status", org.springframework.http.HttpStatus.OK.name());
+    resp.put("email", userDetails.getUsername());
+    return resp;
+  }
+  */
+	
+	/**
+	 *
+	 * @param command (reset)
+	 * @param emailId (email id in base64 encode form)
+	 * @param req
+	 * @param session
+	 * @return
+	 */
+	@GetMapping(value = "/confirmEmail", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
 	public Map<String, String> confirmEmail(
 			@RequestParam("command") @NotNull @NotBlank final String command,
 			@RequestParam("emailId") @NotNull @NotBlank final String emailId,
@@ -185,16 +214,19 @@ public class JwtAuthenticationController {
 		String encryptedEmail = req.getParameter("emailId");
 		String decodedEmail =
 				new String(Base64.getUrlDecoder().decode(encryptedEmail), StandardCharsets.UTF_8);
-		// TODO add a new methos to get user with his email id
-		Optional<AppUsers> user = userDetailsService.getUserByUsername(decodedEmail);
+		// TODO move this logic to service method and handle other use cases
+		Optional<AppUsers> user = jwtUserDetailsService.getUserByUsername(decodedEmail);
 		Map<String, String> resp = new HashMap<>();
 		
 		if (user.get().getEmail().equalsIgnoreCase(decodedEmail)) {
-			user.get().setActive(true);
+			boolean status = jwtUserDetailsService.activateUser(user.get().getEmail(), user.get());
+		}else {
+		
 		}
 		resp.put("token", session.getId());
 		resp.put("userName", user.get().getUsername());
+		resp.put("email", user.get().getEmail());
 		return resp;
-	}*/
+	}
 
 }
