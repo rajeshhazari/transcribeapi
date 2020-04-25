@@ -22,7 +22,7 @@ public class EncryptDecryptControllerTest {
     
     
     @Autowired
-    MockRestServiceServer server;
+    MockRestServiceServer server; 
     
     @LocalServerPort
     private int port;
