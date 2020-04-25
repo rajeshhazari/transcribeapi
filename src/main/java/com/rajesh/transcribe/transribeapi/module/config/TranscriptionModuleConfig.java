@@ -33,7 +33,6 @@ public class TranscriptionModuleConfig{
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(TranscriptionModuleConfig.class);
 	
-
 	  @Value("${server.port}")
 	  private int port;
 	  

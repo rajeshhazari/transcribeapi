@@ -8,7 +8,7 @@
     </encoder>
   </appender>
   
-  <logger name="org.springframework.data.couchbase.repository.query" level="debug" />
+  <logger name="org.springframework.data" level="debug" />
   
   <appender name="rollingFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
