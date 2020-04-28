@@ -8,10 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -48,14 +45,14 @@ public class EncryptDecryptController {
                     @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
             })
     @RequestMapping(value = "/encrypt", method = RequestMethod.POST, produces = "application/json")
-    public Map<String, String> encrypt(@RequestBody String Data, String secret,
+    public Map<String, String> encrypt(@RequestParam String data, @RequestParam String secret,
                                        HttpServletRequest req, HttpServletResponse res) throws Exception {
         final Map<String, String> resp = new HashMap<>();
     
         final Key key = generateKey(secret);
         final Cipher c = Cipher.getInstance(ALGO);
         c.init(Cipher.ENCRYPT_MODE, key);
-        final byte[] encVal = c.doFinal(Data.getBytes());
+        final byte[] encVal = c.doFinal(data.getBytes());
         final  String encodedString = Base64.getEncoder().encodeToString(encVal);
         res.setStatus(HttpStatus.OK.value());
         resp.put("encVal", encodedString);
@@ -74,7 +71,7 @@ public class EncryptDecryptController {
                     @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
             })
     @RequestMapping(value = "/decrypt", method = RequestMethod.POST, produces = "application/json")
-    public Map<String, String> decrypt(@RequestBody String strToDecrypt, String secret,
+    public Map<String, String> decrypt(@RequestParam String strToDecrypt, @RequestParam String secret,
                                        HttpServletRequest req, HttpServletResponse res) {
         Map<String, String> resp = new HashMap<>();
         try {
@@ -92,6 +89,31 @@ public class EncryptDecryptController {
         return resp;
     }
     
+    
+    @ApiOperation(value = "Encrypt given string using springboot BCryptPasswordEncoder api service", response = Map.class, httpMethod = "POST")
+    @ApiResponses(
+            value = {
+                    @ApiResponse(code = 200, message = "Successfully Encrypted."),
+                    @ApiResponse(code = 401, message = "You are not authorized to encrypt."),
+                    @ApiResponse(
+                            code = 403,
+                            message = "Accessing the resource you were trying to reach is forbidden"),
+                    @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
+            })
+    @RequestMapping(value = "/bencrypt", method = RequestMethod.POST, produces = "application/json")
+    public Map<String, String> bencrypt(@RequestParam String data,
+                                       HttpServletRequest req, HttpServletResponse res) throws Exception {
+        final Map<String, String> resp = new HashMap<>();
+        
+        final String encVal = bCryptPasswordEncoder.encode(data);
+        final  String encodedString = Base64.getEncoder().encodeToString(encVal.getBytes());
+        res.setStatus(HttpStatus.OK.value());
+        resp.put("bcryptEncVal", encodedString);
+        resp.put("base64EncVal", Base64.getEncoder().encodeToString(data.getBytes()));
+        return resp;
+        
+    }
+    
     /**
      *
      * @param secret
@@ -102,7 +124,7 @@ public class EncryptDecryptController {
         
         byte[] decoded = Base64.getDecoder().decode(secret.getBytes());
         
-        Key key = new SecretKeySpec(decoded, ALGO);
+        Key key = new SecretKeySpec(secret.getBytes(), ALGO);
         
         return key;
         
