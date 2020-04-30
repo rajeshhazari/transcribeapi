@@ -1,7 +1,7 @@
 package com.rajesh.transcribe.transribeapi.api.services;
 
 import com.rajesh.transcribe.transribeapi.api.domian.AppUsers;
-import com.rajesh.transcribe.transribeapi.api.model.dto.AuthUserDto;
+import com.rajesh.transcribe.transribeapi.api.model.dto.AuthUserProfileDto;
 import com.rajesh.transcribe.transribeapi.api.repository.AppUsersRepository;
 import com.rajesh.transcribe.transribeapi.api.repository.exceptions.UserNotFoundException;
 import org.slf4j.Logger;
@@ -87,10 +87,10 @@ public class JwtUserDetailsService implements UserDetailsService {
      * @param s
      * @return
      */
-    private AuthUserDto getUserDto(String s) throws UsernameNotFoundException {
+    private AuthUserProfileDto getUserDto(String s) throws UsernameNotFoundException {
         //List<AppUsers> appuser = userRepo.findByEmail(s);
         Optional<AppUsers> user = null;
-        AuthUserDto userDto = new AuthUserDto();
+        AuthUserProfileDto userDto = new AuthUserProfileDto();
         try{
             user = userRepo.findByEmail(s);
         }catch (BadCredentialsException bex){

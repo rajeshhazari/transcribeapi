@@ -69,8 +69,8 @@ public class Sphinx4TranscribitionService {
 		delegateExecutor.execute(() -> {
 			TranscribeFileLog tflog = new TranscribeFileLog();
 			tflog.setFileName(file.getName());
-			tflog.setTranscribeReqId(Long.parseLong(transcribtionReqId));
-			tflog.setTranscribeResType("application/json");
+			tflog.setTReqId(Long.parseLong(transcribtionReqId));
+			tflog.setTResType("application/json");
 			Long logid = tfLogRepo.save(tflog).getLogId();
 		});
 		TranscribtionResponseDto rdto = new TranscribtionResponseDto();

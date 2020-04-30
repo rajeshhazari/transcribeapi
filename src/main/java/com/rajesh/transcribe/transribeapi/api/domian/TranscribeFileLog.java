@@ -1,5 +1,6 @@
 package com.rajesh.transcribe.transribeapi.api.domian;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
@@ -12,6 +13,7 @@ import org.springframework.data.relational.core.mapping.Table;
  */
 @Table("TRANSCRIBEFILELOG")
 @NoArgsConstructor
+@AllArgsConstructor
 @Data
 public class TranscribeFileLog {
     
@@ -19,15 +21,16 @@ public class TranscribeFileLog {
     @Column("log_id")
     public Long logId;
     @Column("transcribe_req_id")
-    public Long transcribeReqId;
+    public Long tReqId;
     @Column("username")
     public String username;
     @Column("transcribe_res_type")
-    public String transcribeResType;
+    public String tResType;
     @Column("file_name")
     public String fileName;
     @Column("session_id")
     public String sessionId;
-    
+    @Column("token")
+    public String token;
     
 }

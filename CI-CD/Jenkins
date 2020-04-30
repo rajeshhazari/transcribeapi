@@ -2,14 +2,44 @@ pipeline {
     agent {
         docker {
             image 'maven:3-alpine'
-            args '-v /root/.m2:/root/.m2'
+            customWorkspace "/opt/test"
+            args '-v $HOME/.m2:/root/.m2'
+            //args '-u tdv --name tdv-test -w /opt/test -v $HOME/.m2:/root/.m2 -v /opt/test:/opt/test:rw,z -v /opt/test@tmp:/opt/test@tmp:rw,z -p 9400:9400 -p 9401:9401 -p 9402:9402 -p 9403:9403 -p 9407:9407 -p 9303:9303 --cpus=2.000 -m=4g xxx.xxx.com/tdv/tdv-test:8.2 tdv.server'
         }
     }
+    parameters {
+        string(name: 'BRANCH_NAME', defaultValue: 'branch1', description: 'Branch Name')
+        string(name: 'BRANCH_NAME', defaultValue: 'branch1', description: 'Branch Name')
+    }
     stages {
+        stage('Checkout') {
+            steps{
+                checkout scm
+            }
+        }
         stage('Build') {
             steps {
+                echo "Running ${env.BUILD_ID} on ${env.JENKINS_URL}"
                 sh 'mvn -B -DskipTests clean package'
             }
+        }
+        stage('Unit-test') {
+            steps {
+                echo 'Testing..'
+            }
+        }
+        stage('Deploy to dev') {
+            steps {
+                echo 'Deploying....'
+            }
+        }
+    }
+    post {
+        always {
+            echo "Do something line sanity tests"
+        }
+        failure {
+            //mail to: transcribeappuser@yahoo.com, subject: 'The Pipeline failed :('
         }
     }
 }

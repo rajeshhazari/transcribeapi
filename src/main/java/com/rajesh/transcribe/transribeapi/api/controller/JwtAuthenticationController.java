@@ -1,6 +1,7 @@
 package com.rajesh.transcribe.transribeapi.api.controller;
 
 import com.rajesh.transcribe.transribeapi.api.domian.AppUsers;
+import com.rajesh.transcribe.transribeapi.api.model.dto.AppError;
 import com.rajesh.transcribe.transribeapi.api.models.AuthenticationRequest;
 import com.rajesh.transcribe.transribeapi.api.models.AuthenticationResponse;
 import com.rajesh.transcribe.transribeapi.api.services.JwtUserDetailsService;
@@ -12,11 +13,15 @@ import io.swagger.annotations.ApiResponses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -39,6 +44,9 @@ import java.util.Optional;
 public class JwtAuthenticationController {
 	
 	private final Logger logger = LoggerFactory.getLogger(JwtAuthenticationController.class);
+	
+	//TODO parameterize this
+	private final Integer MAX_LOGIN_TRIES = 6;
 	
 	@Autowired
 	private AuthenticationManager authenticationManager;
@@ -65,18 +73,28 @@ public class JwtAuthenticationController {
 			})
 	@RequestMapping(value = "/auth", method = RequestMethod.POST, produces = "application/json")
 	public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequest authenticationRequest) throws Exception {
-
+		final String email = authenticationRequest.getUsername();
 		try {
 			//byte[] decoded = java.util.Base64.getDecoder().decode();
 			logger.debug("encode passwd:: {}", java.util.Base64.getDecoder().decode(authenticationRequest.getPassword().getBytes()));
 			String hashedPassword = passwordEncoder.encode(authenticationRequest.getPassword());
 			logger.debug("hashedpasswd:: {}", hashedPassword);
-			authenticationManager.authenticate(
-					new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(), authenticationRequest.getPassword())
-			);
+			Authentication auth = authenticationManager.authenticate(
+					new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(), authenticationRequest.getPassword()) );
+			SecurityContextHolder.getContext().setAuthentication(auth);
 		}
 		catch (BadCredentialsException e) {
-			throw new Exception("Incorrect username or password", e);
+			logger.error("Incorrect username or password {}",authenticationRequest.getUsername());
+			//TODO save login tries to DB
+			// Check login retries with value and if retries >= MAX_LOGIN_TRIES  update the user to lock
+			AppError error = new AppError(HttpStatus.FORBIDDEN, "User [" + authenticationRequest.getUsername() + "] not found");
+			return new ResponseEntity<AppError>(error, HttpStatus.FORBIDDEN);
+			//throw new Exception("Incorrect username or password", e);
+		}catch (AuthenticationException authEx){
+			//TODO save login tries to DB
+			// Check login retries with value and if retries >= MAX_LOGIN_TRIES  update the user to lock
+			
+			throw new javax.naming.AuthenticationException("Server Error!");
 		}
 
 
@@ -84,8 +102,9 @@ public class JwtAuthenticationController {
 				.loadUserByUsername(authenticationRequest.getUsername());
 
 		final String jwt = jwtTokenUtil.generateToken(userDetails);
+		
 
-		return ResponseEntity.ok(new AuthenticationResponse(jwt));
+		return new ResponseEntity<AuthenticationResponse>(new AuthenticationResponse(jwt,email), HttpStatus.OK);
 	}
 	/*
 	@RequestMapping(value = "/register", method = RequestMethod.POST, produces = "application/jon")
@@ -149,7 +168,7 @@ public class JwtAuthenticationController {
       method = RequestMethod.POST,
       value = "/validateAuth",
       produces = "application/jon")
-  public java.util.Map<String, String> checkAuth(String auth, javax.servlet.http.HttpServletRequest req) {
+  public java.util.Map<String, String> checkAuth(ValidateAuthRequest auth, javax.servlet.http.HttpServletRequest req) {
 
     java.util.Map<String, String> resp = new java.util.HashMap<>();
 
@@ -220,7 +239,7 @@ public class JwtAuthenticationController {
 		
 		if (user.get().getEmail().equalsIgnoreCase(decodedEmail)) {
 			boolean status = jwtUserDetailsService.activateUser(user.get().getEmail(), user.get());
-		}else {
+		} else {
 		
 		}
 		resp.put("token", session.getId());

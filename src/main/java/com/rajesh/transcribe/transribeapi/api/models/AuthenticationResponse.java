@@ -1,16 +1,18 @@
 package com.rajesh.transcribe.transribeapi.api.models;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.io.Serializable;
 
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter @Setter
 public class AuthenticationResponse implements Serializable {
 
-    private final String jwt;
+    private String jwt;
+    private String email;
 
-    public AuthenticationResponse(String jwt) {
-        this.jwt = jwt;
-    }
-
-    public String getJwt() {
-        return jwt;
-    }
 }

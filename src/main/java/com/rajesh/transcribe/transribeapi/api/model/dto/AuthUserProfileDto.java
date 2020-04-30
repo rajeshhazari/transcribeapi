@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter @Setter
-public class AuthUserDto {
+public class AuthUserProfileDto {
 
 	private String username;
 	private String email;
@@ -27,6 +27,6 @@ public class AuthUserDto {
 	private Boolean verified;
 	private Boolean active;
 	private LocalDateTime registeredDate;
-	private LocalDateTime lastModified;
+	private LocalDateTime lastLogedin;
 	
 }
