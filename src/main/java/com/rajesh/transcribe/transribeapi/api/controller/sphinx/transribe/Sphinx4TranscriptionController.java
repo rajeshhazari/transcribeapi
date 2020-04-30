@@ -115,8 +115,10 @@ public class Sphinx4TranscriptionController {
                                                                      @RequestParam("fname")   @NotNull @NotBlank final String fname,
                                                                      //@RequestParam("file") MultipartFile[] file) throws IOException {
                                                                      @RequestParam("file") final MultipartFile file, HttpServletRequest req, HttpServletResponse res) throws JsonParseException, JsonMappingException, IOException {
-    	logger.debug("Upload: {}", fname);
-    	TranscribtionResponseDto response = new TranscribtionResponseDto();
+         String token = req.getHeader("token");
+         String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+         logger.debug("Upload: {}", fname);
+         TranscribtionResponseDto response = new TranscribtionResponseDto();
          // MetaData document = objectMapper.readValue(metaData, MetaData.class);
          response.setTrancribtionId(reqId);
          response.setFname(fname);
@@ -126,9 +128,11 @@ public class Sphinx4TranscriptionController {
              return new ResponseEntity<TranscribtionResponseDto>(response, HttpStatus.BAD_REQUEST);
         }
          if (!Objects.isNull(file) && !file.isEmpty()) {
+             //TODO handle the file upload status logic and make this service more responsive
+             // rather than user to wait untill all of the transcription is completed, which may take some time
             File convFile = convertMultipartFileToFile(file);
             try {
-                    response = tService.transribeAudioforText(convFile,reqId);
+                    response = tService.transribeAudioforText(convFile,reqId,token, userEmail);
                 } catch (NumberFormatException | ExecutionException e) {
                     logger.error("Exception occured while transcribe from service {}", e.getCause());
 					return new ResponseEntity<TranscribtionResponseDto>(response, HttpStatus.INTERNAL_SERVER_ERROR);

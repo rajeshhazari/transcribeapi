@@ -57,10 +57,12 @@ public class Sphinx4TranscribitionService {
 	/**
 	 * 
 	 * @param file
+	 * @param token
+	 * @param userEmail
 	 * @return
 	 * @throws Exception
 	 */
-	public TranscribtionResponseDto transribeAudioforText(File file, String transcribtionReqId) throws IOException, ExecutionException{
+	public TranscribtionResponseDto transribeAudioforText(File file, String transcribtionReqId, final String token, final String userEmail) throws IOException, ExecutionException{
 		
 		SimpleAsyncTaskExecutor delegateExecutor =
 				new SimpleAsyncTaskExecutor();
@@ -71,12 +73,16 @@ public class Sphinx4TranscribitionService {
 			tflog.setFileName(file.getName());
 			tflog.setTReqId(Long.parseLong(transcribtionReqId));
 			tflog.setTResType("application/json");
+			tflog.setToken(token);
+			tflog.setUsername(userEmail);
 			Long logid = tfLogRepo.save(tflog).getLogId();
+			logger.debug("transcribefile logid {} for requestId", logid, transcribtionReqId);
 		});
 		TranscribtionResponseDto rdto = new TranscribtionResponseDto();
 		recognizer.startRecognition(stream);
 		rdto = extractTranscribedTextFromSpeechRecognizer(recognizer, transcribtionReqId);
-		
+		rdto.setToken(token);
+		rdto.setFname(file.getName());
 		//TODO call formatting method/service
 		//return unformatted_transcribe_text;
 		//return extractTranscribedTextFromSpeechRecognizer(recognizer, transcribtionReqId);

@@ -22,7 +22,7 @@ public class TranscribeFileLog {
     public Long logId;
     @Column("transcribe_req_id")
     public Long tReqId;
-    @Column("username")
+    @Column("userEmail")
     public String username;
     @Column("transcribe_res_type")
     public String tResType;

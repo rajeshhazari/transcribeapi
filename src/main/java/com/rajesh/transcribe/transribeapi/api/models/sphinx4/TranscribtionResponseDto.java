@@ -16,13 +16,13 @@ import java.util.List;
 @AllArgsConstructor
 @Data
 @JsonIgnoreProperties(ignoreUnknown=true)
-@JsonPropertyOrder({"ttoken","trancribtionId", "isFormatted", "text"})
+@JsonPropertyOrder({"token","trancribtionId", "isFormatted", "text"})
 public final class TranscribtionResponseDto {
 
 	@NotEmpty
 	private String transcribedText = null;
 	private String  trancribtionId = null;
-	private String ttoken = null;
+	private String token = null;
 	private boolean isFormatted = false;
 	private List<String> wordsList = null;
 	private List<String> wordConfidenceList = null;

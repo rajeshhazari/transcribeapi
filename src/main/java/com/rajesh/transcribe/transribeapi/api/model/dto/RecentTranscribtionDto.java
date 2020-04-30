@@ -5,10 +5,8 @@ import lombok.*;
 
 import java.util.List;
 
+@RequiredArgsConstructor @AllArgsConstructor
 @Data
-@RequiredArgsConstructor
-@AllArgsConstructor
-@NoArgsConstructor
 public class RecentTranscribtionDto {
     List<TranscribtionResponseDto> recentTranDtoList;
 }

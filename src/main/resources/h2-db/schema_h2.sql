@@ -388,11 +388,12 @@ ALTER TABLE USERSTRANSCRIPTIONS ADD
 
   CREATE TABLE TRANSCRIBEFILELOG (
   log_id identity not null auto_increment,
-  username VARCHAR(100),
+  userEmail VARCHAR(100),
   file_name VARCHAR(256),
   session_id VARCHAR(256),
   transcribe_req_id Long,
   transcribe_res_type VARCHAR(20),
+  token VARCHAR(100),
   
   primary key (log_id)
 );

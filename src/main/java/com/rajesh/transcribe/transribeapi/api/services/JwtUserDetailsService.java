@@ -102,7 +102,7 @@ public class JwtUserDetailsService implements UserDetailsService {
             userDto.setActive(user.get().isActive());
             userDto.setLocked(user.get().isLocked());
             userDto.setEnabled(user.get().isDisabled());
-            userDto.setLastModified(user.get().getLastModified());
+            userDto.setLastLogedin(user.get().getLastModified());
         }
         if (user.isEmpty() || !user.isPresent()) {
             throw new UsernameNotFoundException("User not found with username: " + s);
