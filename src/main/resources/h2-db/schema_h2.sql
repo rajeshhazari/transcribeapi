@@ -359,7 +359,7 @@ CREATE TABLE USERSTRANSCRIPTIONS (
   session_id VARCHAR(100) not null,
   userid Long,
   transcribed boolean default false,
-  downloaded boolean default true,
+  downloaded boolean default false,
   transcribe_res_available_format VARCHAR(20) default 'application/json',
   transcribe_res_downloaded_format VARCHAR(20) default 'application/json',
   transcribed_date timestamp default CURRENT_TIMESTAMP,

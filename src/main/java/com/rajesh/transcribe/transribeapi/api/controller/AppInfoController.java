@@ -7,6 +7,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 @RestController
 public class AppInfoController {
     
@@ -16,7 +19,7 @@ public class AppInfoController {
     
     @RequestMapping("/version")
     public @ResponseBody
-    ResponseEntity<String> greeting() {
+    ResponseEntity<String> greeting(HttpServletRequest request, HttpServletResponse response) {
         env.getProperty("info.app.version");
         return ResponseEntity.ok(env.getProperty("info.app.version"));
     }

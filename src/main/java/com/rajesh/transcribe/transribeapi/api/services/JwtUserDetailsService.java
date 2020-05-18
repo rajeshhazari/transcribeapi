@@ -14,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -23,7 +24,9 @@ import org.springframework.stereotype.Service;
 
 import javax.sql.DataSource;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class JwtUserDetailsService implements UserDetailsService {
@@ -41,6 +44,9 @@ public class JwtUserDetailsService implements UserDetailsService {
     
     @Autowired
     DataSource dataSource;
+    
+    @Autowired
+    private SessionRegistry sessionRegistry;
     
     
     public UserDetails loadUserByUsername(String s) throws UsernameNotFoundException {
@@ -175,7 +181,7 @@ public class JwtUserDetailsService implements UserDetailsService {
     public AppUsers save(AppUsers regUser) {
         AppUsers newUser = new AppUsers();
         newUser.setUsername(regUser.getUsername());
-        //newUser.setPassword(bcryptEncoder.encode(regUser.getPassword()));
+        newUser.setPassword(bcryptEncoder.encode(regUser.getPassword()));
         newUser.setEmail(regUser.getEmail());
         newUser.setFirstName(regUser.getFirstName());
         newUser.setLastName(regUser.getLastName());
@@ -201,5 +207,27 @@ public class JwtUserDetailsService implements UserDetailsService {
             return false;
         }
         return true;
+    }
+    
+    
+    public AppUsers getCurrentUser() {
+        return getUserByEmail(((org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext()
+                .getAuthentication().getPrincipal()).getUsername());
+    }
+    
+    
+    /*private List<GrantedAuthority> getUserAuthorities(Set<Role> roleSet) {
+        List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
+        for (Role role : roleSet) {
+            grantedAuthorities.add(new SimpleGrantedAuthority(role.getRolename()));
+        }
+        return grantedAuthorities;
+    }*/
+    
+    public Collection<String> getLoggedInUsers() {
+        return sessionRegistry.getAllPrincipals().stream()
+                .filter(u -> !sessionRegistry.getAllSessions(u, false).isEmpty())
+                .map(Object::toString)
+                .collect(Collectors.toList());
     }
 }
