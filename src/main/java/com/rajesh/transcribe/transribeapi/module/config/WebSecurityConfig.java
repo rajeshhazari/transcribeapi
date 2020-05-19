@@ -28,7 +28,8 @@ class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 			"/auth/**",
 			"/public/**",
 			"/h2-console/**",
-			"/csrf/**"
+			"/csrf/**",
+			"/api/v1/version/",           // app version
 			// other public endpoints of your API may be appended to this array
 	};
 	
@@ -53,6 +54,13 @@ class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	public AuthenticationManager authenticationManagerBean() throws Exception {
 		return super.authenticationManagerBean();
 	}
+	
+	/*public AuthenticationManager authenticationManagerBean() throws Exception {
+		DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
+		daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());
+		daoAuthenticationProvider.setUserDetailsService(myUserDetailsService);
+		return daoAuthenticationProvider;
+	}*/
 
 	@Override
 	protected void configure(HttpSecurity httpSecurity) throws Exception {

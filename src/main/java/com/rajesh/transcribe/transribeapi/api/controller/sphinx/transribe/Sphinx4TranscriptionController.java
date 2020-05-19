@@ -158,7 +158,6 @@ public class Sphinx4TranscriptionController {
         File convFile = new File(file.getOriginalFilename());
         convFile.createNewFile();
         logger.info("Audio file content type :: {}  with size {} ",file.getContentType(), file.getSize());
-        file.getResource();
         try(InputStream is = file.getInputStream()) {
           Files.copy(is, convFile.toPath(), StandardCopyOption.REPLACE_EXISTING); 
         }

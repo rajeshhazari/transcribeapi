@@ -9,9 +9,16 @@ pipeline {
     }
     parameters {
         string(name: 'BRANCH_NAME', defaultValue: 'branch1', description: 'Branch Name')
-        string(name: 'BRANCH_NAME', defaultValue: 'branch1', description: 'Branch Name')
     }
     stages {
+        stage{
+            steps{
+                sh '''
+                   mkdir -pv /opt/apps/  /opt/test/
+                   ls -lrth /opt/apps/   /opt/test/
+                   '''
+            }
+        }
         stage('Checkout') {
             steps{
                 checkout scm
@@ -26,20 +33,24 @@ pipeline {
         stage('Unit-test') {
             steps {
                 echo 'Testing..'
+                sh 'mvn -B test package'
             }
         }
-        stage('Deploy to dev') {
-            steps {
-                echo 'Deploying....'
+        stage('Deploy') {
+                when {
+                    environment name: 'DEPLOY_TO', value: 'production'
+                }
+                steps {
+                    echo 'Deploying'
+                }
             }
-        }
     }
     post {
         always {
-            echo "Do something line sanity tests"
+            echo "Do something line sanity tests like acuatator healtcheck"
         }
         failure {
-            //mail to: transcribeappuser@yahoo.com, subject: 'The Pipeline failed :('
+            //mail to: transcribeappuser@yahoo.com, subject: 'The Pipeline failed '
         }
     }
 }

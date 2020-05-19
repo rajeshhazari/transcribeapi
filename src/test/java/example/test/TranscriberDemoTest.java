@@ -1,15 +1,15 @@
 /**
  * 
  */
-package com.example.test;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
+package example.test;
 
 import edu.cmu.sphinx.api.Configuration;
 import edu.cmu.sphinx.api.SpeechResult;
 import edu.cmu.sphinx.api.StreamSpeechRecognizer;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 
 /**
  * @author rajesh
