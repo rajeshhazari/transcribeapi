@@ -51,10 +51,11 @@ pipeline {
     }
     post {
         always {
-            echo "Do something line sanity tests like acuatator healtcheck"
+            println("Do something line sanity tests like acuatator healtcheck")
         }
         failure {
             //mail to: transcribeappuser@yahoo.com, subject: 'The Pipeline failed '
+            println(" file failed ")
         }
     }
 }
