@@ -83,7 +83,7 @@ public class Sphinx4TranscribitionService {
 		rdto = extractTranscribedTextFromSpeechRecognizer(recognizer, transcribtionReqId);
 		rdto.setToken(token);
 		rdto.setFname(file.getName());
-		
+		final String transcribedText = rdto.getTranscribedText();
 		delegateExecutor.execute(() -> {
 			UserTranscriptions userTranscriptions = new UserTranscriptions();
 			userTranscriptions.setEmail(userEmail);
@@ -105,6 +105,7 @@ public class Sphinx4TranscribitionService {
 			tflog.setEmail(userEmail);
 			tflog.setFileSize(size);
 			tflog.setSessionId(sessionId);
+			tflog.setTRes(transcribedText);
 			userTranscriptions.setTranscribeResType("application/JSON");
 			userTranscriptions.setTranscribeFileLog(tflog);
 			userTranscribtionsRepository.save(userTranscriptions);
