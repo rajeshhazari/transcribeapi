@@ -19,7 +19,7 @@ public class UserTranscriptions {
 	public Long transcriptionReqId;
 	public String username;
 	public String email;
-	@Column(value = "transcription_res_type")
+	@Column(value = "transcribe_res_type")
 	public String transcribeResType;
 	@Column(value = "file_name")
 	public String fileName;
@@ -34,6 +34,9 @@ public class UserTranscriptions {
 	public String   transcribeResAvailableFormat ;
 	@Column(value = "transcribe_res_downloaded_format")
 	public String   transcribeResDownloadedFormat;
+	@Column("tflog_id")
+	public TranscribeFileLog transcribeFileLog;
+	
 }
 /* enum class TranscibeResponseTypes {
 	application/json, application/text,application/pdf

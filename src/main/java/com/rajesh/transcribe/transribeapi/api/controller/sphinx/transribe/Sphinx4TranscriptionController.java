@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -110,18 +111,22 @@ public class Sphinx4TranscriptionController {
 	            @ApiResponse(code = 401, message = "not authorized!"), 
 	            @ApiResponse(code = 403, message = "forbidden!!!"),
 	            @ApiResponse(code = 404, message = "not found!!!") })
-    @PostMapping(path="/transcribe" , produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @PostMapping(path="/transcribe" , produces = MediaType.APPLICATION_JSON_UTF8_VALUE , consumes = {  MediaType.MULTIPART_FORM_DATA_VALUE, MediaType.APPLICATION_JSON_UTF8_VALUE} )
     public ResponseEntity<TranscribtionResponseDto> getTranscribtion(@RequestParam("reqId")   @NotNull @NotBlank final String reqId,
-                                                                     @RequestParam("fname")   @NotNull @NotBlank final String fname,
                                                                      //@RequestParam("file") MultipartFile[] file) throws IOException {
                                                                      @RequestParam("file") final MultipartFile file, HttpServletRequest req, HttpServletResponse res) throws JsonParseException, JsonMappingException, IOException {
          String token = req.getHeader("token");
          String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-         logger.debug("Upload: {}", fname);
+         logger.debug("Upload: name {} and size: {} ", file.getOriginalFilename(), file.getSize());
+         //getFileChunkFromStream(file);
          TranscribtionResponseDto response = new TranscribtionResponseDto();
          // MetaData document = objectMapper.readValue(metaData, MetaData.class);
          response.setTrancribtionId(reqId);
-         response.setFname(fname);
+         response.setFname(file.getOriginalFilename());
+         HttpHeaders httpHeaders = new HttpHeaders();
+         httpHeaders.add("Accept", "application/json");
+         
+         
          if (Objects.isNull(file)){
              res.setStatus(HttpStatus.BAD_REQUEST.value());
              res.flushBuffer();
@@ -132,7 +137,7 @@ public class Sphinx4TranscriptionController {
              // rather than user to wait untill all of the transcription is completed, which may take some time
             File convFile = convertMultipartFileToFile(file);
             try {
-                    response = tService.transribeAudioforText(convFile,reqId,token, userEmail);
+                    response = tService.transribeAudioforText(convFile,reqId,token, userEmail,req.getSession().getId(),file.getSize());
                 } catch (NumberFormatException | ExecutionException e) {
                     logger.error("Exception occured while transcribe from service {}", e.getCause());
 					return new ResponseEntity<TranscribtionResponseDto>(response, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -170,7 +175,7 @@ public class Sphinx4TranscriptionController {
      * @param file
      * @return
      */
-    private String getFileChunkFromStream(File file) {
+    private String getFileChunkFromStream(MultipartFile file) {
     	
     	FileChannel fileChannel = null;
     	String content = new String();
@@ -181,8 +186,8 @@ public class Sphinx4TranscriptionController {
             //file = new File(filePath.toString());
             MessageDigest  messageDigest = MessageDigest.getInstance("MD5");
             //checksum = getFileCheckSum(messageDigest, file);
-            fis = new FileInputStream(file);
-            int fileSize = (int) file.length();
+            fis = new FileInputStream(file.getName());
+            int fileSize = (int) file.getSize();
             //int fileSize = (int) fis.available();
             fileChannel = fis.getChannel();
             int numberOfChunks = (int) Math.ceil(fileChannel.size() / (double) chunkSize);

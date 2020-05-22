@@ -23,7 +23,7 @@
 	<logger name="org.springframework.data">
 		<level value="DEBUG" />
 	</logger>
-	<logger name="org.springframework.jdbc.core.JdbcTemplate">
+	<logger name="org.springframework.data.jdbc">
 		<level value="DEBUG" />
 	</logger>
     <logger name="org.springframework.security.authentication" level="DEBUG" />

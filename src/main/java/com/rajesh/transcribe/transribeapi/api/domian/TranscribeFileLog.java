@@ -18,19 +18,22 @@ import org.springframework.data.relational.core.mapping.Table;
 public class TranscribeFileLog {
     
     @Id
+    @Column("tflog_id")
+    public Long id;
+    
     @Column("log_id")
     public Long logId;
-    @Column("transcribe_req_id")
+    @Column("transcription_req_id")
     public Long tReqId;
-    @Column("userEmail")
-    public String username;
-    @Column("transcribe_res_type")
-    public String tResType;
+    @Column("file_size")
+    public Long fileSize;
+    @Column("email")
+    public String email;
+    @Column("transcribe_res")
+    public String tRes;
     @Column("file_name")
     public String fileName;
     @Column("session_id")
     public String sessionId;
-    @Column("token")
-    public String token;
     
 }

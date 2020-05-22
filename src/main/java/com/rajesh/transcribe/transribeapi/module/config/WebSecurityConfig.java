@@ -30,18 +30,19 @@ class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 			"/h2-console/**",
 			"/csrf/**",
 			"/api/v1/version/",           // app version
+			"/api/v1/register/",           // register customer
 			// other public endpoints of your API may be appended to this array
 	};
 	
 	
 	@Autowired
-	private UserDetailsService myUserDetailsService;
+	private UserDetailsService jwtUserDetailService;
 	@Autowired
 	private JwtRequestFilter jwtRequestFilter;
 
 	@Autowired
 	public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-		auth.userDetailsService(myUserDetailsService);
+		auth.userDetailsService(jwtUserDetailService);
 	}
 
 	@Bean
@@ -55,7 +56,8 @@ class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 		return super.authenticationManagerBean();
 	}
 	
-	/*public AuthenticationManager authenticationManagerBean() throws Exception {
+	/*
+	public AuthenticationManager authenticationManagerBean() throws Exception {
 		DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
 		daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());
 		daoAuthenticationProvider.setUserDetailsService(myUserDetailsService);

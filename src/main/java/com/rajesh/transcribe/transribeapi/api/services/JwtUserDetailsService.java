@@ -45,8 +45,8 @@ public class JwtUserDetailsService implements UserDetailsService {
     @Autowired
     DataSource dataSource;
     
-    @Autowired
-    private SessionRegistry sessionRegistry;
+    /*@Autowired
+    private SessionRegistry sessionRegistry;*/
     
     
     public UserDetails loadUserByUsername(String s) throws UsernameNotFoundException {
@@ -90,19 +90,19 @@ public class JwtUserDetailsService implements UserDetailsService {
     
     /**
      *
-     * @param s
+     * @param email
      * @return
      */
-    private AuthUserProfileDto getUserDto(String s) throws UsernameNotFoundException {
+    private AuthUserProfileDto getUserDto(String email) throws UsernameNotFoundException {
         //List<AppUsers> appuser = userRepo.findByEmail(s);
         Optional<AppUsers> user = null;
         AuthUserProfileDto userDto = new AuthUserProfileDto();
         try{
-            user = userRepo.findByEmail(s);
+            user = userRepo.findByEmail(email);
         }catch (BadCredentialsException bex){
-            throw new BadCredentialsException("Bad credentials. Please check your username/password: " + s);
+            throw new BadCredentialsException("Bad credentials. Please check your username/password: " + email);
         }
-        logger.debug("user retrived:: %s  for user %s",user ,s );
+        logger.debug("user retrived:: %s  for user %s",user ,email );
         if (!user.isEmpty() || user.isPresent()) {
             userDto.setUsername(user.get().getEmail());
             userDto.setActive(user.get().isActive());
@@ -111,11 +111,11 @@ public class JwtUserDetailsService implements UserDetailsService {
             userDto.setLastLogedin(user.get().getLastModified());
         }
         if (user.isEmpty() || !user.isPresent()) {
-            throw new UsernameNotFoundException("User not found with username: " + s);
+            throw new UsernameNotFoundException("User not found with username: " + email);
         }else if (user.isPresent() && user.get().getUsername().isEmpty()) {
-            throw new UsernameNotFoundException("There is some problem with your account, please contact us to resolve your issue: " + s);
+            throw new UsernameNotFoundException("There is some problem with your account, please contact us to resolve your issue: " + email);
         }else if (user.isPresent() && user.get().isLocked()) {
-            throw new UsernameNotFoundException("Your account is locker. Please Contact us for more info: " + s);
+            throw new UsernameNotFoundException("Your account is locker. Please Contact us for more info: " + email);
         }
         
         SecurityContext context = SecurityContextHolder.getContext();
@@ -222,7 +222,7 @@ public class JwtUserDetailsService implements UserDetailsService {
             grantedAuthorities.add(new SimpleGrantedAuthority(role.getRolename()));
         }
         return grantedAuthorities;
-    }*/
+    }
     
     public Collection<String> getLoggedInUsers() {
         return sessionRegistry.getAllPrincipals().stream()
@@ -230,4 +230,6 @@ public class JwtUserDetailsService implements UserDetailsService {
                 .map(Object::toString)
                 .collect(Collectors.toList());
     }
+    
+     */
 }

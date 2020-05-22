@@ -3,9 +3,12 @@
  */
 package com.rajesh.transcribe.transribeapi.api.services.sphinx4.transcribe;
 
+import com.rajesh.transcribe.transribeapi.api.domian.AppUsers;
 import com.rajesh.transcribe.transribeapi.api.domian.TranscribeFileLog;
+import com.rajesh.transcribe.transribeapi.api.domian.UserTranscriptions;
 import com.rajesh.transcribe.transribeapi.api.models.sphinx4.TranscribtionResponseDto;
-import com.rajesh.transcribe.transribeapi.api.repository.TranscrbeFileLogRepo;
+import com.rajesh.transcribe.transribeapi.api.repository.AppUsersRepository;
+import com.rajesh.transcribe.transribeapi.api.repository.UserTranscribtionsRepository;
 import edu.cmu.sphinx.api.Configuration;
 import edu.cmu.sphinx.api.SpeechResult;
 import edu.cmu.sphinx.api.StreamSpeechRecognizer;
@@ -29,6 +32,8 @@ import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
@@ -52,37 +57,61 @@ public class Sphinx4TranscribitionService {
 	Executor asyncExecutor;
 	
 	@Autowired
-	TranscrbeFileLogRepo tfLogRepo;
-
+	UserTranscribtionsRepository userTranscribtionsRepository;
+	@Autowired
+	private AppUsersRepository appUsersRepo;
+	
 	/**
 	 * 
 	 * @param file
+	 * @param transcribtionReqId
 	 * @param token
 	 * @param userEmail
+	 * @param  sessionId
+	 * @param size
 	 * @return
 	 * @throws Exception
 	 */
-	public TranscribtionResponseDto transribeAudioforText(File file, String transcribtionReqId, final String token, final String userEmail) throws IOException, ExecutionException{
+	public TranscribtionResponseDto transribeAudioforText(File file, String transcribtionReqId, final String token, final String userEmail,final @NotNull @NotBlank String sessionId, final Long size) throws IOException, ExecutionException{
 		
 		SimpleAsyncTaskExecutor delegateExecutor =
 				new SimpleAsyncTaskExecutor();
 		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(sphinxConfiguration);
 		InputStream stream = new FileInputStream(file);
-		delegateExecutor.execute(() -> {
-			TranscribeFileLog tflog = new TranscribeFileLog();
-			tflog.setFileName(file.getName());
-			tflog.setTReqId(Long.parseLong(transcribtionReqId));
-			tflog.setTResType("application/json");
-			tflog.setToken(token);
-			tflog.setUsername(userEmail);
-			Long logid = tfLogRepo.save(tflog).getLogId();
-			logger.debug("transcribefile logid {} for requestId", logid, transcribtionReqId);
-		});
 		TranscribtionResponseDto rdto = new TranscribtionResponseDto();
 		recognizer.startRecognition(stream);
 		rdto = extractTranscribedTextFromSpeechRecognizer(recognizer, transcribtionReqId);
 		rdto.setToken(token);
 		rdto.setFname(file.getName());
+		
+		delegateExecutor.execute(() -> {
+			UserTranscriptions userTranscriptions = new UserTranscriptions();
+			userTranscriptions.setEmail(userEmail);
+			userTranscriptions.setFileName(file.getName());
+			userTranscriptions.setSessionId("1234");
+			userTranscriptions.setTranscriptionReqId(Long.parseLong(transcribtionReqId));
+			userTranscriptions.setTranscribeResAvailableFormat("application/json");
+			userTranscriptions.setTranscribed(true);
+			userTranscriptions.setDownloaded(false);
+			Optional<AppUsers> appUsers = appUsersRepo.findByEmail(userEmail);
+			if(Objects.nonNull(appUsers.get())){
+				userTranscriptions.setUsername(appUsers.get().getUsername());
+				userTranscriptions.setUserid(appUsers.get().getUserid());
+			}
+			TranscribeFileLog tflog = new TranscribeFileLog();
+			tflog.setFileName(file.getName());
+			tflog.setTReqId(Long.parseLong(transcribtionReqId));
+			tflog.setLogId(userTranscriptions.getLogId());
+			tflog.setEmail(userEmail);
+			tflog.setFileSize(size);
+			tflog.setSessionId(sessionId);
+			userTranscriptions.setTranscribeResType("application/JSON");
+			userTranscriptions.setTranscribeFileLog(tflog);
+			userTranscribtionsRepository.save(userTranscriptions);
+			//Long id = tfLogRepo.save(tflog).getId();
+			logger.debug("transcribefile  for requestId {} is saved", transcribtionReqId);
+		});
+		
 		//TODO call formatting method/service
 		//return unformatted_transcribe_text;
 		//return extractTranscribedTextFromSpeechRecognizer(recognizer, transcribtionReqId);

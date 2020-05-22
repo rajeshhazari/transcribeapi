@@ -20,15 +20,17 @@ DROP TABLE IF EXISTS QRTZ_BLOB_TRIGGERS;
 DROP TABLE IF EXISTS QRTZ_TRIGGERS;
 DROP TABLE IF EXISTS QRTZ_JOB_DETAILS;
 DROP TABLE IF EXISTS QRTZ_CALENDARS;
-ALTER TABLE USERSTRANSCRIPTIONS DROP CONSTRAINT IF EXISTS FK_Users_Transcriptions_users;
-ALTER TABLE REGISTEREDAPPUSERS DROP CONSTRAINT IF EXISTS FK_REGUSERS_USERNAME_EMAIL;
+ALTER TABLE APPUSERS_TRANSCRIPTIONS DROP CONSTRAINT IF EXISTS FK_Users_Transcriptions_users;
+ALTER TABLE TRANSCRIBEFILELOG DROP CONSTRAINT IF EXISTS APP_USERS_TRANSCRIBEFILELOG_FK;
+
+--ALTER TABLE REGISTEREDAPPUSERS DROP CONSTRAINT IF EXISTS FK_REGUSERS_USERNAME_EMAIL;
 DROP TABLE IF EXISTS APPUSERS;
 DROP TABLE IF EXISTS AUTHORITIES;
 DROP TABLE IF EXISTS USERREGVERIFYLOGDETIALS;
 DROP TABLE IF EXISTS USERREGISTRATIONSLOGDETIALS;
-DROP TABLE IF EXISTS USERSTRANSCRIPTIONS;
+DROP TABLE IF EXISTS APPUSERS_TRANSCRIPTIONS;
 DROP TABLE IF EXISTS TRANSCRIBEFILELOG;
-DROP TABLE IF EXISTS REGISTEREDAPPUSERS;
+--DROP TABLE IF EXISTS REGISTEREDAPPUSERS;
 
 ALTER TABLE USER_SESSIONS_ATTRIBUTES DROP CONSTRAINT IF EXISTS USER_SESSIONS_ATTRIBUTES_FK;
 DROP TABLE IF EXISTS USER_SESSIONS;
@@ -301,14 +303,6 @@ ALTER TABLE QRTZ_TRIGGERS ADD
 --   primary key (id)
 -- );
 
-CREATE TABLE REGISTEREDAPPUSERS(
-  id identity not null auto_increment,
-  username VARCHAR(100) not null,
-   email VARCHAR(100) not null,
-  primary key (id),
-  CONSTRAINT FK_REGUSERS_USERNAME_EMAIL foreign key (username,email) references APPUSERS(username,email)
-);
-
 
  CREATE TABLE AUTHORITIES (
   auth_id identity not null auto_increment,
@@ -322,12 +316,13 @@ CREATE TABLE USERREGVERIFYLOGDETIALS (
   username VARCHAR(100) not null,  
   disabled boolean default false,
   verified boolean default false,
-  verification_email_to VARCHAR(100) not null,
-  verified_reg_ip VARCHAR(50) ,
-  verification_email_sent boolean default false,
-  verification_email_code VARCHAR(50) not null,
-  email_sent_date  timestamp default CURRENT_TIMESTAMP,
-  verfication_date timestamp , primary key (id)
+  email VARCHAR(100) not null,
+  confEmailUrl VARCHAR(500) not null,
+  verifiedRegClientIp VARCHAR(50) ,
+  verificationEmailSent boolean default false,
+  confEmailToken VARCHAR(50) not null,
+  emailSentDate  timestamp default CURRENT_TIMESTAMP,
+  verficationDate timestamp , primary key (id)
 );
 
 CREATE TABLE USERREGISTRATIONSLOGDETIALS (
@@ -349,7 +344,7 @@ CREATE TABLE USERREGISTRATIONSLOGDETIALS (
   primary key (id)
 );
 
-CREATE TABLE USERSTRANSCRIPTIONS (
+CREATE TABLE APPUSERS_TRANSCRIPTIONS (
   log_id identity not null auto_increment,
   username VARCHAR(100) not null,
   email VARCHAR(100) not null,
@@ -376,7 +371,7 @@ CREATE TABLE USERSTRANSCRIPTIONS (
 --  primary key (did)
 --);
 
-ALTER TABLE USERSTRANSCRIPTIONS ADD
+ALTER TABLE APPUSERS_TRANSCRIPTIONS ADD
   CONSTRAINT FK_Users_Transcriptions_users FOREIGN KEY
   (
     username,
@@ -387,15 +382,17 @@ ALTER TABLE USERSTRANSCRIPTIONS ADD
   );
 
   CREATE TABLE TRANSCRIBEFILELOG (
-  log_id identity not null auto_increment,
-  userEmail VARCHAR(100),
+  tflog_id identity not null auto_increment,
+  email VARCHAR(100),
   file_name VARCHAR(256),
   session_id VARCHAR(256),
-  transcribe_req_id Long,
-  transcribe_res_type VARCHAR(20),
-  token VARCHAR(100),
-  
-  primary key (log_id)
+  log_id Long,
+  transcription_req_id Long,
+  transcribe_res VARCHAR(400),
+   file_size Long,
+  created_at timestamp default CURRENT_TIMESTAMP,
+  primary key (tflog_id),
+  CONSTRAINT APP_USERS_TRANSCRIBEFILELOG_FK FOREIGN KEY (log_id, transcription_req_id,email) REFERENCES APPUSERS_TRANSCRIPTIONS (log_id,transcription_req_id,email) ON DELETE CASCADE
 );
   
   CREATE TABLE USER_SESSIONS (

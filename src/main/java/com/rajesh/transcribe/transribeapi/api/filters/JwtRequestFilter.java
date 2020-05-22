@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -55,6 +56,8 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 LOGGER.info("Unable to get JWT Token");
             } catch (ExpiredJwtException ex) {
                 LOGGER.info("JWT Token has expired");
+                response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
+                response.sendError(HttpStatus.UNPROCESSABLE_ENTITY.value(), ex.getMessage());
             }
         }else {
             LOGGER.warn("JWT Token does not begin with Bearer String");

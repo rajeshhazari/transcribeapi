@@ -12,7 +12,7 @@
 	<artifactId>transcribeapi</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>transcribeapi</name>
-	<description>Transcribe api app using Sphinx4s</description>
+	<description>Transcribe api service using Sphinx4s</description>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
