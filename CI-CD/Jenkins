@@ -27,8 +27,11 @@ pipeline {
         stage('Build') {
             steps {
                 echo "Running ${env.BUILD_ID} on ${env.JENKINS_URL}"
-                sh 'mvn -B -DskipTests clean package'
-                ls -lrth
+                sh '''
+                   mvn -B -DskipTests clean package 
+                    ls -lrth
+                '''
+
             }
         }
         stage('Unit-test') {
