@@ -7,13 +7,15 @@ RUN mkdir -pv /opt/apps
 
 # An executable jar that will run in this Docker container
 #Run `mvn package` to create it
-Run mvn package
-COPY target/transcribeapi.jar /opt/apps/
-
+Run mvn -DskipTests clean package
+RUN ls -lrth
+COPY target/transcribeapi-0.0.1-SNAPSHOT.jar /opt/apps/
+RUN ls -lrth
 # A simple shell script to pass JVM arguments
 #ADD bin/entrypoint.sh /opt/apps/entrypoint.sh
 
 VOLUME /tmp
+RUN ls -lrth
 ARG DEPENDENCY=target/dependency
 COPY ${DEPENDENCY}/BOOT-INF/lib /app/lib
 COPY ${DEPENDENCY}/META-INF /app/META-INF
@@ -25,7 +27,7 @@ EXPOSE 9010
 # JVM debugging port
 EXPOSE 8585
 
-ENTRYPOINT [ "/opt/apps/entrypoint.sh" ]
+#ENTRYPOINT [ "/opt/apps/entrypoint.sh" ]
 ##
 #FROM openjdk:11-jdk-alpine
 #VOLUME /tmp
