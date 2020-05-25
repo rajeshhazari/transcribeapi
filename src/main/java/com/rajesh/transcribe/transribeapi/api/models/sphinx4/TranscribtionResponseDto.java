@@ -26,7 +26,7 @@ public final class TranscribtionResponseDto {
 	private boolean isFormatted = false;
 	private List<String> wordsList = null;
 	private List<String> wordConfidenceList = null;
-	private String fname = null;
+	private String fileName = null;
 
 
 	

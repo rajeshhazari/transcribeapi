@@ -82,7 +82,7 @@ public class Sphinx4TranscribitionService {
 		recognizer.startRecognition(stream);
 		rdto = extractTranscribedTextFromSpeechRecognizer(recognizer, transcribtionReqId);
 		rdto.setToken(token);
-		rdto.setFname(file.getName());
+		rdto.setFileName(file.getName());
 		final String transcribedText = rdto.getTranscribedText();
 		delegateExecutor.execute(() -> {
 			UserTranscriptions userTranscriptions = new UserTranscriptions();

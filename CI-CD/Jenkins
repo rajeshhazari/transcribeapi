@@ -1,40 +1,50 @@
 pipeline {
-    agent {
-        docker {
-            //image 'openjdk:11'
-            //customWorkspace "/opt/test"
-            //args '-v $HOME/.m2:/root/.m2'
-            //args '-u tdv --name tdv-test -w /opt/test -v $HOME/.m2:/root/.m2 -v /opt/test:/opt/test:rw,z -v /opt/test@tmp:/opt/test@tmp:rw,z -p 9400:9400 -p 9401:9401 -p 9402:9402 -p 9403:9403 -p 9407:9407 -p 9303:9303 --cpus=2.000 -m=4g xxx.xxx.com/tdv/tdv-test:8.2 tdv.server'
-        }
+    agent any
+    tools {
+        maven 'maven3'
+    }
+    environment{
+        def JAVA_OPTS='-Dspring.profiles.active=dev -Dlogging.level.org.springframework=DEBUG   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
+        def idstring = UUID.randomUUID().toString();
+        id = "tmp-${UUID.randomUUID()}"
+
+
+
+
     }
     parameters {
         string(name: 'BRANCH_NAME', defaultValue: 'branch1', description: 'Branch Name')
         string(name: 'environment', defaultValue: 'dev', description: 'Environment profile for sping app')
         choice(name: 'DEPLOY_TO', choices: ['dev', 'qa', 'prod'], description: 'select and environement for deploying.')
     }
-    tools {
-        maven 'apache-maven-3.0.1'
-    }
+
     stages {
         stage ('prepare environment'){
             steps{
+                println("idString:: "+idstring +" id:: "+id)
                 sh '''
+                
                    #mkdir -pv /opt/apps/  /opt/test/
-                   ls -lrth /opt/apps/  /opt/test/
+                   ls -lrth /opt/apps/  /opt/
+                  echo "PATH = ${PATH}"
+                    echo "M2_HOME = ${M2_HOME}"
                    '''
             }
         }
         stage('Checkout') {
             steps{
                 checkout scm
+                sh 'ls -lrth .'
             }
         }
         stage('Build') {
             steps {
                 echo "Running ${env.BUILD_ID} on ${env.JENKINS_URL}"
                 sh '''
-                   mvn -B -DskipTests clean package 
+                id -a 
+                   mvn -DskipTests clean package 
                     ls -lrth
+                    printenv
                 '''
 
             }
@@ -45,32 +55,50 @@ pipeline {
                 sh 'mvn -B test package'
             }
         }
+        stage('Deploy') {
+            when {
+                environment name: 'DEPLOY_TO', value: 'production'
+            }
+            steps {
+                echo 'Deploying'
+            }
+        }
         stage('Deploy-devappserver'){
             when{
-                expression {
-                    environment name: 'DEPLOY_TO', value: 'dev'
-                    currentBuild.result == null || currentBuild.result == 'SUCCESS'
-                }
+
+                environment name: 'DEPLOY_TO', value: 'dev'
+                //currentBuild.result == null || currentBuild.result == 'SUCCESS'
+
+            }
+            steps{
+                sh '''
+                pwd
+                ls -lrth 
+                cp target/*.jar app.jar
+                mv app.jar /opt/apps/
+                java -jar -D${JAVA_OPTS} /opt/apps/app.jar 
+                '''
             }
         }
         stage('Deploy-prod') {
-                when {
-                    environment name: 'DEPLOY_TO', value: 'production'
-                    currentBuild.result == null || currentBuild.result == 'SUCCESS'
-                }
-                steps {
-                    println("Deploying to "+environment)
-                }
+            when {
+
+                environment name: 'DEPLOY_TO', value: 'production'
+                //currentBuild.result == null || currentBuild.result == 'SUCCESS'
+
             }
+            steps {
+                println("Deploying to "+environment)
+            }
+        }
     }
     post {
         always {
             println("Do something line sanity tests like acuatator healtcheck")
-            cleanws()
         }
         failure {
             //mail to: transcribeappuser@yahoo.com, subject: 'The Pipeline failed '
-            println(" currentBuild  failed ")
+            println(" file failed ")
         }
     }
 }
