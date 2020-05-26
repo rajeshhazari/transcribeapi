@@ -28,6 +28,11 @@ pipeline {
                    ls -lrth /opt/apps/  /opt/
                   echo "PATH = ${PATH}"
                     echo "M2_HOME = ${M2_HOME}"
+                    
+                    mvn install:install-file -Dfile=/home/devuser/.m2/repository/edu/cmu/sphinx/sphinx4-core/5prealpha-SNAPSHOT/sphinx4-core-5prealpha-SNAPSHOT.jar -DartifactId=sphinx4-core -DgroupId=edu.cmu.sphinx -Dversion=5prealpha-SNAPSHOT -Dpackaging=jar
+                    mvn install:install-file -Dfile=/home/devuser/.m2/repository/edu/cmu/sphinx/sphinx4-data/5prealpha-SNAPSHOT/sphinx4-data-5prealpha-SNAPSHOT.jar -DartifactId=sphinx4-data -DgroupId=edu.cmu.sphinx -Dversion=5prealpha-SNAPSHOT -Dpackaging=jar
+                    
+                    
                    '''
             }
         }
@@ -42,7 +47,7 @@ pipeline {
                 echo "Running ${env.BUILD_ID} on ${env.JENKINS_URL}"
                 sh '''
                 id -a 
-                   mvn -DskipTests clean package 
+                   mvn -X -U -DskipTests clean install 
                     ls -lrth
                     printenv
                 '''
@@ -52,7 +57,7 @@ pipeline {
         stage('Unit-test') {
             steps {
                 echo 'Testing..'
-                sh 'mvn -B test package'
+                //sh 'mvn -B test package'
             }
         }
         stage('Deploy') {

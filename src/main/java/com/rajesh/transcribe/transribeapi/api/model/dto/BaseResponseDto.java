@@ -7,6 +7,6 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 
 @Data
-@NoArgsConstructor @AllArgsConstructor
+@AllArgsConstructor
 public abstract  class BaseResponseDto implements Serializable {
 }

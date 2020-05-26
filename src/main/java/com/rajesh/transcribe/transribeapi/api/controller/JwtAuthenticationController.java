@@ -24,6 +24,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.util.unit.DataUnit;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -31,10 +32,8 @@ import javax.servlet.http.HttpSession;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.time.Instant;
+import java.util.*;
 
 @RestController
 @CrossOrigin
@@ -104,7 +103,7 @@ public class JwtAuthenticationController {
 		final String jwt = jwtTokenUtil.generateToken(userDetails);
 		
 
-		return new ResponseEntity<AuthenticationResponse>(new AuthenticationResponse(jwt,email), HttpStatus.OK);
+		return new ResponseEntity<AuthenticationResponse>(new AuthenticationResponse(jwt,email, new Date(Instant.now().toEpochMilli()),null), HttpStatus.OK);
 	}
 	/*
 	@RequestMapping(value = "/register", method = RequestMethod.POST, produces = "application/jon")
