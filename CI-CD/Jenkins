@@ -20,7 +20,6 @@ pipeline {
 
 
 
-
     }
     parameters {
         string(name: 'BRANCH_NAME', defaultValue: 'branch1', description: 'Branch Name')
@@ -31,50 +30,62 @@ pipeline {
     stages {
         stage ('prepare environment'){
             steps{
-                println("idString:: "+idstring +" id:: "+id)
-                sh '''
+                script {
+                    last_started = env.STAGE_NAME
+                    println("idString:: " + idstring + " id:: " + id)
+                    sh '''
                 
-                   #mkdir -pv /opt/apps/  /opt/test/
-                   ls -lrth /opt/apps/  /opt/
-                    echo "PATH = ${PATH}"
-                    echo "M2_HOME = ${M2_HOME}"
-                    
-                    #mvn install:install-file -Dfile=/home/devuser/.m2/repository/edu/cmu/sphinx/sphinx4-core/5prealpha-SNAPSHOT/sphinx4-core-5prealpha-SNAPSHOT.jar -DartifactId=sphinx4-core -DgroupId=edu.cmu.sphinx -Dversion=5prealpha-SNAPSHOT -Dpackaging=jar
-                    #mvn install:install-file -Dfile=/home/devuser/.m2/repository/edu/cmu/sphinx/sphinx4-data/5prealpha-SNAPSHOT/sphinx4-data-5prealpha-SNAPSHOT.jar -DartifactId=sphinx4-data -DgroupId=edu.cmu.sphinx -Dversion=5prealpha-SNAPSHOT -Dpackaging=jar
-                    
-                    
-                   '''
+                           #mkdir -pv /opt/apps/  /opt/test/
+                           ls -lrth /opt/apps/  /opt/
+                            echo "PATH = ${PATH}"
+                            echo "M2_HOME = ${M2_HOME}"
+                            
+                            #mvn install:install-file -Dfile=/home/devuser/.m2/repository/edu/cmu/sphinx/sphinx4-core/5prealpha-SNAPSHOT/sphinx4-core-5prealpha-SNAPSHOT.jar -DartifactId=sphinx4-core -DgroupId=edu.cmu.sphinx -Dversion=5prealpha-SNAPSHOT -Dpackaging=jar
+                            #mvn install:install-file -Dfile=/home/devuser/.m2/repository/edu/cmu/sphinx/sphinx4-data/5prealpha-SNAPSHOT/sphinx4-data-5prealpha-SNAPSHOT.jar -DartifactId=sphinx4-data -DgroupId=edu.cmu.sphinx -Dversion=5prealpha-SNAPSHOT -Dpackaging=jar
+                            
+                            
+                           '''
+                }
             }
         }
         stage('Checkout') {
             steps{
                 checkout scm
-                sh 'ls -lrth .'
             }
         }
         stage('Build') {
             steps {
-                echo "Running ${env.BUILD_ID} on ${env.JENKINS_URL}"
-                sh '''
-                id -a 
-                   mvn  -U -DskipTests clean install 
-                   
-                '''
+                script {
+                    last_started = env.STAGE_NAME
 
+                    echo "Running ${env.BUILD_ID} on ${env.JENKINS_URL}"
+                    sh '''
+                        id -a 
+                           mvn  -U -DskipTests clean install 
+                           
+                        '''
+                }
             }
         }
         stage('Unit-test') {
             steps {
-                echo 'Testing..'
-                //sh 'mvn -B test package'
+                script {
+                    last_started = env.STAGE_NAME
+                    echo 'Testing..'
+
+                    //sh 'mvn -B test package'
+                }
             }
         }
-        stage('Deploy') {
+        stage('Deploy to prod') {
             when {
                 environment name: 'DEPLOY_TO', value: 'production'
             }
             steps {
-                echo 'Deploying'
+                script{
+                    last_started = env.STAGE_NAME
+                    println("Deploying to prod")
+                }
             }
         }
         stage('Deploy-devappserver'){
@@ -86,29 +97,12 @@ pipeline {
             }
             steps{
                 script{
-
+                    last_started = env.STAGE_NAME
                     def workspacePath=pwd();
+                    println("workspace path :: "+workspacePath +" workspace:: +${WORKSPACE}");
+                    sh './CI-CD/scripts/start.sh'
+                    readAppInfoFromJson();
 
-                    sh '''
-                            pwd
-                            ls -lrth 
-                            cp target/*.jar app.jar
-                            mv app.jar /opt/apps/
-                            curl -k -X POST https://localhost:8585/api/v1/shutdown || true
-                            nohup java -jar ${JAVA_OPTS} /opt/apps/app.jar   >/dev/null 2>&1 &
-                             curl -k --retry-delay 10 --retry 5 https://devappserver:8585/api/v1/actuator/info -o ${WORKSPACE}/response.json
-                                http_response=$(curl -k -s -o response.json -w "%{http_code}" https://devappserver:8585/api/v1/actuator/health )
-                               echo "response code: $http_response"
-                               if [ $http_response != "200" ]; then
-                                    # handle error
-                                    exit 1
-                                else
-                                    echo "Server returned:"
-                                    cat response.json    
-                                fi
-                            '''
-
-                    println("workspacePath:: status "+readAppInfoFromJson())
                 }
 
 
@@ -124,7 +118,10 @@ pipeline {
 
             }
             steps {
-                println("Deploying to "+environment)
+                script{
+                    last_started = env.STAGE_NAME
+                    println("Deploying to "+environment)
+                }
             }
         }
 
@@ -136,7 +133,7 @@ pipeline {
         }
         failure {
             //mail to: transcribeappuser@yahoo.com, subject: 'The Pipeline failed '
-            println(" file failed ")
+            println(" build failed ${last_started}")
         }
     }
 
