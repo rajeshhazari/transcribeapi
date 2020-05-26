@@ -47,7 +47,7 @@ pipeline {
                 echo "Running ${env.BUILD_ID} on ${env.JENKINS_URL}"
                 sh '''
                 id -a 
-                   mvn -X -U -DskipTests clean install 
+                   mvn  -U -DskipTests clean install 
                     ls -lrth
                     printenv
                 '''
