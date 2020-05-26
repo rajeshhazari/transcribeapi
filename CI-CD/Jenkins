@@ -81,7 +81,7 @@ pipeline {
                 ls -lrth 
                 cp target/*.jar app.jar
                 mv app.jar /opt/apps/
-                java -jar -D${JAVA_OPTS} /opt/apps/app.jar 
+                nohup java -jar -D${JAVA_OPTS} /opt/apps/app.jar   >/dev/null 2>&1 &
                 '''
             }
         }
