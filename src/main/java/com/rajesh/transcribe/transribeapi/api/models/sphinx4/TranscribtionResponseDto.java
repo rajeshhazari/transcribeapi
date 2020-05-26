@@ -5,6 +5,7 @@ package com.rajesh.transcribe.transribeapi.api.models.sphinx4;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.rajesh.transcribe.transribeapi.api.model.dto.BaseResponseDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,7 +18,7 @@ import java.util.List;
 @Data
 @JsonIgnoreProperties(ignoreUnknown=true)
 @JsonPropertyOrder({"token","trancribtionId", "isFormatted", "text"})
-public final class TranscribtionResponseDto {
+public final class TranscribtionResponseDto extends BaseResponseDto {
 
 	@NotEmpty
 	private String transcribedText = null;

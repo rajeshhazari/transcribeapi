@@ -6,6 +6,7 @@ package com.rajesh.transcribe.transribeapi.api.model.dto.search;
 import com.rajesh.transcribe.transribeapi.api.model.dto.BaseResponseDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 /**
@@ -13,7 +14,9 @@ import lombok.NoArgsConstructor;
  *
  */
 @Data
-@NoArgsConstructor @AllArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = false)
 public class SearchDetails extends BaseResponseDto {
 	
 	private String status = null;
