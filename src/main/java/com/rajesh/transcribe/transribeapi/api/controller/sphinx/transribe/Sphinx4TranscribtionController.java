@@ -235,12 +235,9 @@ public class Sphinx4TranscribtionController {
                         content = new String(bytebuffer.array(), StandardCharsets.UTF_8);
                         
                     }
-                    
-                    
                     bytebuffer.clear();
                     
                 } else {
-                    
                     String chunkData = "";
                     ByteBuffer byteBuffer = ByteBuffer.allocate(fileSize);
                     fileChannel.read(byteBuffer);
@@ -251,9 +248,9 @@ public class Sphinx4TranscribtionController {
                 numberOfChunks--;
             }
         } catch (IOException e) {
-            logger.error("IOException occured : ", e);
+            logger.error("IOException occured : {} ", e);
         } catch (NoSuchAlgorithmException nsae) {
-            logger.error("NoSuchAlgorithm error occured : ", nsae);
+            logger.error("NoSuchAlgorithm error occurred : {} ", nsae);
         } finally {
             try {
                 fis.close();

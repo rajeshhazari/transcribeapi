@@ -6,8 +6,8 @@ mv app.jar /opt/apps/
 #curl -k -X POST https://localhost:8585/api/v1/actuator/shutdown || true
 if [ -f /opt/apps/pid.file ]; then
     ls -lrth
-    echo " stopping the app  with pid::  (cat /opt/apps/pid.file)"
-    kill -9 $(cat /opt/apps/pid.file)
+    echo " stopping the app  with pid::  `(cat /opt/apps/pid.file)`"
+    kill -9  $(cat /opt/apps/pid.file)
 else
     echo "app not started!"
     ls -lrth
