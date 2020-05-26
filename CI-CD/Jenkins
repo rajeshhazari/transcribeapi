@@ -1,3 +1,13 @@
+import groovy.json.JsonSlurper;
+
+def readAppInfoFromJson() {
+    def workspacePath = pwd()
+    def slurper = new JsonSlurper()
+    def json = slurper.parseText(new File("${WORKSPACE}/response.json").text)
+    def status = json.status
+    return status
+}
+
 pipeline {
     agent any
     tools {
@@ -26,11 +36,11 @@ pipeline {
                 
                    #mkdir -pv /opt/apps/  /opt/test/
                    ls -lrth /opt/apps/  /opt/
-                  echo "PATH = ${PATH}"
+                    echo "PATH = ${PATH}"
                     echo "M2_HOME = ${M2_HOME}"
                     
-                    mvn install:install-file -Dfile=/home/devuser/.m2/repository/edu/cmu/sphinx/sphinx4-core/5prealpha-SNAPSHOT/sphinx4-core-5prealpha-SNAPSHOT.jar -DartifactId=sphinx4-core -DgroupId=edu.cmu.sphinx -Dversion=5prealpha-SNAPSHOT -Dpackaging=jar
-                    mvn install:install-file -Dfile=/home/devuser/.m2/repository/edu/cmu/sphinx/sphinx4-data/5prealpha-SNAPSHOT/sphinx4-data-5prealpha-SNAPSHOT.jar -DartifactId=sphinx4-data -DgroupId=edu.cmu.sphinx -Dversion=5prealpha-SNAPSHOT -Dpackaging=jar
+                    #mvn install:install-file -Dfile=/home/devuser/.m2/repository/edu/cmu/sphinx/sphinx4-core/5prealpha-SNAPSHOT/sphinx4-core-5prealpha-SNAPSHOT.jar -DartifactId=sphinx4-core -DgroupId=edu.cmu.sphinx -Dversion=5prealpha-SNAPSHOT -Dpackaging=jar
+                    #mvn install:install-file -Dfile=/home/devuser/.m2/repository/edu/cmu/sphinx/sphinx4-data/5prealpha-SNAPSHOT/sphinx4-data-5prealpha-SNAPSHOT.jar -DartifactId=sphinx4-data -DgroupId=edu.cmu.sphinx -Dversion=5prealpha-SNAPSHOT -Dpackaging=jar
                     
                     
                    '''
@@ -48,8 +58,7 @@ pipeline {
                 sh '''
                 id -a 
                    mvn  -U -DskipTests clean install 
-                    ls -lrth
-                    printenv
+                   
                 '''
 
             }
@@ -76,13 +85,35 @@ pipeline {
 
             }
             steps{
-                sh '''
-                pwd
-                ls -lrth 
-                cp target/*.jar app.jar
-                mv app.jar /opt/apps/
-                nohup java -jar -D${JAVA_OPTS} /opt/apps/app.jar   >/dev/null 2>&1 &
-                '''
+                script{
+
+                    def workspacePath=pwd();
+
+                    sh '''
+                            pwd
+                            ls -lrth 
+                            cp target/*.jar app.jar
+                            mv app.jar /opt/apps/
+                            curl -k -X POST https://localhost:8585/api/v1/shutdown || true
+                            nohup java -jar ${JAVA_OPTS} /opt/apps/app.jar   >/dev/null 2>&1 &
+                             curl -k --retry-delay 10 --retry 5 https://devappserver:8585/api/v1/actuator/info -o ${WORKSPACE}/response.json
+                                http_response=$(curl -k -s -o response.json -w "%{http_code}" https://devappserver:8585/api/v1/actuator/health )
+                               echo "response code: $http_response"
+                               if [ $http_response != "200" ]; then
+                                    # handle error
+                                    exit 1
+                                else
+                                    echo "Server returned:"
+                                    cat response.json    
+                                fi
+                            '''
+
+                    println("workspacePath:: status "+readAppInfoFromJson())
+                }
+
+
+
+
             }
         }
         stage('Deploy-prod') {
@@ -96,6 +127,8 @@ pipeline {
                 println("Deploying to "+environment)
             }
         }
+
+
     }
     post {
         always {
@@ -106,4 +139,9 @@ pipeline {
             println(" file failed ")
         }
     }
+
+
+
+
+
 }
