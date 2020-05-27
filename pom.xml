@@ -18,6 +18,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>11</java.version>
+		<tomcat.version>9.0.33</tomcat.version>
 		<email.version>1.16.18</email.version>
 		<org.projectlombok.version>1.16.22</org.projectlombok.version>
 	</properties>
