@@ -1,6 +1,6 @@
 package com.rajesh.transcribe.transribeapi.api.controller.exceptions;
 
-import com.rajesh.transcribe.transribeapi.api.model.dto.AppError;
+import com.rajesh.transcribe.transribeapi.api.models.dto.AppError;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

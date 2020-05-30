@@ -1,7 +1,7 @@
 package com.rajesh.transcribe.transribeapi.api.services;
 
 import com.rajesh.transcribe.transribeapi.api.domian.AppUsers;
-import com.rajesh.transcribe.transribeapi.api.model.dto.AuthUserProfileDto;
+import com.rajesh.transcribe.transribeapi.api.models.dto.AuthUserProfileDto;
 import com.rajesh.transcribe.transribeapi.api.repository.AppUsersRepository;
 import com.rajesh.transcribe.transribeapi.api.repository.exceptions.UserNotFoundException;
 import org.slf4j.Logger;
@@ -14,7 +14,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -24,9 +23,7 @@ import org.springframework.stereotype.Service;
 
 import javax.sql.DataSource;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class JwtUserDetailsService implements UserDetailsService {

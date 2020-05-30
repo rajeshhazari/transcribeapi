@@ -6,7 +6,7 @@ package com.rajesh.transcribe.transribeapi.api.services.sphinx4.transcribe;
 import com.rajesh.transcribe.transribeapi.api.domian.AppUsers;
 import com.rajesh.transcribe.transribeapi.api.domian.TranscribeFileLog;
 import com.rajesh.transcribe.transribeapi.api.domian.UserTranscriptions;
-import com.rajesh.transcribe.transribeapi.api.models.sphinx4.TranscribtionResponseDto;
+import com.rajesh.transcribe.transribeapi.api.models.dto.sphinx.TranscribtionResponseDto;
 import com.rajesh.transcribe.transribeapi.api.repository.AppUsersRepository;
 import com.rajesh.transcribe.transribeapi.api.repository.UserTranscribtionsRepository;
 import edu.cmu.sphinx.api.Configuration;

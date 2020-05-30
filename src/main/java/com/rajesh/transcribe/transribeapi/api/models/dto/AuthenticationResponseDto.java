@@ -1,6 +1,5 @@
-package com.rajesh.transcribe.transribeapi.api.models;
+package com.rajesh.transcribe.transribeapi.api.models.dto;
 
-import com.rajesh.transcribe.transribeapi.api.model.dto.AppError;
 import lombok.*;
 
 import java.io.Serializable;
@@ -9,7 +8,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class AuthenticationResponse implements Serializable {
+public class AuthenticationResponseDto implements Serializable {
 
     private String jwt;
     private String email;

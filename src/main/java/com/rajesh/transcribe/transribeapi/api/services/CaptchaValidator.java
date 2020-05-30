@@ -1,6 +1,6 @@
 package com.rajesh.transcribe.transribeapi.api.services;
 
-import com.rajesh.transcribe.transribeapi.api.model.dto.CaptchaResponse;
+import com.rajesh.transcribe.transribeapi.api.models.dto.CaptchaResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;

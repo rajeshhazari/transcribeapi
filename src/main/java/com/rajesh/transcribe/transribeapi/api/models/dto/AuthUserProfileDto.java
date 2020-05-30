@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.rajesh.transcribe.transribeapi.api.model.dto;
+package com.rajesh.transcribe.transribeapi.api.models.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

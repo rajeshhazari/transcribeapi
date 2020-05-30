@@ -1,4 +1,4 @@
-package com.rajesh.transcribe.transribeapi.api.models;
+package com.rajesh.transcribe.transribeapi.api.models.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,7 +9,7 @@ import java.io.Serializable;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuthenticationRequest implements Serializable {
+public class AuthenticationRequestDto implements Serializable {
     private String username;
     private String password;
     

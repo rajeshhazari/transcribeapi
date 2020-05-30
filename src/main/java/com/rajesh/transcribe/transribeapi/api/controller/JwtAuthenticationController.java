@@ -1,9 +1,9 @@
 package com.rajesh.transcribe.transribeapi.api.controller;
 
 import com.rajesh.transcribe.transribeapi.api.domian.AppUsers;
-import com.rajesh.transcribe.transribeapi.api.model.dto.AppError;
-import com.rajesh.transcribe.transribeapi.api.models.AuthenticationRequest;
-import com.rajesh.transcribe.transribeapi.api.models.AuthenticationResponse;
+import com.rajesh.transcribe.transribeapi.api.models.dto.AppError;
+import com.rajesh.transcribe.transribeapi.api.models.dto.AuthenticationRequestDto;
+import com.rajesh.transcribe.transribeapi.api.models.dto.AuthenticationResponseDto;
 import com.rajesh.transcribe.transribeapi.api.services.JwtUserDetailsService;
 import com.rajesh.transcribe.transribeapi.api.util.JwtUtil;
 import io.swagger.annotations.Api;
@@ -24,7 +24,6 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.util.unit.DataUnit;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -60,7 +59,7 @@ public class JwtAuthenticationController {
 	private JwtUserDetailsService jwtUserDetailsService;
 
 	
-	@ApiOperation(value = "Authenticate to api service", response = AuthenticationResponse.class, httpMethod = "POST")
+	@ApiOperation(value = "Authenticate to api service", response = AuthenticationResponseDto.class, httpMethod = "POST")
 	@ApiResponses(
 			value = {
 					@ApiResponse(code = 200, message = "Successfully Authenticated."),
@@ -71,22 +70,22 @@ public class JwtAuthenticationController {
 					@ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
 			})
 	@RequestMapping(value = "/auth", method = RequestMethod.POST, produces = "application/json")
-	public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequest authenticationRequest) throws Exception {
-		final String email = authenticationRequest.getUsername();
+	public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequestDto authenticationRequestDto) throws Exception {
+		final String email = authenticationRequestDto.getUsername();
 		try {
 			//byte[] decoded = java.util.Base64.getDecoder().decode();
-			logger.debug("encode passwd:: {}", java.util.Base64.getDecoder().decode(authenticationRequest.getPassword().getBytes()));
-			String hashedPassword = passwordEncoder.encode(authenticationRequest.getPassword());
+			logger.debug("encode passwd:: {}", java.util.Base64.getDecoder().decode(authenticationRequestDto.getPassword().getBytes()));
+			String hashedPassword = passwordEncoder.encode(authenticationRequestDto.getPassword());
 			logger.debug("hashedpasswd:: {}", hashedPassword);
 			Authentication auth = authenticationManager.authenticate(
-					new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(), authenticationRequest.getPassword()) );
+					new UsernamePasswordAuthenticationToken(authenticationRequestDto.getUsername(), authenticationRequestDto.getPassword()) );
 			SecurityContextHolder.getContext().setAuthentication(auth);
 		}
 		catch (BadCredentialsException e) {
-			logger.error("Incorrect username or password {}",authenticationRequest.getUsername());
+			logger.error("Incorrect username or password {}", authenticationRequestDto.getUsername());
 			//TODO save login tries to DB
 			// Check login retries with value and if retries >= MAX_LOGIN_TRIES  update the user to lock
-			AppError error = new AppError(HttpStatus.FORBIDDEN, "User [" + authenticationRequest.getUsername() + "] not found");
+			AppError error = new AppError(HttpStatus.FORBIDDEN, "User [" + authenticationRequestDto.getUsername() + "] not found");
 			return new ResponseEntity<AppError>(error, HttpStatus.FORBIDDEN);
 			//throw new Exception("Incorrect username or password", e);
 		}catch (AuthenticationException authEx){
@@ -98,12 +97,12 @@ public class JwtAuthenticationController {
 
 
 		final UserDetails userDetails = jwtUserDetailsService
-				.loadUserByUsername(authenticationRequest.getUsername());
+				.loadUserByUsername(authenticationRequestDto.getUsername());
 
 		final String jwt = jwtTokenUtil.generateToken(userDetails);
 		
 
-		return new ResponseEntity<AuthenticationResponse>(new AuthenticationResponse(jwt,email, new Date(Instant.now().toEpochMilli()),null), HttpStatus.OK);
+		return new ResponseEntity<AuthenticationResponseDto>(new AuthenticationResponseDto(jwt,email, new Date(Instant.now().toEpochMilli()),null), HttpStatus.OK);
 	}
 	/*
 	@RequestMapping(value = "/register", method = RequestMethod.POST, produces = "application/jon")

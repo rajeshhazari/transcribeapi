@@ -1,9 +1,9 @@
 /**
  * 
  */
-package com.rajesh.transcribe.transribeapi.api.model.dto.search;
+package com.rajesh.transcribe.transribeapi.api.models.dto.search;
 
-import com.rajesh.transcribe.transribeapi.api.model.dto.BaseResponseDto;
+import com.rajesh.transcribe.transribeapi.api.models.dto.BaseResponseDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

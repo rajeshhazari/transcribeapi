@@ -1,4 +1,4 @@
-package com.rajesh.transcribe.transribeapi.api.model.dto;
+package com.rajesh.transcribe.transribeapi.api.models.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;

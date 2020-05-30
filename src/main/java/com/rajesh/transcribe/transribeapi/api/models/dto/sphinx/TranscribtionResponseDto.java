@@ -1,11 +1,11 @@
 /**
  *
  */
-package com.rajesh.transcribe.transribeapi.api.models.sphinx4;
+package com.rajesh.transcribe.transribeapi.api.models.dto.sphinx;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.rajesh.transcribe.transribeapi.api.model.dto.BaseResponseDto;
+import com.rajesh.transcribe.transribeapi.api.models.dto.BaseResponseDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

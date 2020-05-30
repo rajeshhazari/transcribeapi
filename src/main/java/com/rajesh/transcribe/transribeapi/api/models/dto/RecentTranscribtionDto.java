@@ -1,6 +1,6 @@
-package com.rajesh.transcribe.transribeapi.api.model.dto;
+package com.rajesh.transcribe.transribeapi.api.models.dto;
 
-import com.rajesh.transcribe.transribeapi.api.models.sphinx4.TranscribtionResponseDto;
+import com.rajesh.transcribe.transribeapi.api.models.dto.sphinx.TranscribtionResponseDto;
 import lombok.*;
 
 import java.util.List;

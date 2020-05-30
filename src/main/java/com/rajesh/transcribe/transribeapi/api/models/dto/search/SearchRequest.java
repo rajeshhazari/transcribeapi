@@ -1,4 +1,4 @@
-package com.rajesh.transcribe.transribeapi.api.model.dto.search;
+package com.rajesh.transcribe.transribeapi.api.models.dto.search;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
