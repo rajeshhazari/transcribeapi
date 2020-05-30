@@ -51,6 +51,7 @@ pipeline {
         stage('Checkout') {
             steps{
                 checkout scm
+                sh " chmod +x ${WORKSPACE}/CI-CD/scripts/*.sh"
             }
         }
         stage('Build') {
