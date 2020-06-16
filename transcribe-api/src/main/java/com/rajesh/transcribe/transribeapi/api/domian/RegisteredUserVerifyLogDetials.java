@@ -5,12 +5,13 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
+import java.time.Instant;
 import java.util.Date;
 
-@Table("USERREGVERIFYLOGDETAILS")
 @Data
 @AllArgsConstructor
-public class RegisteredUserVerifyLogDetials {
+@Table("USERREGVERIFYLOGDETAILS")
+public class RegisteredUserVerifyLogDetials implements java.io.Serializable {
     
     @Id
     @Column("id")
@@ -25,8 +26,8 @@ public class RegisteredUserVerifyLogDetials {
     public boolean disabled;
     public boolean verified;
     public boolean verificationEmailSent;
-    public Date emailSentDate;
-    public Date verificationDate;
+    public Instant emailSentDate;
+    public Instant verificationDate;
     public String verifiedRegClientIp;
     
     
@@ -35,3 +36,4 @@ public class RegisteredUserVerifyLogDetials {
         this.email = email;
     }
 }
+

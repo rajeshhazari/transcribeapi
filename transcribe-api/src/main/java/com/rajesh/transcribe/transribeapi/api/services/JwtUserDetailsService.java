@@ -32,6 +32,7 @@ import org.springframework.web.server.ServerErrorException;
 import javax.mail.MessagingException;
 import javax.sql.DataSource;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -42,16 +43,20 @@ public class JwtUserDetailsService implements UserDetailsService {
     
     @Autowired
     Environment env;
+    @Autowired
     private PasswordEncoder bcryptEncoder;
+    @Autowired
     private AppUsersRepository userRepo;
+    @Autowired
     private RegisteredUsersRepo registeredUsersRepo;
+    @Autowired
     private AppEmailService appEmailService;
     
     @Autowired
     DataSource dataSource;
 
     @Autowired
-    public JwtUserDetailsService (PasswordEncoder bcryptEncoder,
+    /*public JwtUserDetailsService (PasswordEncoder bcryptEncoder,
                                   AppUsersRepository userRepo,
                                   RegisteredUsersRepo registeredUsersRepo,
                                   AppEmailService appEmailService){
@@ -59,28 +64,34 @@ public class JwtUserDetailsService implements UserDetailsService {
         this.userRepo = userRepo;
         this.registeredUsersRepo = registeredUsersRepo;
         this.appEmailService = appEmailService;
-    }
+    }*/
     
     /*@Autowired
     private SessionRegistry sessionRegistry;*/
     
     
-    public UserDetails loadUserByUsername(String s) throws UsernameNotFoundException {
+    /**
+     *
+     * @param email
+     * @return
+     * @throws UsernameNotFoundException
+     */
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         //List<AppUsers> appuser = userRepo.findByEmail(s);
         Optional<AppUsers> user = null;
         try{
-            user = userRepo.findByEmail(s);
+            user = userRepo.findByEmail(email);
         }catch (BadCredentialsException bex){
-            throw new BadCredentialsException("Bad credentials. Please check your username/password: " + s);
+            throw new BadCredentialsException("Bad credentials. Please check your username/password: " + email);
         }
-        logger.debug("user retrived:: %s  for user %s",user ,s );
+        logger.debug("user retrived:: %s  for user %s",user ,email );
     
         if (user.isEmpty() || !user.isPresent()) {
-            throw new UsernameNotFoundException("User not found with username: " + s);
+            throw new UsernameNotFoundException("User not found with username: " + email);
         }else if (user.isPresent() && user.get().getUsername().isEmpty()) {
-            throw new UsernameNotFoundException("There is some problem with your account, please contact us to resolve your issue: " + s);
+            throw new UsernameNotFoundException("There is some problem with your account, please contact us to resolve your issue: " + email);
         }else if (user.isPresent() && user.get().isLocked()) {
-            throw new UsernameNotFoundException("Your account is locker. Please Contact us for more info: " + s);
+            throw new UsernameNotFoundException("Your account is locker. Please Contact us for more info: " + email);
         }
     
     
@@ -250,13 +261,21 @@ public class JwtUserDetailsService implements UserDetailsService {
     }
     
     /**
-     *
+     * 
      * @param emailId
      * @param code
      * @return
      */
-    public RegisteredUserVerifyLogDetials getUserRegVerifyLogDetailsByEamil(final String emailId, final String code) {
-        return  registeredUsersRepo.findByEmailAndCode(emailId, Integer.parseInt(code));
+    public Boolean verifyEmailisVerified(final String emailId, final String code) {
+        Boolean result = false;
+        List<RegisteredUserVerifyLogDetials> registeredUserVerifyLogDetialsList =  registeredUsersRepo.findByEmailAndCode(emailId, Integer.parseInt(code));
+        RegisteredUserVerifyLogDetials registeredUserVerifyLogDetials = registeredUserVerifyLogDetialsList.stream().filter(user -> user.isVerified()).findFirst().get();
+        if(registeredUserVerifyLogDetials.isVerificationEmailSent() && registeredUserVerifyLogDetials.isVerified()){
+            result = true;
+        } else if(registeredUserVerifyLogDetials.isVerificationEmailSent() && !registeredUserVerifyLogDetials.isVerified()){
+            logger.warn("Email is is alreadry verified.{}", emailId);
+        }
+        return  false;
     }
     
     

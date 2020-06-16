@@ -6,6 +6,7 @@ import com.rajesh.transcribe.transribeapi.api.repository.RegisteredUsersRepo;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.mail.MailSendException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -52,7 +53,7 @@ public class AppEmailService implements  AppMailService{
 	public Boolean sendVerificationEmail(RegisteredUserVerifyLogDetials userReq) throws MessagingException {
 		//TODO: get the app server info
 		logger.info("Called with e-mail {}", userReq.getEmail());
-		Boolean status = false;
+		Boolean status = Boolean.FALSE;
 		String confEmailUrl = "https://devappserver:8585/api/v1/public/";
 		String decodedEmail =
 				new String(Base64.getUrlDecoder().decode(userReq.getEmail()), StandardCharsets.UTF_8);
@@ -64,9 +65,8 @@ public class AppEmailService implements  AppMailService{
 		userReq.setVerified(false);
 		
 		try {
-			final JavaMailSenderImpl sender = new JavaMailSenderImpl();
 			
-			final MimeMessage message = sender.createMimeMessage();
+			final MimeMessage message = javaMailSender.createMimeMessage();
 			
 			final MimeMessageHelper helper = new MimeMessageHelper(message);
 			
@@ -76,20 +76,14 @@ public class AppEmailService implements  AppMailService{
 					+ "<a href='" + confEmailUrl+ "'>" +
 					"Click here to complete your registration" +
 					"</a>", true);
-			
 			sendMail(message);
+			registeredUsersRepo.save(userReq);
+			status = Boolean.TRUE;
 		} catch (MessagingException e) {
 			e.printStackTrace();
 			logger.error("Exception occured while sending conf email {}", confEmailUrl);
-			throw new MessagingException("Exception occured while sending conf email "+confEmailUrl);
-		}
-		if(sendEmail(emailTo, "UserVerification email")){
-			registeredUsersRepo.save(userReq);
-			status = true;
-		}else {
-			logger.debug("unable to send email to {}",userReq.getEmail());
 			//TODO throw an exception saying unable to send email
-			status = false;
+			throw new MessagingException("Exception occured while sending conf email, please check your email "+confEmailUrl);
 		}
 		return status;
 	}
@@ -115,20 +109,23 @@ public class AppEmailService implements  AppMailService{
 	
 	
 	/**
-	 * {@inheritDoc}
+	 *
+	 * @param email E-mail address of the recipient
+	 * @param token E-mail change token
+	 * @return
 	 */
 	@Async
 	@Override
-	public void sendMailWithEmailChangeToken(
+	public Boolean sendMailWithEmailChangeToken(
 			@NotBlank @Email final String email,
 			@NotBlank final String token
 	) {
+		Boolean result = Boolean.FALSE;
 		logger.info("Called with e-mail {}, token {}", email, token);
 		
 		try {
-			final JavaMailSenderImpl sender = new JavaMailSenderImpl();
 			
-			final MimeMessage message = sender.createMimeMessage();
+			final MimeMessage message = javaMailSender.createMimeMessage();
 			
 			final MimeMessageHelper helper = new MimeMessageHelper(message);
 			
@@ -140,9 +137,18 @@ public class AppEmailService implements  AppMailService{
 					"</a>", true);
 			
 			sendMail(message);
-		} catch (MessagingException e) {
+			result = Boolean.TRUE;
+			
+		} catch (MailSendException e) {
+			logger.error("Unable to send email to {}", emailTo);
 			e.printStackTrace();
+			
+		}catch (MessagingException ex){
+			logger.error("Messaging exception occured while sending email {}", emailTo);
+			ex.printStackTrace();
+			
 		}
+		return result;
 	}
 	
 	/**

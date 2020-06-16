@@ -16,12 +16,12 @@ public interface AppMailService {
     
     /**
      * This method sends an e-mail with an email change token.
-     *
-     * @param email E-mail address of the recipient
+     *  @param email E-mail address of the recipient
      * @param token E-mail change token
+     * @return
      */
     @Async
-    void sendMailWithEmailChangeToken(
+    Boolean sendMailWithEmailChangeToken(
             @NotBlank @Email final String email,
             @NotBlank final String token
     );

@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
+import javax.mail.MessagingException;
 import java.time.Instant;
 
 @RestControllerAdvice
@@ -35,4 +36,9 @@ public class GlobalControllerExceptionHandler {
         return new ResponseEntity<>(errorDetails, HttpStatus.NOT_FOUND);
     }
     
+    @ExceptionHandler(MessagingException.class)
+    public ResponseEntity<?> emailExceptions(MessagingException ex, HttpRequest request) {
+        AppError errorDetails = new AppError(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), Instant.now());
+        return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
+    }
 }
