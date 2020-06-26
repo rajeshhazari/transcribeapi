@@ -1,12 +1,16 @@
 package com.rajesh.transcribe.transribeapi.api.controller.exceptions;
 
 import com.rajesh.transcribe.transribeapi.api.models.AppError;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import javax.mail.MessagingException;
@@ -39,6 +43,16 @@ public class GlobalControllerExceptionHandler {
     @ExceptionHandler(MessagingException.class)
     public ResponseEntity<?> emailExceptions(MessagingException ex, HttpRequest request) {
         AppError errorDetails = new AppError(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), Instant.now());
+        return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
+    }
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    protected ResponseEntity<Object> handleMethodArgumentNotValid
+            (
+                    MethodArgumentNotValidException ex,
+                    HttpHeaders headers, HttpStatus status, WebRequest request)     {
+        AppError errorDetails = new AppError(HttpStatus.BAD_REQUEST.value(),
+                ex.getMessage(), Instant.now());
+    
         return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
     }
 }

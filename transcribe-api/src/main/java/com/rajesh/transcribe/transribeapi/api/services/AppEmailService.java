@@ -3,7 +3,9 @@ package com.rajesh.transcribe.transribeapi.api.services;
 import com.c3transcribe.core.utils.EncryptUtils;
 import com.rajesh.transcribe.transribeapi.api.domian.RegisteredUserVerifyLogDetials;
 import com.rajesh.transcribe.transribeapi.api.repository.RegisteredUsersRepo;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
+import org.jose4j.lang.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.mail.MailSendException;
@@ -12,6 +14,7 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
@@ -54,11 +57,10 @@ public class AppEmailService implements  AppMailService{
 		//TODO: get the app server info
 		logger.info("Called with e-mail {}", userReq.getEmail());
 		Boolean status = Boolean.FALSE;
-		String confEmailUrl = "https://devappserver:8585/api/v1/public/";
 		String decodedEmail =
 				new String(Base64.getUrlDecoder().decode(userReq.getEmail()), StandardCharsets.UTF_8);
 		String randomNum = EncryptUtils.randomToken();
-		confEmailUrl = confEmailUrl+decodedEmail+"/"+randomNum+"/";
+		String confEmailUrl = new StringBuilder().append("https://devappserver:8585/").append(decodedEmail).append("/").append(randomNum).append("/").toString();
 		//generate a random number
 		userReq.setConfEmailUrl(confEmailUrl);
 		userReq.setCode(Integer.parseInt(randomNum));
