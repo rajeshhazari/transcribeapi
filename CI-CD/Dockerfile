@@ -19,7 +19,7 @@ RUN echo $JAVA_HOME  $PATH && \
   
 RUN apt-get update && apt-get upgrade -y && rm -rf /var/cache/apk/* && \
 #find /usr/share/ca-certificates/mozilla/ -name "*.crt" -type f -exec  $JAVA_HOME/bin/keytool -importcert  -cacerts  -storepass changeit -noprompt  -file '{}' -alias '{}' \; && \
-#  $JAVA_HOME/bin/keytool -list -keystore $JAVA_HOME/lib/security/cacerts --storepass changeit
+	#  $JAVA_HOME/bin/keytool -list -keystore $JAVA_HOME/lib/security/cacerts --storepass changeit
 
 ENV APP_HOME /opt
 
@@ -37,14 +37,6 @@ RUN  mkdir -p /opt/apps && \
 
 WORKDIR $APP_HOME/apps/
 
-# An executable jar that will run in this Docker container
-RUN ls -lrth /tmp 
-
-#COPY  . $APP_HOME/apps/
-#COPY  ./BOOT-INF/lib $APP_HOME/lib
-#COPY  ./META-INF $APP_HOME/META-INF
-#COPY  ./BOOT-INF/classes $APP_HOME/
-
 
 # JMX
 #EXPOSE 9010
@@ -52,11 +44,12 @@ RUN ls -lrth /tmp
 # JVM debugging port
 EXPOSE 8585
 
-
+cp /opt/BOOT-INF/classes/sample.jks /opt/BOOT-INF/classes/sample.cert
 # ARG DEPENDENCY=target/dependency
  COPY ./BOOT-INF/lib $APP_HOME/apps/lib
  COPY ./META-INF $APP_HOME/apps/META-INF
  COPY ./BOOT-INF/classes $APP_HOME/apps
+ COPY ./BOOT-INF/classes/sample.jks $APP_HOME/apps/classes/sample.cert
 #ENTRYPOINT ["sh", "-c", "$JAVA_OPTS -Djava.security.egd=file:/dev/urandom -jar app.jar "]
 ENTRYPOINT ["java","-cp","$APP_HOME/apps/lib/*:$APP_HOME/apps/classes  $JAVA_OPTS  -Djava.security.egd=file:/dev/urandom $MAIN_CLASS"]
 
