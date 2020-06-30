@@ -50,7 +50,7 @@ COPY /opt/BOOT-INF/classes/sample.jks /opt/BOOT-INF/classes/sample.cert
  COPY ./BOOT-INF/lib $APP_HOME/apps/lib
  COPY ./META-INF $APP_HOME/apps/META-INF
  COPY ./BOOT-INF/classes $APP_HOME/apps
- COPY ./BOOT-INF/classes/sample.jks $APP_HOME/apps/classes/sample.cert
+ COPY $APP_HOME/apps/classes/sample.jks $APP_HOME/apps/classes/sample.cert
 #ENTRYPOINT ["sh", "-c", "$JAVA_OPTS -Djava.security.egd=file:/dev/urandom -jar app.jar "]
 ENTRYPOINT ["java","-cp","$APP_HOME/apps/lib/*:$APP_HOME/apps/classes  $JAVA_OPTS  -Djava.security.egd=file:/dev/urandom $MAIN_CLASS"]
 
