@@ -51,10 +51,7 @@ pipeline {
         stage('Checkout') {
             steps{
                 println('Branch name::'+params.BRANCH_NAME)
-                //checkout scm
-
-
-
+                checkout scm
                 sh ' chmod +x ${WORKSPACE}/CI-CD/scripts/*.sh  '
             }
         }
