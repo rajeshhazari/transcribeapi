@@ -17,8 +17,8 @@ RUN echo $JAVA_HOME  $PATH && \
    id -a 
   
 RUN apt-get update && apt-get upgrade -y && rm -rf /var/cache/apk/* && \
-	wget htts://bootstrap.pypa.io/get-pip.py && \
-    python get-pip.py
+	apt-get install wget inetutils-tools curl python openssl libffi-dev musl-dev make gcc -y
+
 #find /usr/share/ca-certificates/mozilla/ -name "*.crt" -type f -exec  $JAVA_HOME/bin/keytool -importcert  -cacerts  -storepass changeit -noprompt  -file '{}' -alias '{}' \; && \
 	#  $JAVA_HOME/bin/keytool -list -keystore $JAVA_HOME/lib/security/cacerts --storepass changeit
 
