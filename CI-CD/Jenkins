@@ -50,22 +50,38 @@ pipeline {
         }
         stage('Checkout') {
             steps{
-                checkout scm ${BRANCH_NAME}
-                //git branch: ${BRANCH_NAME}, credentialsId:
-                sh " chmod +x ${WORKSPACE}/CI-CD/scripts/*.sh"
+                println('Branch name::'+params.BRANCH_NAME)
+                //checkout scm
+
+
+
+                sh ' chmod +x ${WORKSPACE}/CI-CD/scripts/*.sh  '
             }
         }
         stage('Build') {
             steps {
                 script {
                     last_started = env.STAGE_NAME
-                    echo "Running ${env.BUILD_ID} on ${env.JENKINS_URL}"
+
+
                     sh '''
                         id -a 
-                           mvn  -U -DskipTests clean install 
-                           mkdir -p target/dependency && (cd target/dependency; jar -xf ../*.jar)
-                           docker build -t transribeapp/transcribeapi-${env.APP_NAME}-${env.BUILD_ID} . 
-                           #&& docker run -p 8585:8585 transribeapp/transcribeapi-${env.APP_NAME}-${env.BUILD_ID} 
+                        
+                        echo "Running ${BUILD_ID} on ${JENKINS_URL}"
+                        version=$(mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.version -q -DforceStdout --batch-mode -U -e -Dsurefire.useFile=false) 
+                        artifactId=$(mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.artifactId -q -DforceStdout --batch-mode -U -e -Dsurefire.useFile=false)
+                        groupId=$(mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.groupId -q -DforceStdout --batch-mode -U -e -Dsurefire.useFile=false)
+                        
+                        echo $version  $groupId $artifactId
+                        
+                        mvn  -U -DskipTests clean package 
+                        ls -lrth 
+                        pwd 
+                        mkdir -p ${WORKSPACE}/transcribe-api/target/dependency && (cd ${WORKSPACE}/transcribe-api/target/dependency; jar -xf ../*.jar)
+                           imageId=$(docker build  -q -t transcribeapp:$artifactId-$version -e DEPENDENCY=target/dependency  -e ARTIFACT_NAME=$artifactId-$version.jar -e BUILD_WORKSPACE=${WORKSPACE} -e MAIN_CLASS=com.rajesh.transcribe.transribeapi.TranscribeapiApplication -e JAVA_OPTS=$JAVA_OPTS ${WORKSPACE}/CI-CD/ )
+                           
+                            echo $imageId
+                           
                         '''
                 }
             }
@@ -80,14 +96,18 @@ pipeline {
                 }
             }
         }
-        stage('Deploy to prod') {
+        stage('Deploy-to-qa') {
             when {
-                environment name: 'DEPLOY_TO', value: 'production'
+                environment name: 'DEPLOY_TO', value: 'qa'
             }
             steps {
                 script{
                     last_started = env.STAGE_NAME
-                    println("Deploying to prod")
+                    println("Deploying to "+environment)
+                    //TODO ssh to prod server
+                    JAVA_OPTS='-Dspring.profiles.active=qa -Dlogging.level.org.springframework=WARN   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
+                    sh '  docker run -d  --restart -t -p 8585:8585 transcribeapp:$artifactId-$version  --label production_status=testing --label env=qa -e JAVA_OPTS $JAVA_OPTS '
+
                 }
             }
         }
@@ -102,8 +122,10 @@ pipeline {
                 script{
                     last_started = env.STAGE_NAME
                     def workspacePath=pwd();
+                    JAVA_OPTS='-Dspring.profiles.active=dev -Dlogging.level.org.springframework=DEBUG   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
                     println("workspace path :: "+workspacePath +" workspace:: +${WORKSPACE}");
-                    sh './CI-CD/scripts/start.sh'
+                    sh ' # ./CI-CD/scripts/start.sh'
+                    sh '  docker run -d --restart -t -p 8585:8585 transcribeapp:$artifactId-$version  --label production_status=development --label env=dev -e JAVA_OPTS $JAVA_OPTS '
                     readAppInfoFromJson();
 
                 }
@@ -124,6 +146,10 @@ pipeline {
                 script{
                     last_started = env.STAGE_NAME
                     println("Deploying to "+environment)
+                    //TODO ssh to prod server
+                    JAVA_OPTS='-Dspring.profiles.active=prod -Dlogging.level.org.springframework=WARN   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
+                    sh '  docker run -d --restart -t -p 8585:8585 transcribeapp:$artifactId-$version  --label production_status=beta-testing --label env=prod -e JAVA_OPTS $JAVA_OPTS '
+
                 }
             }
         }
@@ -139,9 +165,5 @@ pipeline {
             println(" build failed ${last_started}")
         }
     }
-
-
-
-
 
 }

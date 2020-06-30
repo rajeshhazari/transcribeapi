@@ -9,5 +9,4 @@ import java.util.List;
 public interface RegisteredUsersRepo extends CrudRepository<RegisteredUserVerifyLogDetials, Integer> {
 	
 	List<RegisteredUserVerifyLogDetials> findByEmailAndCode(@Param("email") String email, @Param("code") Integer code);
-	List<RegisteredUserVerifyLogDetials> findByEmail(@Param("email") String email);
 }
