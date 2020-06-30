@@ -24,7 +24,8 @@ pipeline {
     parameters {
         string(name: 'BRANCH_NAME', defaultValue: 'branch1', description: 'Branch Name')
         string(name: 'environment', defaultValue: 'dev', description: 'Environment profile for sping app')
-        choice(name: 'DEPLOY_TO', choices: ['dev', 'qa', 'prod'], description: 'select and environement for deploying.')
+        booleanParam(name: 'DEPLOY_TO',  description: 'Please select to deploy.')
+        choice(name: 'DEPLOY_TO_ENV', choices: ['dev', 'qa', 'prod'], description: 'select and environement for deploying.')
     }
 
     stages {
@@ -43,7 +44,8 @@ pipeline {
                             
                             #mvn install:install-file -Dfile=/home/devuser/.m2/repository/edu/cmu/sphinx/sphinx4-core/5prealpha-SNAPSHOT/sphinx4-core-5prealpha-SNAPSHOT.jar -DartifactId=sphinx4-core -DgroupId=edu.cmu.sphinx -Dversion=5prealpha-SNAPSHOT -Dpackaging=jar
                             #mvn install:install-file -Dfile=/home/devuser/.m2/repository/edu/cmu/sphinx/sphinx4-data/5prealpha-SNAPSHOT/sphinx4-data-5prealpha-SNAPSHOT.jar -DartifactId=sphinx4-data -DgroupId=edu.cmu.sphinx -Dversion=5prealpha-SNAPSHOT -Dpackaging=jar
-                            
+                            version=$(mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.version -q -DforceStdout --batch-mode -U -e -Dsurefire.useFile=false) 
+                            artifactId=$(mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.artifactId -q -DforceStdout --batch-mode -U -e -Dsurefire.useFile=false)
                             
                            '''
                 }
@@ -99,7 +101,9 @@ pipeline {
         }
         stage('Deploy-to-qa') {
             when {
-                environment name: 'DEPLOY_TO', value: 'qa'
+                environment ignoreCase: true, name: 'DEPLOY_TO_ENV', value: 'qa'
+                environment  name: 'DEPLOY_TO', value: 'true'
+
             }
             steps {
                 script{
@@ -107,7 +111,7 @@ pipeline {
                     println("Deploying to "+environment)
                     //TODO ssh to prod server
                     JAVA_OPTS='-Dspring.profiles.active=qa -Dlogging.level.org.springframework=WARN   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
-                    sh '  docker run -d --restart -t -p 8585:8585 transcribeapp/$artifactId:$version  -e  ARTIFACT_NAME=$artifactId-$version.jar  -e  MAIN_CLASS="com.rajesh.transcribe.transribeapi.TranscribeapiApplication"  --label production_status=qa-testing --label env=qa -e JAVA_OPTS $JAVA_OPTS '
+                    sh '  docker run -d --restart -t -p 8585:8585 transcribeapp/${artifactId}:${version}  -e  ARTIFACT_NAME=$artifactId-$version.jar  -e  MAIN_CLASS="com.rajesh.transcribe.transribeapi.TranscribeapiApplication"  --label production_status=qa-testing --label env=qa -e JAVA_OPTS $JAVA_OPTS '
 
                 }
             }
@@ -115,7 +119,8 @@ pipeline {
         stage('Deploy-devappserver'){
             when{
 
-                environment name: 'DEPLOY_TO', value: 'dev'
+                environment ignoreCase: true, name: 'DEPLOY_TO', value: 'dev'
+                environment  name: 'DEPLOY_TO', value: 'true'
                 //currentBuild.result == null || currentBuild.result == 'SUCCESS'
             }
             steps{
@@ -125,7 +130,7 @@ pipeline {
                     JAVA_OPTS='-Dspring.profiles.active=dev -Dlogging.level.org.springframework=DEBUG   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
                     println("workspace path :: "+workspacePath +" workspace:: +${WORKSPACE}");
                     sh ' # ./CI-CD/scripts/start.sh'
-                    sh '  docker run -d --restart -t -p 8585:8585 transcribeapp/$artifactId:$version --label production_status=development --label env=dev -e JAVA_OPTS $JAVA_OPTS  -e  ARTIFACT_NAME=$artifactId-$version.jar  -e  MAIN_CLASS="com.rajesh.transcribe.transribeapi.TranscribeapiApplication"  '
+                    sh '  docker run -d --restart -t -p 8585:8585 transcribeapp/${artifactId}:${version} --label production_status=development --label env=dev -e JAVA_OPTS $JAVA_OPTS  -e  ARTIFACT_NAME=$artifactId-$version.jar  -e  MAIN_CLASS="com.rajesh.transcribe.transribeapi.TranscribeapiApplication"  '
                     readAppInfoFromJson();
 
                 }
@@ -138,7 +143,8 @@ pipeline {
         stage('Deploy-prod') {
             when {
 
-                environment name: 'DEPLOY_TO', value: 'production'
+                environment ignoreCase: true, name: 'DEPLOY_TO', value: 'prod'
+                environment  name: 'DEPLOY_TO', value: 'true'
                 //currentBuild.result == null || currentBuild.result == 'SUCCESS'
 
             }
@@ -148,7 +154,7 @@ pipeline {
                     println("Deploying to "+environment)
                     //TODO ssh to prod server
                     JAVA_OPTS='-Dspring.profiles.active=prod -Dlogging.level.org.springframework=WARN   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
-                    sh '  docker run -d --restart -t -p 8585:8585 transcribeapp/$artifactId:$version  --label production_status=beta-testing --label env=prod -e JAVA_OPTS=$JAVA_OPTS  -e  ARTIFACT_NAME=$artifactId-$version.jar  -e  MAIN_CLASS="com.rajesh.transcribe.transribeapi.TranscribeapiApplication"  '
+                    sh '  docker run -d --restart -t -p 8585:8585 transcribeapp/${artifactId}:${version}  --label production_status=beta-testing --label env=prod -e JAVA_OPTS=$JAVA_OPTS  -e  ARTIFACT_NAME=$artifactId-$version.jar  -e  MAIN_CLASS="com.rajesh.transcribe.transribeapi.TranscribeapiApplication"  '
 
                 }
             }
