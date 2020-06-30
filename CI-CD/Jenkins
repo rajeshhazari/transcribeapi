@@ -77,11 +77,12 @@ pipeline {
                         mvn  -U -DskipTests clean package 
                         ls -lrth 
                         pwd 
-                            mkdir -p ${WORKSPACE}/transcribe-api/target/dependency && (cd ${WORKSPACE}/transcribe-api/target/dependency; jar -xf ../*.jar)
-                            cp ${WORKSPACE}/CI-CD/Dockerfile ${WORKSPACE}/transcribe-api/target/dependency/ 
-                            imageId=$(docker build  -q -t transcribeapp-$artifactId-$version -e DEPENDENCY=target/dependency  -e ARTIFACT_NAME=$artifactId-$version.jar -e BUILD_WORKSPACE=${WORKSPACE} -e MAIN_CLASS=com.rajesh.transcribe.transribeapi.TranscribeapiApplication -e JAVA_OPTS=$JAVA_OPTS ${WORKSPACE}/CI-CD/ )
-                            echo $imageId
-                            docker image $imageId  
+                        mkdir -p ${WORKSPACE}/transcribe-api/target/dependency && (cd ${WORKSPACE}/transcribe-api/target/dependency; jar -xf ../*.jar)
+                        cp ${WORKSPACE}/CI-CD/Dockerfile ${WORKSPACE}/transcribe-api/target/dependency/
+                        cd ${WORKSPACE}/transcribe-api/target/dependency/
+                        imageId=$(docker build  -q -t transcribeapp/$artifactId:$version --build-arg DEPENDENCY=target/dependency  --build-arg ARTIFACT_NAME=$artifactId-$version.jar --build-arg BUILD_WORKSPACE="${WORKSPACE}" --build-arg MAIN_CLASS="com.rajesh.transcribe.transribeapi.TranscribeapiApplication" . )
+                        echo $imageId
+                        docker image $imageId  
                            
                         '''
                 }
@@ -107,7 +108,7 @@ pipeline {
                     println("Deploying to "+environment)
                     //TODO ssh to prod server
                     JAVA_OPTS='-Dspring.profiles.active=qa -Dlogging.level.org.springframework=WARN   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
-                    sh '  docker run -d  --restart -p 8585:8585 -t transcribeapp-$artifactId-$version  --label production_status=testing --label env=qa -e JAVA_OPTS $JAVA_OPTS '
+                    sh '  docker run -d --restart -t -p 8585:8585 transcribeapp/$artifactId:$version  -e  ARTIFACT_NAME=$artifactId-$version.jar  -e  MAIN_CLASS="com.rajesh.transcribe.transribeapi.TranscribeapiApplication"  --label production_status=qa-testing --label env=qa -e JAVA_OPTS $JAVA_OPTS '
 
                 }
             }
@@ -126,7 +127,7 @@ pipeline {
                     JAVA_OPTS='-Dspring.profiles.active=dev -Dlogging.level.org.springframework=DEBUG   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
                     println("workspace path :: "+workspacePath +" workspace:: +${WORKSPACE}");
                     sh ' # ./CI-CD/scripts/start.sh'
-                    sh '  docker run -d --restart -t -p 8585:8585 transcribeapp-$artifactId-$version  --label production_status=development --label env=dev -e JAVA_OPTS $JAVA_OPTS '
+                    sh '  docker run -d --restart -t -p 8585:8585 transcribeapp/$artifactId:$version --label production_status=development --label env=dev -e JAVA_OPTS $JAVA_OPTS  -e  ARTIFACT_NAME=$artifactId-$version.jar  -e  MAIN_CLASS="com.rajesh.transcribe.transribeapi.TranscribeapiApplication"  '
                     readAppInfoFromJson();
 
                 }
@@ -149,7 +150,7 @@ pipeline {
                     println("Deploying to "+environment)
                     //TODO ssh to prod server
                     JAVA_OPTS='-Dspring.profiles.active=prod -Dlogging.level.org.springframework=WARN   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
-                    sh '  docker run -d --restart -t -p 8585:8585 transcribeapp-$artifactId-$version  --label production_status=beta-testing --label env=prod -e JAVA_OPTS $JAVA_OPTS '
+                    sh '  docker run -d --restart -t -p 8585:8585 transcribeapp/$artifactId:$version  --label production_status=beta-testing --label env=prod -e JAVA_OPTS=$JAVA_OPTS  -e  ARTIFACT_NAME=$artifactId-$version.jar  -e  MAIN_CLASS="com.rajesh.transcribe.transribeapi.TranscribeapiApplication"  '
 
                 }
             }

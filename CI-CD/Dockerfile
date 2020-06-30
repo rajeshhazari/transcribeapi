@@ -5,8 +5,7 @@ FROM openjdk:11-jdk-slim as runtime
 #ARG SSH_KEY
 #RUN echo "$SSH_KEY" > /root/.ssh/id_rsa
 ARG JAVA_OPTS
-ARG BUILD_WORKSPACE
-ARG MAIN_CLASS=com.rajesh.transcribe.transribeapi.TranscribeapiApplication
+ARG MAIN_CLASS
 ARG DEPENDENCY=target/dependency
 
  
@@ -18,6 +17,8 @@ RUN echo $JAVA_HOME  $PATH && \
    id -a 
   
 RUN apt-get update && apt-get upgrade -y && rm -rf /var/cache/apk/* && \
+	wget htts://bootstrap.pypa.io/get-pip.py && \
+    python get-pip.py
 #find /usr/share/ca-certificates/mozilla/ -name "*.crt" -type f -exec  $JAVA_HOME/bin/keytool -importcert  -cacerts  -storepass changeit -noprompt  -file '{}' -alias '{}' \; && \
 	#  $JAVA_HOME/bin/keytool -list -keystore $JAVA_HOME/lib/security/cacerts --storepass changeit
 
@@ -44,7 +45,7 @@ WORKDIR $APP_HOME/apps/
 # JVM debugging port
 EXPOSE 8585
 
-cp /opt/BOOT-INF/classes/sample.jks /opt/BOOT-INF/classes/sample.cert
+COPY /opt/BOOT-INF/classes/sample.jks /opt/BOOT-INF/classes/sample.cert
 # ARG DEPENDENCY=target/dependency
  COPY ./BOOT-INF/lib $APP_HOME/apps/lib
  COPY ./META-INF $APP_HOME/apps/META-INF
