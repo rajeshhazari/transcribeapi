@@ -24,7 +24,7 @@ pipeline {
     parameters {
         string(name: 'BRANCH_NAME', defaultValue: 'branch1', description: 'Branch Name')
         string(name: 'environment', defaultValue: 'dev', description: 'Environment profile for sping app')
-        booleanParam(name: 'DEPLOY_TO',  description: 'Please select to deploy.')
+        booleanParam(name: 'DEPLOY',  description: 'Please select to deploy.')
         choice(name: 'DEPLOY_TO_ENV', choices: ['dev', 'qa', 'prod'], description: 'select and environement for deploying.')
     }
 
@@ -102,7 +102,7 @@ pipeline {
         stage('Deploy-to-qa') {
             when {
                 environment ignoreCase: true, name: 'DEPLOY_TO_ENV', value: 'qa'
-                environment  name: 'DEPLOY_TO', value: 'true'
+                environment  name: 'DEPLOY', value: 'true'
 
             }
             steps {
@@ -119,8 +119,8 @@ pipeline {
         stage('Deploy-devappserver'){
             when{
 
-                environment ignoreCase: true, name: 'DEPLOY_TO', value: 'dev'
-                environment  name: 'DEPLOY_TO', value: 'true'
+                environment ignoreCase: true, name: 'DEPLOY_TO_ENV', value: 'dev'
+                environment  name: 'DEPLOY', value: 'true'
                 //currentBuild.result == null || currentBuild.result == 'SUCCESS'
             }
             steps{
@@ -143,8 +143,8 @@ pipeline {
         stage('Deploy-prod') {
             when {
 
-                environment ignoreCase: true, name: 'DEPLOY_TO', value: 'prod'
-                environment  name: 'DEPLOY_TO', value: 'true'
+                environment ignoreCase: true, name: 'DEPLOY_TO_ENV', value: 'prod'
+                environment  name: 'DEPLOY', value: 'true'
                 //currentBuild.result == null || currentBuild.result == 'SUCCESS'
 
             }
