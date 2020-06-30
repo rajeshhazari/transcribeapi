@@ -101,8 +101,10 @@ pipeline {
         }
         stage('Deploy-to-qa') {
             when {
-                environment ignoreCase: true, name: 'DEPLOY_TO_ENV', value: 'qa'
-                environment  name: 'DEPLOY', value: 'true'
+                allOf {
+                    environment ignoreCase: true, name: 'DEPLOY_TO_ENV', value: 'qa'
+                    environment  name: 'DEPLOY', value: 'true'
+                }
 
             }
             steps {
@@ -118,10 +120,11 @@ pipeline {
         }
         stage('Deploy-devappserver'){
             when{
-
-                environment ignoreCase: true, name: 'DEPLOY_TO_ENV', value: 'dev'
-                environment  name: 'DEPLOY', value: 'true'
-                //currentBuild.result == null || currentBuild.result == 'SUCCESS'
+                allOf {
+                    environment ignoreCase: true, name: 'DEPLOY_TO_ENV', value: 'dev'
+                    environment name: 'DEPLOY', value: 'true'
+                    //currentBuild.result == null || currentBuild.result == 'SUCCESS'
+                }
             }
             steps{
                 script{
@@ -135,17 +138,15 @@ pipeline {
 
                 }
 
-
-
-
             }
         }
         stage('Deploy-prod') {
             when {
-
-                environment ignoreCase: true, name: 'DEPLOY_TO_ENV', value: 'prod'
-                environment  name: 'DEPLOY', value: 'true'
-                //currentBuild.result == null || currentBuild.result == 'SUCCESS'
+                allOf {
+                    environment ignoreCase: true, name: 'DEPLOY_TO_ENV', value: 'prod'
+                    environment name: 'DEPLOY', value: 'true'
+                    //currentBuild.result == null || currentBuild.result == 'SUCCESS'
+                }
 
             }
             steps {
