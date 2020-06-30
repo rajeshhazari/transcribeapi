@@ -82,7 +82,7 @@ pipeline {
                         cd ${WORKSPACE}/transcribe-api/target/dependency/
                         imageId=$(docker build  -q -t transcribeapp/$artifactId:$version --build-arg DEPENDENCY=target/dependency  --build-arg ARTIFACT_NAME=$artifactId-$version.jar --build-arg BUILD_WORKSPACE="${WORKSPACE}" --build-arg MAIN_CLASS="com.rajesh.transcribe.transribeapi.TranscribeapiApplication" . )
                         echo $imageId
-                        docker image $imageId  
+                        docker images   
                            
                         '''
                 }
