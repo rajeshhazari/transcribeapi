@@ -45,7 +45,6 @@ WORKDIR $APP_HOME/apps/
 # JVM debugging port
 EXPOSE 8585
 
-COPY /opt/BOOT-INF/classes/sample.jks /opt/BOOT-INF/classes/sample.cert
 # ARG DEPENDENCY=target/dependency
  COPY ./BOOT-INF/lib $APP_HOME/apps/lib
  COPY ./META-INF $APP_HOME/apps/META-INF

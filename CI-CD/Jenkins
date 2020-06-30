@@ -32,6 +32,7 @@ pipeline {
             steps{
                 script {
                     last_started = env.STAGE_NAME
+                    cleanWS()
                     println("idString:: " + idstring + " id:: " + id)
                     sh '''
                 
@@ -51,7 +52,9 @@ pipeline {
         stage('Checkout') {
             steps{
                 println('Branch name::'+params.BRANCH_NAME)
-                checkout scm
+                //checkout scm
+                checkout([$class: 'GitSCM', branches: [[name: '${BRANCH_NAME}'], [name: '*/branch1']], doGenerateSubmoduleConfigurations: false,
+                          extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'RH-Transcribe-app-github-creds', url: 'https://github.com/rajeshhazari/transcribeapi.git']]])
                 sh ' chmod +x ${WORKSPACE}/CI-CD/scripts/*.sh  '
             }
         }
@@ -90,7 +93,6 @@ pipeline {
                 script {
                     last_started = env.STAGE_NAME
                     echo 'Testing..'
-
                     //sh 'mvn -B test package'
                 }
             }
@@ -115,7 +117,6 @@ pipeline {
 
                 environment name: 'DEPLOY_TO', value: 'dev'
                 //currentBuild.result == null || currentBuild.result == 'SUCCESS'
-
             }
             steps{
                 script{
