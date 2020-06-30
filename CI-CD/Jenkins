@@ -32,7 +32,7 @@ pipeline {
             steps{
                 script {
                     last_started = env.STAGE_NAME
-                    cleanWS()
+                    cleanWs()
                     println("idString:: " + idstring + " id:: " + id)
                     sh '''
                 

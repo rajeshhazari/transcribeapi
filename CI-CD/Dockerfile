@@ -49,7 +49,8 @@ EXPOSE 8585
  COPY ./BOOT-INF/lib $APP_HOME/apps/lib
  COPY ./META-INF $APP_HOME/apps/META-INF
  COPY ./BOOT-INF/classes $APP_HOME/apps
- RUN cp $APP_HOME/apps/classes/sample.jks $APP_HOME/apps/classes/sample.cert
+ RUN ls -lrth $APP_HOME/apps/
+ #RUN cp $APP_HOME/apps/classes/sample.jks $APP_HOME/apps/classes/sample.cert
 #ENTRYPOINT ["sh", "-c", "$JAVA_OPTS -Djava.security.egd=file:/dev/urandom -jar app.jar "]
 ENTRYPOINT ["java","-cp","$APP_HOME/apps/lib/*:$APP_HOME/apps/classes  $JAVA_OPTS  -Djava.security.egd=file:/dev/urandom $MAIN_CLASS"]
 
