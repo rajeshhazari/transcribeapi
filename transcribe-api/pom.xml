@@ -74,6 +74,24 @@
                 <configuration>
                     <mainClass>com.rajesh.transcribe.transribeapi.TranscribeapiApplication</mainClass>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>build-info</id>
+                        <goals>
+                            <goal>build-info</goal>
+                        </goals>
+                        <configuration>
+                            <additionalProperties>
+                                <encoding.source>UTF-8</encoding.source>
+                                <encoding.reporting>UTF-8</encoding.reporting>
+                                <java.source>${maven.compiler.source}</java.source>
+                                <java.target>${maven.compiler.target}</java.target>
+                                <solr.version>${solr.version}</solr.version>
+                                <app.mainClass>com.rajesh.transcribe.transribeapi.TranscribeapiApplication</app.mainClass>
+                            </additionalProperties>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

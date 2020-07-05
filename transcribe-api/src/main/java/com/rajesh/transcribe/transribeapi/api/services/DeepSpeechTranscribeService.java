@@ -2,6 +2,8 @@ package com.rajesh.transcribe.transribeapi.api.services;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.web.client.RestTemplate;
 
 import java.net.http.HttpClient;
 
@@ -9,7 +11,12 @@ import java.net.http.HttpClient;
 public class DeepSpeechTranscribeService {
     
     private Logger logger = LoggerFactory.getLogger(DeepSpeechTranscribeService.class);
-    
+
+    private final RestTemplate restTemplate;
+    public DeepSpeechTranscribeService(RestTemplateBuilder restTemplateBuilder) {
+        this.restTemplate = restTemplateBuilder.build();
+        }
+
     /**
      *
      * @param url

@@ -1,6 +1,7 @@
 package com.rajesh.transcribe.transribeapi.api.services;
 
 
+import com.rajesh.transcribe.transribeapi.api.domian.RegisteredUserVerifyLogDetials;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.validation.annotation.Validated;
 
@@ -10,7 +11,6 @@ import javax.validation.constraints.NotBlank;
 /**
  * E-mail sending service.
  */
-@Validated
 public interface AppMailService {
     
     
@@ -20,19 +20,22 @@ public interface AppMailService {
      * @param token E-mail change token
      * @return
      */
-    @Async
     Boolean sendMailWithEmailChangeToken(
             @NotBlank @Email final String email,
             @NotBlank final String token
     );
-    
+
+    Boolean sendMailWithEmailChangeToken(RegisteredUserVerifyLogDetials regUser,
+                                         @NotBlank @Email String email,
+                                         @NotBlank String token
+    );
+
     /**
      * This method sends an e-mail with a new password.
      *
      * @param email E-mail address of the recipient
      * @param newPassword A new password
      */
-    @Async
     void sendMailWithNewPassword(
             @NotBlank @Email final String email,
             @NotBlank final String newPassword
@@ -44,7 +47,6 @@ public interface AppMailService {
      * @param email E-mail address of the recipient
      * @param username The user's name
      */
-    @Async
     void sendMailWithUsername(
             @NotBlank @Email final String email,
             @NotBlank final String username

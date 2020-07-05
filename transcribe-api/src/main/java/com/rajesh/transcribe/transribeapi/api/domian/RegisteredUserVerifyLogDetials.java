@@ -11,7 +11,7 @@ import java.util.Date;
 @Data
 @AllArgsConstructor
 @Table("USERREGVERIFYLOGDETAILS")
-public class RegisteredUserVerifyLogDetials implements java.io.Serializable {
+public class RegisteredUserVerifyLogDetials {
     
     @Id
     @Column("id")
@@ -19,6 +19,7 @@ public class RegisteredUserVerifyLogDetials implements java.io.Serializable {
     @NonNull
     public String username;
     @NonNull
+    @Column("email")
     public String email;
     private Integer code;
     public String confEmailToken;

@@ -1,23 +1,37 @@
 package com.rajesh.transcribe.transribeapi.api.controller;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.*;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.codec.digest.MessageDigestAlgorithms;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.security.Key;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.apache.commons.codec.digest.MessageDigestAlgorithms.*;
 
 @Api(
         value = "EncryptionDecryptionController",
@@ -25,13 +39,18 @@ import java.util.Map;
 @RestController
 public class EncryptDecryptController {
     
-    private static final String ALGO = "AES"; // Default uses ECB PKCS5Padding
-    
     private final Logger logger = LoggerFactory.getLogger(EncryptDecryptController.class);
+    private static final String ALGO = "AES"; // Default uses ECB PKCS5Padding
+    private static MessageDigestAlgorithms messageDigestAlgorithms;
+    @Value("${app.io.uploadDir}")
+    private String uploadDir;
     
+    private SecureRandom secureRandom;
     private BCryptPasswordEncoder bCryptPasswordEncoder;
-    public EncryptDecryptController(BCryptPasswordEncoder bCryptPasswordEncoder){
+    public EncryptDecryptController(BCryptPasswordEncoder bCryptPasswordEncoder,
+                                    SecureRandom secureRandom){
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
+        this.secureRandom = secureRandom;
     }
     
     @ApiOperation(value = "Encrypt given string api service", response = Map.class, httpMethod = "POST")
@@ -128,5 +147,112 @@ public class EncryptDecryptController {
         
         return key;
         
+    }
+    
+    /**
+     *
+     * @param msg
+     * @param algorithm
+     * @return
+     */
+    public static byte[] encodeUsingGivenAlg(Charset charset,String msg, String algorithm) throws NoSuchAlgorithmException {
+        final Charset defaultCharset = StandardCharsets.UTF_8;
+        final String defaultAlgorithm = "MD5";
+        byte [] digest = new DigestUtils(MessageDigestAlgorithms.SHA_224).digest(msg);
+        
+        if(null == charset){
+            charset = defaultCharset;
+        }
+        if(StringUtils.hasText(algorithm)){
+            algorithm = defaultAlgorithm;
+        }
+        byte[] bytesOfMessage = msg.getBytes(charset);
+        
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        byte[] thedigest = md.digest(bytesOfMessage);
+        return thedigest;
+    }
+    
+    /**
+     *
+     * @param data
+     * @param messageDigestAlgorithms
+     * @param req
+     * @param res
+     * @return
+     */
+    @ApiOperation(value = "Encrypt given string using MessageDigestAlgorithms algorithm ", response = Map.class, httpMethod = "POST")
+    @ApiResponses(
+            value = {
+                    @ApiResponse(code = 200, message = "Successfully Encrypted."),
+                    @ApiResponse(code = 401, message = "You are not authorized to encrypt."),
+                    @ApiResponse(
+                            code = 403,
+                            message = "Accessing the resource you were trying to reach is forbidden"),
+                    @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
+            })
+    @RequestMapping(value = "/encode/", method = RequestMethod.POST, produces = "application/json")
+    public static ResponseEntity<?> encodeDataUsingGivenAlg(@RequestParam @ApiParam(name="data", allowableValues = "" , defaultValue = "" , example = "test") String data,
+                                                            @RequestParam @ApiParam (name = "messageDigestAlgorithms" , defaultValue = MessageDigestAlgorithms.MD5 ) String messageDigestAlgorithms,
+                                                         HttpServletRequest req, HttpServletResponse res){
+        String defaultAlgorithm = MessageDigestAlgorithms.MD5;
+        if(CollectionUtils.contains(Arrays.asList(MessageDigestAlgorithms.values()).iterator(),messageDigestAlgorithms)){
+            defaultAlgorithm = messageDigestAlgorithms;
+        }else {
+            defaultAlgorithm = MD5;
+        }
+        final String hdigest = new DigestUtils(defaultAlgorithm).digestAsHex(data);
+            return new ResponseEntity(hdigest, HttpStatus.OK);
+    }
+    
+    
+    /**
+     *
+     * @param data
+     * @param messageDigestAlgorithms
+     * @param req
+     * @param res
+     * @return
+     */
+    @ApiOperation(value = "Encrypt given file using MessageDigestAlgorithms algorithm ", response = Map.class, httpMethod = "POST")
+    @ApiResponses(
+            value = {
+                    @ApiResponse(code = 200, message = "Successfully Encrypted."),
+                    @ApiResponse(code = 401, message = "You are not authorized to encrypt."),
+                    @ApiResponse(
+                            code = 403,
+                            message = "Accessing the resource you were trying to reach is forbidden"),
+                    @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
+            })
+    @RequestMapping(value = "/encode/", method = RequestMethod.POST, produces = "application/json")
+    public static ResponseEntity<?> encodeFileUsingGivenAlg(@RequestParam @ApiParam String data, @RequestParam @ApiParam  String messageDigestAlgorithms,
+                                                           HttpServletRequest req, HttpServletResponse res){
+    
+        String defaultAlgorithm = MessageDigestAlgorithms.MD5;
+        if(CollectionUtils.contains(Arrays.asList(MessageDigestAlgorithms.values()).iterator(),messageDigestAlgorithms)){
+            defaultAlgorithm = messageDigestAlgorithms;
+        }else {
+            defaultAlgorithm = MD5;
+        }
+        final String hdigest = new DigestUtils(defaultAlgorithm).digestAsHex(data);
+        return new ResponseEntity(hdigest, HttpStatus.OK);
+    }
+    
+    
+    
+    public String random(int size, String algorith) {
+        
+        StringBuilder generatedToken = new StringBuilder();
+        String defaultAlg = "SHA1PRNG";
+        if(StringUtils.hasText(algorith)){
+            defaultAlg = algorith;
+        }
+        try {
+            String number = SecureRandom.getInstance(defaultAlg).generateSeed(size).toString();
+            generatedToken.append(RandomStringUtils.random(size, 0, 0, true, true, null, new SecureRandom()));
+        } catch (NoSuchAlgorithmException e) {
+            logger.error("unable to generate random password ", e.getMessage());
+        }
+        return generatedToken.toString();
     }
 }

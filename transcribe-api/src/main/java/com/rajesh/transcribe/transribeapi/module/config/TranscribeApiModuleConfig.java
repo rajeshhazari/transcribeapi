@@ -1,6 +1,7 @@
 /** */
 package com.rajesh.transcribe.transribeapi.module.config;
 
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.catalina.connector.Connector;
@@ -8,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.actuate.jdbc.DataSourceHealthIndicator;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.h2.H2ConsoleAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -16,6 +18,8 @@ import org.springframework.data.jdbc.repository.config.EnableJdbcRepositories;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcOperations;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
@@ -25,7 +29,7 @@ import java.security.SecureRandom;
 /** @author rajesh */
 @Configuration
 @EnableAutoConfiguration(exclude = { H2ConsoleAutoConfiguration.class})
-@EnableJdbcRepositories("com.rajesh.transcribe.transribeapi.api.repository")
+@EnableJdbcRepositories("com.rajesh.transcribe.transribeapi.api")
 public class TranscribeApiModuleConfig {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(TranscribeApiModuleConfig.class);
@@ -36,6 +40,8 @@ public class TranscribeApiModuleConfig {
 	
 	@Value("${server.servlet.contextPath}")
 	private String context;
+
+	private DataSourceHealthIndicator dataSourceHealthIndicator;
 
   /*@Bean
   @Profile("default")
@@ -63,17 +69,18 @@ public class TranscribeApiModuleConfig {
         .build();
   }*/
 	
-	
-	@Bean
-	NamedParameterJdbcOperations operations() {
-		return new NamedParameterJdbcTemplate(dataSource);
-	}
-	
+
 	@Bean
 	PlatformTransactionManager transactionManager() {
 		return new DataSourceTransactionManager(dataSource);
 	}
-	
+
+	@Bean
+	public  DataSourceHealthIndicator dataSourceHealthIndicator(){
+		return   new DataSourceHealthIndicator(dataSource);
+	}
+
+
 	@Bean(name = "sphinxConfiguration")
 	public edu.cmu.sphinx.api.Configuration getAudioTranscribeConfiguration() {
 		edu.cmu.sphinx.api.Configuration configuration = new edu.cmu.sphinx.api.Configuration();
@@ -145,7 +152,8 @@ public class TranscribeApiModuleConfig {
   	return tomcat;
   }*/
 	
-	private Connector redirectConnector() {
+	@Bean
+	public Connector redirectConnector() {
 		Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
 		connector.setScheme("http");
 		connector.setPort(port);
@@ -154,6 +162,10 @@ public class TranscribeApiModuleConfig {
 		return connector;
 	}
 
+	@Bean
+	public JavaMailSender javaMailSender(){
+		return  new JavaMailSenderImpl();
+	}
   /*
   @Bean
   public SessionRegistry getSessionRegistry() {
@@ -166,6 +178,32 @@ public class TranscribeApiModuleConfig {
   			new ConcurrentSessionControlAuthenticationStrategy(sessionRegistry);
 
   	return controlAuthenticationStrategy;
-  }*/
+  }
+
+@Bean
+       public ApplicationListener<?> loggingListener() {
+
+               return (ApplicationListener<ApplicationEvent>) event -> {
+                       if (event instanceof RelationalEvent) {
+                               System.out.println("Received an event: "  event);
+                       }
+               };
+       }
+
+       /*
+        * @return {@link BeforeSaveCallback} for {@link Category}.
+        /
+       @Bean
+       public BeforeSaveCallback<Category> timeStampingSaveTime() {
+
+               return (entity, aggregateChange) -> {
+
+                       entity.timeStamp();
+
+                       return entity;
+               };
+
+
+  */
 	
 }

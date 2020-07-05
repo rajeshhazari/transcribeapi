@@ -8,10 +8,13 @@ import com.rajesh.transcribe.transribeapi.api.models.dto.RegisterUserDto;
 import com.rajesh.transcribe.transribeapi.api.repository.AppUsersRepository;
 import com.rajesh.transcribe.transribeapi.api.repository.RegisteredUsersRepo;
 import com.rajesh.transcribe.transribeapi.api.repository.exceptions.UserNotFoundException;
+import org.apache.commons.configuration2.DataConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.jdbc.DataSourceHealthIndicator;
 import org.springframework.core.env.Environment;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DuplicateKeyException;
@@ -29,8 +32,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ServerErrorException;
 
+import javax.annotation.PostConstruct;
 import javax.mail.MessagingException;
 import javax.sql.DataSource;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -41,35 +46,38 @@ public class JwtUserDetailsService implements UserDetailsService {
     
     private Logger logger = LoggerFactory.getLogger(JwtUserDetailsService.class);
     
-    @Autowired
     Environment env;
-    @Autowired
     private PasswordEncoder bcryptEncoder;
-    @Autowired
     private AppUsersRepository userRepo;
-    @Autowired
     private RegisteredUsersRepo registeredUsersRepo;
-    @Autowired
-    private AppEmailService appEmailService;
-    
-    @Autowired
-    DataSource dataSource;
+    private AppMailService appEmailServiceImpl;
+    private DataSourceHealthIndicator dataSourceHealthIndicator;
+    private SecureRandom secureRandom;
 
     @Autowired
-    /*public JwtUserDetailsService (PasswordEncoder bcryptEncoder,
+    public JwtUserDetailsService (PasswordEncoder bcryptEncoder,
                                   AppUsersRepository userRepo,
                                   RegisteredUsersRepo registeredUsersRepo,
-                                  AppEmailService appEmailService){
+                                  AppMailService appEmailService,
+                                  DataSourceHealthIndicator dataSourceHealthIndicator,
+                                  SecureRandom secureRandom){
         this.bcryptEncoder = bcryptEncoder;
         this.userRepo = userRepo;
         this.registeredUsersRepo = registeredUsersRepo;
-        this.appEmailService = appEmailService;
-    }*/
+        this.appEmailServiceImpl = appEmailService;
+        this.dataSourceHealthIndicator = dataSourceHealthIndicator;
+        this.secureRandom = secureRandom;
+    }
     
     /*@Autowired
     private SessionRegistry sessionRegistry;*/
-    
-    
+
+    @PostConstruct
+    public void init(){
+     Health dbHealth = dataSourceHealthIndicator.getHealth(true);
+    }
+
+
     /**
      *
      * @param email
@@ -256,7 +264,7 @@ public class JwtUserDetailsService implements UserDetailsService {
         //TODO generate confirm email and send email
         RegisteredUserVerifyLogDetials newUser = new RegisteredUserVerifyLogDetials(users.getUsername(),users.getEmail());
         RegisteredUserVerifyLogDetials registeredUserVerifyLogDetials = registeredUsersRepo.save(newUser);
-        appEmailService.sendVerificationEmail(registeredUserVerifyLogDetials);
+        appEmailServiceImpl.sendMailWithEmailChangeToken( registeredUserVerifyLogDetials.email,null);
        return Objects.nonNull(save(users).getUserid());
     }
     
@@ -266,7 +274,7 @@ public class JwtUserDetailsService implements UserDetailsService {
      * @param code
      * @return
      */
-    public Boolean verifyEmailisVerified(final String emailId, final String code) {
+    public Boolean verifyEmailForUserRegistration(final String emailId, final String code) {
         Boolean result = false;
         List<RegisteredUserVerifyLogDetials> registeredUserVerifyLogDetialsList =  registeredUsersRepo.findByEmailAndCode(emailId, Integer.parseInt(code));
         RegisteredUserVerifyLogDetials registeredUserVerifyLogDetials = registeredUserVerifyLogDetialsList.stream().filter(user -> user.isVerified()).findFirst().get();
@@ -279,7 +287,7 @@ public class JwtUserDetailsService implements UserDetailsService {
     }
     
     
-    /*private List<GrantedAuthority> getUserAuthorities(Set<Roles> roleSet) {
+    /*private List<GrantedAuthority> getUserAuthorities(String email) {
         List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
         for (Roles role : roleSet) {
             grantedAuthorities.add(new SimpleGrantedAuthority(role.getRolename()));

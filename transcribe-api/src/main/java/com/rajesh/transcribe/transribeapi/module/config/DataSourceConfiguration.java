@@ -1,5 +1,6 @@
 package com.rajesh.transcribe.transribeapi.module.config;
 
+import org.springframework.boot.actuate.jdbc.DataSourceHealthIndicator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;

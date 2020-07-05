@@ -15,6 +15,7 @@ import org.springframework.context.annotation.ComponentScan;
 @SpringBootApplication
 @ComponentScan("com.rajesh.transcribe.*")
 public class TranscribeapiApplication extends SpringBootServletInitializer  {
+//implements ApplicationContextInitializer<ContextRefreshedEvent> {
 	
 	private final Logger logger = LoggerFactory.getLogger(TranscribeapiApplication.class);
 	
@@ -26,4 +27,11 @@ public class TranscribeapiApplication extends SpringBootServletInitializer  {
 				.run(args);
 	}
 
+/*
+     @Override
+       public void initialize(final ContextRefreshedEvent contextRefreshedEvent) {
+       logger.info("Application context is create successfully! {}",contextRefreshedEvent.getApplicationContext().getApplicationName());
+ }*/
+	
+	
 }

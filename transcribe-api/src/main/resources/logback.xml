@@ -20,13 +20,10 @@
   
     <logger name="org.springframework.data.couchbase.repository.query" level="TRACE" />
     <logger name="org.springframework.data.h2.repository.query" level="TRACE" />
-	<logger name="org.springframework.data">
+	<logger name="org.springframework.data.spring-data-jdbc">
 		<level value="DEBUG" />
 	</logger>
-	<logger name="org.springframework.data.jdbc">
-		<level value="DEBUG" />
-	</logger>
-    <logger name="org.springframework.security.authentication" level="DEBUG" />
+    <logger name="org.springframework.jdbc.core.JdbcTemplate" level="DEBUG" />
     
   
   

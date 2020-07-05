@@ -24,16 +24,17 @@ import java.io.IOException;
 
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
-
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(JwtRequestFilter.class);
+    
     @Value("${app.io.sessionTimeout}")
     private int timeoutinMin;
     @Autowired
     private JwtUserDetailsService userDetailsService;
-
+    
     @Autowired
     private JwtUtil jwtUtil;
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(JwtRequestFilter.class);
     
     
     @Override
