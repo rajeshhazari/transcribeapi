@@ -93,17 +93,17 @@ public class JwtAuthenticationController {
 			SecurityContextHolder.getContext().setAuthentication(auth);
 		}
 		catch (BadCredentialsException e) {
-			logger.error("Incorrect username or password {}", authenticationRequestDto.getUsername());
+			logger.error("Incorrect username or password {}, exception message :: {}", authenticationRequestDto.getUsername(), e.getMessage());
+			final  String message = "Incorrect username or password : %s";
 			//TODO save login tries to DB
 			// Check login retries with value and if retries >= MAX_LOGIN_TRIES  update the user to lock
-			AppError error = new AppError(HttpStatus.FORBIDDEN, "User [" + authenticationRequestDto.getUsername() + "] not found");
-			return new ResponseEntity<AppError>(error, HttpStatus.FORBIDDEN);
-			//throw new Exception("Incorrect username or password", e);
+			AppError error = new AppError(HttpStatus.UNAUTHORIZED, String.format(message, authenticationRequestDto.getUsername()));
+			return new ResponseEntity<AppError>(error, HttpStatus.UNAUTHORIZED);
 		}catch (AuthenticationException authEx){
 			//TODO save login tries to DB
 			// Check login retries with value and if retries >= MAX_LOGIN_TRIES  update the user to lock
-			
-			throw new javax.naming.AuthenticationException("Server Error!");
+			AppError error = new AppError(HttpStatus.UNAUTHORIZED, "Server Error!");
+			return new ResponseEntity<AppError>(error, HttpStatus.UNAUTHORIZED);
 		}
 
 
@@ -112,8 +112,8 @@ public class JwtAuthenticationController {
 
 		final String jwt = jwtTokenUtil.generateToken(userDetails);
 		AuthenticationResponseDto responseDto = new AuthenticationResponseDto(jwt,email, new Date(Instant.now().toEpochMilli()));
-		responseDto.setEmail(null);
-
+		responseDto.setEmail(authenticationRequestDto.getUsername());
+		responseDto.setError(null);
 		return new ResponseEntity<AuthenticationResponseDto>(responseDto, HttpStatus.OK);
 	}
 	

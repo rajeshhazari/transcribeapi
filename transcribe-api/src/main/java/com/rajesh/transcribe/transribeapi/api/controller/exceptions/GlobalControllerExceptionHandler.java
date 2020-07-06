@@ -1,6 +1,8 @@
 package com.rajesh.transcribe.transribeapi.api.controller.exceptions;
 
 import com.rajesh.transcribe.transribeapi.api.models.AppError;
+import com.rajesh.transcribe.transribeapi.api.repository.exceptions.UserNotFoundException;
+import io.jsonwebtoken.security.SignatureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
@@ -53,6 +55,17 @@ public class GlobalControllerExceptionHandler {
         AppError errorDetails = new AppError(HttpStatus.BAD_REQUEST.value(),
                 ex.getMessage(), Instant.now());
     
+        return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
+    }
+    
+    @ExceptionHandler(SignatureException.class)
+    protected ResponseEntity<Object> handleJsonTokenSignature
+            (
+                    SignatureException ex,
+                    HttpHeaders headers, HttpStatus status, WebRequest request)     {
+        AppError errorDetails = new AppError(HttpStatus.BAD_REQUEST.value(),
+                ex.getMessage(), Instant.now());
+        
         return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
     }
 }
