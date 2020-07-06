@@ -34,19 +34,20 @@ public class CustomerContactController {
     }
     
     
-    @ApiOperation(value = "Save customer contact messages", response = Boolean.class, httpMethod = "POST")
+    @ApiOperation(value = "Save customer contact messages", response = Boolean.class, httpMethod = "PUT")
     @ApiResponses(
             value = {
-                    @ApiResponse(code = 200, message = "Successfully Saved."),
-                    @ApiResponse(code = 401, message = "You are not authorized to encrypt."),
+                    @ApiResponse(code = 204, message = "Successfully Saved the message."),
                     @ApiResponse(
-                            code = 403,
-                            message = "Accessing the resource you were trying to reach is forbidden"),
+                            code = 500,
+                            message = "Unable to save you message, Server error!"),
                     @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
             })
-    @RequestMapping(value = "/savemsg", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/savemsg", method = RequestMethod.PUT, produces = "application/json")
     public ResponseEntity<Boolean> saveMessage(CustomerContactMessagesDto customerContactMessagesDto, HttpServletRequest request, HttpServletResponse response){
-        //TODO send an email to c3Transcribeops@email.com, there is nw contact message received.
-        return new ResponseEntity<Boolean>(Boolean.TRUE, HttpStatus.OK);
+        //TODO send an email to c3Transcribeappops@email.com, there is new contact message received.
+        //TODO validate the message does not scripts and validate the code is verified and the client is not a bot
+        customerContactMessagesService.saveCustomerMessage(customerContactMessagesDto);
+        return new ResponseEntity<Boolean>(Boolean.TRUE, HttpStatus.NO_CONTENT);
     }
 }

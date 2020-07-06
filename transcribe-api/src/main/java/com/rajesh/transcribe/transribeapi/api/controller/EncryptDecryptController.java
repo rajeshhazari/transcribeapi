@@ -2,7 +2,7 @@ package com.rajesh.transcribe.transribeapi.api.controller;
 
 import com.rajesh.transcribe.transribeapi.api.models.AppError;
 import com.rajesh.transcribe.transribeapi.api.models.dto.digest.DigestResponseDto;
-import com.rajesh.transcribe.transribeapi.api.models.dto.sphinx.TranscribtionResponseDto;
+import com.rajesh.transcribe.transribeapi.api.models.dto.sphinx.TranscriptionResponseDto;
 import io.swagger.annotations.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
@@ -238,7 +238,7 @@ public class EncryptDecryptController {
                             message = "Accessing the resource you were trying to reach is forbidden"),
                     @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
             })
-    @RequestMapping(value = "/encode/", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/encodeFile/", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<DigestResponseDto> encodeFileUsingGivenAlg(@RequestParam("file") final MultipartFile file,
                                                                      @RequestParam @ApiParam  String messageDigestAlgorithms,
                                                                      HttpServletRequest req, HttpServletResponse res) throws IOException {

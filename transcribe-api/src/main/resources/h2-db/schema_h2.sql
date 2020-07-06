@@ -325,7 +325,7 @@ CREATE TABLE USERREGVERIFYLOGDETAILS (
   confEmailToken VARCHAR(50) not null,
   emailSentDate  timestamp default CURRENT_TIMESTAMP,
   verificationDate timestamp ,
-  verifiedRegClientIp VARCHAR(50) ,primary key (id)
+  primary key (id)
 );
 
 CREATE TABLE USERREGISTRATIONSLOGDETIALS (

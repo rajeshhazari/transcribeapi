@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
+import java.util.Map;
 
 /**
  * @author rhazari
@@ -20,15 +21,15 @@ import java.util.Date;
 public class SearchResultDto extends BaseResponseDto {
     
     private String sttTranscriptionModule = null;
-    private String transcribtionReqId = null;
-    private String email;
+    private String TranscriptionReqId = null;
     private String fileName = null;
     private Long fileSize = null;
-    private String transcribtionResp = null;
+    private String TranscriptionResp = null;
     private String OriginalMediaFormat = null;
     private String mediaFormat = null;
     private Date transcribedDate = null;
     private Date downloadedDate = null;
     private String duration = null;
     private Date lastModified = null;
+    private Map<String, Long> spokenTextMap;
 }

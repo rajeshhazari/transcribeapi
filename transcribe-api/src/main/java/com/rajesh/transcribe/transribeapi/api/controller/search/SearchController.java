@@ -1,11 +1,13 @@
 package com.rajesh.transcribe.transribeapi.api.controller.search;
 
+import com.rajesh.transcribe.transribeapi.api.models.SearchRequest;
 import com.rajesh.transcribe.transribeapi.api.models.dto.search.SearchResultDto;
 import io.swagger.annotations.Api;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,13 +28,14 @@ public class SearchController {
     
     @GetMapping(value = "/search")
     public HttpEntity<?> search(
-            @RequestParam final String type,
-            @RequestParam final String q,
-            @RequestParam(defaultValue = "1") final int page,
-            @RequestParam(defaultValue = "1") final int pageSize,
+            @RequestParam final SearchRequest searchRequest,
             HttpServletRequest request, HttpServletResponse response
     ) {
+        String token = request.getHeader("token");
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        
         SearchResultDto searchResultDto = new SearchResultDto();
+        
         return  ResponseEntity.ok(searchResultDto);
     }
 }

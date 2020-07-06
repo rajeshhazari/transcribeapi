@@ -133,11 +133,13 @@ public class JwtAuthenticationController {
 		// TODO handle session specific logic.
 		Map<String, String> respMap = new ConcurrentHashMap();
 		try {
-			Boolean isUserCreated  = jwtUserDetailsService.registerUser(user);
-		}catch (MessagingException ex){
+			//Boolean isUserCreated  = jwtUserDetailsService.registerUser(user);
+			AppUsers users = new AppUsers();
+			jwtUserDetailsService.save(users);
+		}/*catch (MessagingException ex){
 			respMap.put("Error", "Error occured while sending email, Please check your email.");
 			return  new ResponseEntity<>(respMap, HttpStatus.BAD_REQUEST);
-		}catch (UserAlreadyRegisteredException ex){
+		}*/catch (UserAlreadyRegisteredException ex){
 			respMap.put("Error", "User is already registered, Please login!.");
 			return  new ResponseEntity<>(respMap, HttpStatus.BAD_REQUEST);
 		}

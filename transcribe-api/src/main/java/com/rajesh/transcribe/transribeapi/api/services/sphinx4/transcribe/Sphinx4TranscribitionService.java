@@ -6,9 +6,9 @@ package com.rajesh.transcribe.transribeapi.api.services.sphinx4.transcribe;
 import com.rajesh.transcribe.transribeapi.api.domian.AppUsers;
 import com.rajesh.transcribe.transribeapi.api.domian.TranscribeFileLog;
 import com.rajesh.transcribe.transribeapi.api.domian.UserTranscriptions;
-import com.rajesh.transcribe.transribeapi.api.models.dto.sphinx.TranscribtionResponseDto;
+import com.rajesh.transcribe.transribeapi.api.models.dto.sphinx.TranscriptionResponseDto;
 import com.rajesh.transcribe.transribeapi.api.repository.AppUsersRepository;
-import com.rajesh.transcribe.transribeapi.api.repository.UserTranscribtionsRepository;
+import com.rajesh.transcribe.transribeapi.api.repository.UserTranscriptionsRepository;
 import com.rajesh.transcribe.transribeapi.api.repository.exceptions.UserNotFoundException;
 import edu.cmu.sphinx.api.Configuration;
 import edu.cmu.sphinx.api.SpeechResult;
@@ -58,14 +58,14 @@ public class Sphinx4TranscribitionService {
 	Executor asyncExecutor;
 	
 	@Autowired
-	UserTranscribtionsRepository userTranscribtionsRepository;
+	UserTranscriptionsRepository userTranscriptionsRepository;
 	@Autowired
 	private AppUsersRepository appUsersRepo;
 	
 	/**
 	 * 
 	 * @param file
-	 * @param transcribtionReqId
+	 * @param TranscriptionReqId
 	 * @param token
 	 * @param userEmail
 	 * @param  sessionId
@@ -73,15 +73,15 @@ public class Sphinx4TranscribitionService {
 	 * @return
 	 * @throws Exception
 	 */
-	public TranscribtionResponseDto transribeAudioforText(File file, String transcribtionReqId, final String token, final String userEmail,final @NotNull @NotBlank String sessionId, final Long size) throws IOException, ExecutionException{
+	public TranscriptionResponseDto transribeAudioforText(File file, String TranscriptionReqId, final String token, final String userEmail,final @NotNull @NotBlank String sessionId, final Long size) throws IOException, ExecutionException{
 		
 		SimpleAsyncTaskExecutor delegateExecutor =
 				new SimpleAsyncTaskExecutor();
 		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(sphinxConfiguration);
 		InputStream stream = new FileInputStream(file);
-		TranscribtionResponseDto rdto = new TranscribtionResponseDto();
+		TranscriptionResponseDto rdto = new TranscriptionResponseDto();
 		recognizer.startRecognition(stream);
-		rdto = extractTranscribedTextFromSpeechRecognizer(recognizer, transcribtionReqId);
+		rdto = extractTranscribedTextFromSpeechRecognizer(recognizer, TranscriptionReqId);
 		rdto.setToken(token);
 		rdto.setFileName(file.getName());
 		final String transcribedText = rdto.getTranscribedText();
@@ -90,8 +90,8 @@ public class Sphinx4TranscribitionService {
 			userTranscriptions.setEmail(userEmail);
 			userTranscriptions.setFileName(file.getName());
 			userTranscriptions.setSessionId("1234");
-			userTranscriptions.setTranscriptionReqId(Long.parseLong(transcribtionReqId));
-			userTranscriptions.setTranscribeResAvailableFormat("application/json");
+			userTranscriptions.setTranscriptionReqId(Long.parseLong(TranscriptionReqId));
+			userTranscriptions.setTranscribeResAvailableFormat("text/plain");
 			userTranscriptions.setTranscribed(true);
 			userTranscriptions.setDownloaded(false);
 			Optional<AppUsers> appUsers = appUsersRepo.findByEmail(userEmail);
@@ -99,27 +99,27 @@ public class Sphinx4TranscribitionService {
 				userTranscriptions.setUsername(appUsers.get().getUsername());
 				userTranscriptions.setUserid(appUsers.get().getUserid());
 			} else {
-				throw new UserNotFoundException("Username not found for this transcribtion request with Email: "+userEmail);
+				throw new UserNotFoundException("Username not found for this Transcription request with Email: "+userEmail);
 			}
 			TranscribeFileLog tflog = new TranscribeFileLog();
 			tflog.setFileName(file.getName());
-			tflog.setTReqId(Long.parseLong(transcribtionReqId));
+			tflog.setTReqId(Long.parseLong(TranscriptionReqId));
 			tflog.setLogId(userTranscriptions.getLogId());
 			tflog.setEmail(userEmail);
 			tflog.setFileSize(size);
 			tflog.setSessionId(sessionId);
 			tflog.setTRes(transcribedText);
-			userTranscriptions.setTranscribeResType("application/JSON");
+			userTranscriptions.setTranscribeResType("text/plain");
 			userTranscriptions.setTranscribeFileLog(tflog);
-			userTranscriptions = userTranscribtionsRepository.save(userTranscriptions);
+			userTranscriptions = userTranscriptionsRepository.save(userTranscriptions);
 			Long tflogid = userTranscriptions.getTranscribeFileLog().getId();
-			logger.debug("transcribefile  for requestId {} is saved  with tflogid ::{}", transcribtionReqId , tflogid);
+			logger.debug("transcribefile  for requestId {} is saved  with tflogid ::{}", TranscriptionReqId , tflogid);
 		});
 		
 		//TODO call formatting method/service
 		//return unformatted_transcribe_text;
-		//return extractTranscribedTextFromSpeechRecognizer(recognizer, transcribtionReqId);
-		//TranscribtionResponseDto rDto = responseDto.
+		//return extractTranscribedTextFromSpeechRecognizer(recognizer, TranscriptionReqId);
+		//TranscriptionResponseDto rDto = responseDto.
 		return rdto;
 	}
 
@@ -160,7 +160,7 @@ public class Sphinx4TranscribitionService {
 	 * @throws InterruptedException 
 	 * @throws NumberFormatException 
 	 */
-	public TranscribtionResponseDto transcribeAudio(File audioFile, @NotNull @NotBlank String reqId) throws  IOException, ExecutionException {
+	public TranscriptionResponseDto transcribeAudio(File audioFile, @NotNull @NotBlank String reqId) throws  IOException, ExecutionException {
 
 		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(sphinxConfiguration);
 		InputStream stream = new FileInputStream(audioFile);
@@ -183,7 +183,7 @@ public class Sphinx4TranscribitionService {
 	 * @throws NoSuchAlgorithmException
 	 * @throws NoSuchProviderException
 	 */
-	public TranscribtionResponseDto transcribeVideo(File videoFile, String reqId) throws IOException, NoSuchAlgorithmException, NoSuchProviderException {
+	public TranscriptionResponseDto transcribeVideo(File videoFile, String reqId) throws IOException, NoSuchAlgorithmException, NoSuchProviderException {
 
 		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(sphinxConfiguration);
 		InputStream stream = new FileInputStream(videoFile);
@@ -221,10 +221,10 @@ public class Sphinx4TranscribitionService {
 	 *
 	 * @param recognizer
 	 * @param reqId
-	 * @return TranscribtionResponseDto
+	 * @return TranscriptionResponseDto
 	 */
 	@Async
-	private TranscribtionResponseDto extractTranscribedTextFromSpeechRecognizer(StreamSpeechRecognizer recognizer, String reqId) {
+	private TranscriptionResponseDto extractTranscribedTextFromSpeechRecognizer(StreamSpeechRecognizer recognizer, String reqId) {
 		
 		StringBuilder unformattedTranscribeText = new StringBuilder();
 		SpeechResult result;
@@ -244,7 +244,7 @@ public class Sphinx4TranscribitionService {
 		}
         recognizer.stopRecognition();
         
-        return new TranscribtionResponseDto(unformattedTranscribeText.toString(), reqId, null, false, wordsList,null,null);
+        return new TranscriptionResponseDto(unformattedTranscribeText.toString(), reqId, null, false, wordsList,null,null);
 	}
 }
 

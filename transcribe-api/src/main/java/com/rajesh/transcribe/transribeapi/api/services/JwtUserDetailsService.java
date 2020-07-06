@@ -46,15 +46,15 @@ public class JwtUserDetailsService implements UserDetailsService {
     
     private Logger logger = LoggerFactory.getLogger(JwtUserDetailsService.class);
     
-    Environment env;
-    private PasswordEncoder bcryptEncoder;
-    private AppUsersRepository userRepo;
-    private RegisteredUsersRepo registeredUsersRepo;
-    private AppMailService appEmailServiceImpl;
-    private DataSourceHealthIndicator dataSourceHealthIndicator;
-    private SecureRandom secureRandom;
+    @Autowired Environment env;
+    @Autowired private PasswordEncoder bcryptEncoder;
+    @Autowired private AppUsersRepository userRepo;
+    @Autowired private RegisteredUsersRepo registeredUsersRepo;
+    @Autowired private AppMailService appEmailServiceImpl;
+    @Autowired private DataSourceHealthIndicator dataSourceHealthIndicator;
+    @Autowired private SecureRandom secureRandom;
 
-    @Autowired
+    /*@Autowired
     public JwtUserDetailsService (PasswordEncoder bcryptEncoder,
                                   AppUsersRepository userRepo,
                                   RegisteredUsersRepo registeredUsersRepo,
@@ -67,7 +67,7 @@ public class JwtUserDetailsService implements UserDetailsService {
         this.appEmailServiceImpl = appEmailService;
         this.dataSourceHealthIndicator = dataSourceHealthIndicator;
         this.secureRandom = secureRandom;
-    }
+    }*/
     
     /*@Autowired
     private SessionRegistry sessionRegistry;*/

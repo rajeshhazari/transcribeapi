@@ -104,7 +104,29 @@ public class TranscribeApiModuleConfig {
 	public SecureRandom createRandom() throws NoSuchAlgorithmException {
 		return SecureRandom.getInstance("SHA1PRNG");
 	}
-
+	
+	@Bean
+	public Connector redirectConnector() {
+		Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
+		connector.setScheme("http");
+		connector.setPort(port);
+		connector.setSecure(false);
+		connector.setRedirectPort(8443);
+		return connector;
+	}
+	
+	@Bean
+	public JavaMailSender javaMailSender(){
+		return  new JavaMailSenderImpl();
+	}
+	
+	@Bean
+	public ObjectMapper getObjectMapper() {
+		ObjectMapper mapper = new ObjectMapper();
+		mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+		return mapper;
+	}
+	
   /*@Bean(name = "asyncExecutor")
   public Executor asyncExecutor() {
       ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
@@ -125,13 +147,6 @@ public class TranscribeApiModuleConfig {
       //factory.setErrorPages(pageHandlers);
       return factory;
   }*/
-	
-	@Bean
-	public ObjectMapper getObjectMapper() {
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-		return mapper;
-	}
 
   /*
   @Bean
@@ -152,20 +167,7 @@ public class TranscribeApiModuleConfig {
   	return tomcat;
   }*/
 	
-	@Bean
-	public Connector redirectConnector() {
-		Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
-		connector.setScheme("http");
-		connector.setPort(port);
-		connector.setSecure(false);
-		connector.setRedirectPort(8443);
-		return connector;
-	}
-
-	@Bean
-	public JavaMailSender javaMailSender(){
-		return  new JavaMailSenderImpl();
-	}
+	
   /*
   @Bean
   public SessionRegistry getSessionRegistry() {

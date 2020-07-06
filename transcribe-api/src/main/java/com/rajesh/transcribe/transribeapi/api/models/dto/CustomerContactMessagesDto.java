@@ -1,17 +1,11 @@
 package com.rajesh.transcribe.transribeapi.api.models.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
-@Getter
-@Setter
-@AllArgsConstructor
-@NoArgsConstructor
+@Data @NoArgsConstructor  @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class CustomerContactMessagesDto {
+public class CustomerContactMessagesDto extends BaseResponseDto{
     private int code;
     private String message;
     private String email;
