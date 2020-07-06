@@ -1,5 +1,6 @@
 package com.rajesh.transcribe.transribeapi.api.controller.sphinx.transribe;
 
+import com.rajesh.transcribe.transribeapi.api.controller.AppServiceUtils;
 import com.rajesh.transcribe.transribeapi.api.models.AppError;
 import com.rajesh.transcribe.transribeapi.api.models.dto.sphinx.TranscribtionResponseDto;
 import com.rajesh.transcribe.transribeapi.api.services.sphinx4.transcribe.Sphinx4TranscribitionService;
@@ -59,14 +60,19 @@ public class Sphinx4TranscribtionController {
     SecureRandom secureRandom;
     @Value("${app.io.uploadDir}")
     private String uploadDir;
+    private AppServiceUtils appServiceUtils;
     
     private Logger logger = LoggerFactory.getLogger(Sphinx4TranscribtionController.class);
     
-    public Sphinx4TranscribtionController(Environment env, Sphinx4TranscribitionService tService, JwtUtil jwtUtil, SecureRandom secureRandom) {
+    public Sphinx4TranscribtionController(Environment env,
+                                          Sphinx4TranscribitionService tService,
+                                          JwtUtil jwtUtil,
+                                          SecureRandom secureRandom, AppServiceUtils appServiceUtils) {
         this.env = env;
         this.tService = tService;
         this.jwtUtil = jwtUtil;
         this.secureRandom = secureRandom;
+        this.appServiceUtils = appServiceUtils;
         
     }
     
@@ -146,7 +152,7 @@ public class Sphinx4TranscribtionController {
         if (!Objects.isNull(file) && !file.isEmpty()) {
             //TODO handle the file upload status logic and make this service more responsive
             // rather than user to wait until all of the transcription is completed, which may take some time
-            File convFile = convertMultipartFileToFile(file,uploadDir);
+            File convFile = appServiceUtils.convertMultipartFileToFile(file,uploadDir);
             try {
                 response = tService.transribeAudioforText(convFile, reqId, token, userEmail, req.getSession().getId(), file.getSize());
             } catch (NumberFormatException | ExecutionException e) {
@@ -163,26 +169,6 @@ public class Sphinx4TranscribtionController {
         res.flushBuffer();
         return new ResponseEntity<TranscribtionResponseDto>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-    
-    
-    /**
-     * @param file
-     * @param uploadDir
-     * @return
-     * @throws IOException
-     */
-    private File convertMultipartFileToFile(MultipartFile file, final String uploadDir) throws IOException {
-        file.transferTo(Paths.get(uploadDir+file.getOriginalFilename()));
-        
-        File convFile = new File(uploadDir+file.getOriginalFilename());
-        //convFile.createNewFile();
-        logger.info("Audio file uploaded to: {}  content type :: {}  with size {} ", uploadDir, file.getContentType(), file.getSize());
-        /*try (InputStream is = file.getInputStream()) {
-            Files.copy(is, convFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        }*/
-        return convFile;
-    }
-    
     
     /**
      * @param file

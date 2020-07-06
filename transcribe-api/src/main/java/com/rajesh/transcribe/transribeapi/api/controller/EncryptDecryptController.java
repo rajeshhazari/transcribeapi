@@ -1,24 +1,32 @@
 package com.rajesh.transcribe.transribeapi.api.controller;
 
+import com.rajesh.transcribe.transribeapi.api.models.AppError;
+import com.rajesh.transcribe.transribeapi.api.models.dto.digest.DigestResponseDto;
+import com.rajesh.transcribe.transribeapi.api.models.dto.sphinx.TranscribtionResponseDto;
 import io.swagger.annotations.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -26,10 +34,7 @@ import java.security.Key;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static org.apache.commons.codec.digest.MessageDigestAlgorithms.*;
 
@@ -47,10 +52,14 @@ public class EncryptDecryptController {
     
     private SecureRandom secureRandom;
     private BCryptPasswordEncoder bCryptPasswordEncoder;
+    private AppServiceUtils appServiceUtils;
+    
     public EncryptDecryptController(BCryptPasswordEncoder bCryptPasswordEncoder,
-                                    SecureRandom secureRandom){
+                                    SecureRandom secureRandom,
+                                    AppServiceUtils appServiceUtils){
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
         this.secureRandom = secureRandom;
+        this.appServiceUtils = appServiceUtils;
     }
     
     @ApiOperation(value = "Encrypt given string api service", response = Map.class, httpMethod = "POST")
@@ -195,7 +204,12 @@ public class EncryptDecryptController {
     public static ResponseEntity<?> encodeDataUsingGivenAlg(@RequestParam @ApiParam(name="data", allowableValues = "" , defaultValue = "" , example = "test") String data,
                                                             @RequestParam @ApiParam (name = "messageDigestAlgorithms" , defaultValue = MessageDigestAlgorithms.MD5 ) String messageDigestAlgorithms,
                                                          HttpServletRequest req, HttpServletResponse res){
+        String token = req.getHeader("token");
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        DigestResponseDto response = new DigestResponseDto();
         String defaultAlgorithm = MessageDigestAlgorithms.MD5;
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.add("Accept", "application/json");
         if(CollectionUtils.contains(Arrays.asList(MessageDigestAlgorithms.values()).iterator(),messageDigestAlgorithms)){
             defaultAlgorithm = messageDigestAlgorithms;
         }else {
@@ -208,7 +222,7 @@ public class EncryptDecryptController {
     
     /**
      *
-     * @param data
+     * @param file
      * @param messageDigestAlgorithms
      * @param req
      * @param res
@@ -225,34 +239,43 @@ public class EncryptDecryptController {
                     @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
             })
     @RequestMapping(value = "/encode/", method = RequestMethod.POST, produces = "application/json")
-    public static ResponseEntity<?> encodeFileUsingGivenAlg(@RequestParam @ApiParam String data, @RequestParam @ApiParam  String messageDigestAlgorithms,
-                                                           HttpServletRequest req, HttpServletResponse res){
+    public ResponseEntity<DigestResponseDto> encodeFileUsingGivenAlg(@RequestParam("file") final MultipartFile file,
+                                                                     @RequestParam @ApiParam  String messageDigestAlgorithms,
+                                                                     HttpServletRequest req, HttpServletResponse res) throws IOException {
+        String token = req.getHeader("token");
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        logger.debug("Upload: name {} and size: {} ", file.getOriginalFilename(), file.getSize());
+        DigestResponseDto response = new DigestResponseDto();
+        String content = null;
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.add("Accept", "application/json");
     
-        String defaultAlgorithm = MessageDigestAlgorithms.MD5;
-        if(CollectionUtils.contains(Arrays.asList(MessageDigestAlgorithms.values()).iterator(),messageDigestAlgorithms)){
-            defaultAlgorithm = messageDigestAlgorithms;
-        }else {
-            defaultAlgorithm = MD5;
+        if(file.isEmpty()){
+            res.setStatus(HttpStatus.BAD_REQUEST.value());
+            res.flushBuffer();
+            AppError error = new AppError(HttpStatus.BAD_REQUEST,"File size is zero OR File is empty!");
+            return new ResponseEntity<DigestResponseDto>(response, HttpStatus.BAD_REQUEST);
+        } else if (!Objects.isNull(file) && !file.isEmpty()) {
+            //TODO handle the file upload status logic and make this service more responsive
+            // rather than user to wait until all of the transcription is completed, which may take some time
+            content = FileUtils.readFileToString(appServiceUtils.convertMultipartFileToFile(file, uploadDir), StandardCharsets.UTF_8);
         }
-        final String hdigest = new DigestUtils(defaultAlgorithm).digestAsHex(data);
-        return new ResponseEntity(hdigest, HttpStatus.OK);
-    }
-    
-    
-    
-    public String random(int size, String algorith) {
-        
-        StringBuilder generatedToken = new StringBuilder();
-        String defaultAlg = "SHA1PRNG";
-        if(StringUtils.hasText(algorith)){
-            defaultAlg = algorith;
+        if(StringUtils.hasText(content)) {
+            String defaultAlgorithm = MessageDigestAlgorithms.MD5;
+            if (CollectionUtils.contains(Arrays.asList(MessageDigestAlgorithms.values()).iterator(), messageDigestAlgorithms)) {
+                defaultAlgorithm = messageDigestAlgorithms;
+                response.setAlgorithm(messageDigestAlgorithms);
+            } else {
+                defaultAlgorithm = MD5;
+                response.setAlgorithm(defaultAlgorithm);
+            }
+            final String hdigest = new DigestUtils(defaultAlgorithm).digestAsHex(content);
+            response.setData(hdigest);
+        }else{
+            AppError appError = new AppError(HttpStatus.NO_CONTENT,"Either the file is Empty!");
+            response.setError(appError);
+            return new ResponseEntity(response, HttpStatus.NO_CONTENT);
         }
-        try {
-            String number = SecureRandom.getInstance(defaultAlg).generateSeed(size).toString();
-            generatedToken.append(RandomStringUtils.random(size, 0, 0, true, true, null, new SecureRandom()));
-        } catch (NoSuchAlgorithmException e) {
-            logger.error("unable to generate random password ", e.getMessage());
-        }
-        return generatedToken.toString();
+        return new ResponseEntity(response, HttpStatus.OK);
     }
 }

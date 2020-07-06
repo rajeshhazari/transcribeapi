@@ -1,5 +1,18 @@
 #FROM openjdk:11-slim as runtime
-FROM openjdk:11-jdk-slim as runtime
+#FROM openjdk:11-jdk-slim as runtime
+
+# (1) use Alpine Linux for build stage
+FROM alpine:3.11.3 as runtime
+# (2) install build dependencies
+RUN apk --no-cache add openjdk11
+RUN apk --no-cache add maven
+RUN echo $PATH $JAVA_HOME
+# build JDK with less modules
+RUN /usr/lib/jvm/default-jvm/bin/jlink \
+    --compress=2 \
+    --module-path /usr/lib/jvm/default-jvm/jmods \
+    --add-modules java.base,java.logging,java.xml,jdk.unsupported,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument \
+    --output /jdk-minimal
 
 # to check for open ports in the container: docker run <container id> netstat -tan
 #ARG SSH_KEY
@@ -29,8 +42,6 @@ RUN  addgroup --system --gid 2001 devops  && \
      usermod -a app_user -G  devops
 RUN  chown app_user:devops -R $APP_HOME
 USER app_user
-RUN ls -lrth
-
 RUN  mkdir -p /opt/apps && \
      mkdir -p $APP_HOME/config && \
      mkdir -p $APP_HOME/logs && \
