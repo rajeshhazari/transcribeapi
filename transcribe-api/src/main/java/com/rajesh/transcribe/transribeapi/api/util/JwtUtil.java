@@ -3,6 +3,8 @@ package com.rajesh.transcribe.transribeapi.api.util;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.jose4j.jwt.consumer.JwtConsumerBuilder;
+import org.jose4j.jwt.consumer.JwtContext;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -87,8 +89,11 @@ public class JwtUtil {
      * @param userDetails
      * @return
      */
-    public String generateToken(UserDetails userDetails) {
+    public String generateToken(UserDetails userDetails,String userFingerprint) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("owner", "auth0");
+        claims.put("userFingerPrint", userFingerprint);
+        claims.put("typ", "JWT");
         return createToken(claims, userDetails.getUsername());
     }
     
@@ -99,7 +104,12 @@ public class JwtUtil {
      * @return
      */
     private String createToken(Map<String, Object> claims, String subject) {
-        return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
+        
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(subject)
+                .setIssuedAt(Date.from(Instant.now()))
+                .setNotBefore(Date.from(Instant.now()))
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * timeoutinMin ))
                 .signWith(SignatureAlgorithm.HS256, secret.getBytes(UTF_8)).compact();
     }
@@ -113,6 +123,16 @@ public class JwtUtil {
     public Boolean validateToken(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    }
+    
+    /**
+     *
+     * @param token
+     * @param username
+     * @return
+     */
+    public Boolean validateToken(String token, String username) {
+        return (username.equalsIgnoreCase(extractUsername(token)) && !isTokenExpired(token));
     }
     
     /**

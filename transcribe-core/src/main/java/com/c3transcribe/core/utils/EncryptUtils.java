@@ -1,9 +1,19 @@
 package com.c3transcribe.core.utils;
 
+import org.apache.calcite.util.Static;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.logging.log4j.Logger;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.util.StringUtils;
+
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+
+import static org.apache.logging.log4j.LogManager.getLogger;
 
 public final class EncryptUtils {
-    
+
+    private static final Logger logger = getLogger(EncryptUtils.class);
     /**
      * Encryption strength.
      */
@@ -13,9 +23,9 @@ public final class EncryptUtils {
      * This method converts text on code of force 12.
      *
      * @param text Text to encode
-     * @return Returns encoded text by force 12
+     * @return Returns encoded text encrypted with STRENGTH of 12
      */
-    public static String encrypt(final String text) {
+    public static String encryptWithBCryptAlgo(final String text) {
         return new BCryptPasswordEncoder(STRENGTH).encode(text);
     }
     
@@ -24,7 +34,7 @@ public final class EncryptUtils {
      *
      * @param text Text to compare code with text2
      * @param text2 Text to compare code with text
-     * @return Returns TRUE if texts are the same
+     * @return Returns TRUE if texts are the same with encryption algorith as BCryptPasswordEncode and Stength of 12
      */
     public static boolean matches(final String text, final String text2) {
         return new BCryptPasswordEncoder(STRENGTH).matches(text, text2);
@@ -36,13 +46,13 @@ public final class EncryptUtils {
             "0123456789").toCharArray();
     
     /**
-     * This method generates a password.
+     * This method generates a alphanumeric password
+     * @return Returns the generated alphanumeric password.
      *
-     * @return Returns the generated password.
+     * @see #CHARACTERS
      */
     public static String randomPassword() {
         final java.util.Random random = new java.util.Random();
-        
         final byte randomLength = (byte) (random.nextInt(14) + 6);
         byte randomElementNumber;
         String password = "";
@@ -76,5 +86,27 @@ public final class EncryptUtils {
         }
         
         return token;
+    }
+    
+    /**
+     *This method generated random String using "SHA1PRNG" algorithm
+     * @param size
+     * @param algorithm
+     * @return random string
+     */
+    public static String randomString(int size, String algorithm) {
+        
+        StringBuilder generatedToken = new StringBuilder();
+        String defaultAlg = "SHA1PRNG";
+        if(StringUtils.hasText(algorithm)){
+            defaultAlg = algorithm;
+        }
+        try {
+            String number = SecureRandom.getInstance(defaultAlg).generateSeed(size).toString();
+            generatedToken.append(RandomStringUtils.random(size, 0, 0, true, true, null, new SecureRandom()));
+        } catch (NoSuchAlgorithmException e) {
+            logger.error("unable to generate random password ", e.getMessage());
+        }
+        return generatedToken.toString();
     }
 }

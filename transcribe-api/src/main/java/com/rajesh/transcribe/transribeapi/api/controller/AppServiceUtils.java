@@ -57,25 +57,4 @@ private static final Logger logger = getLogger(AppServiceUtils.class);
          return numBytesSaved;
      }
      
-    /**
-     *
-     * @param size
-     * @param algorith
-     * @return random
-     */
-    public String random(int size, String algorith) {
-        
-        StringBuilder generatedToken = new StringBuilder();
-        String defaultAlg = "SHA1PRNG";
-        if(StringUtils.hasText(algorith)){
-            defaultAlg = algorith;
-        }
-        try {
-            String number = SecureRandom.getInstance(defaultAlg).generateSeed(size).toString();
-            generatedToken.append(RandomStringUtils.random(size, 0, 0, true, true, null, new SecureRandom()));
-        } catch (NoSuchAlgorithmException e) {
-            logger.error("unable to generate random password ", e.getMessage());
-        }
-        return generatedToken.toString();
-    }
 }

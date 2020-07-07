@@ -3,10 +3,7 @@
  */
 package com.rajesh.transcribe.transribeapi.api.models.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.Map;
 
@@ -16,8 +13,8 @@ import java.util.Map;
  */
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter @Setter
-public class RegisterUserDto extends  BaseResponseDto{
+@Data
+public class RegisterUserRequest {
 
 	public String username;
 	public String email;

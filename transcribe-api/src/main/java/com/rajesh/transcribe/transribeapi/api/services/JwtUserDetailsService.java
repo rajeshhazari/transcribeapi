@@ -4,11 +4,10 @@ import com.rajesh.transcribe.transribeapi.api.controller.exceptions.UserAlreadyR
 import com.rajesh.transcribe.transribeapi.api.domian.AppUsers;
 import com.rajesh.transcribe.transribeapi.api.domian.RegisteredUserVerifyLogDetials;
 import com.rajesh.transcribe.transribeapi.api.models.dto.AuthUserProfileDto;
-import com.rajesh.transcribe.transribeapi.api.models.dto.RegisterUserDto;
+import com.rajesh.transcribe.transribeapi.api.models.dto.RegisterUserRequest;
 import com.rajesh.transcribe.transribeapi.api.repository.AppUsersRepository;
 import com.rajesh.transcribe.transribeapi.api.repository.RegisteredUsersRepo;
 import com.rajesh.transcribe.transribeapi.api.repository.exceptions.UserNotFoundException;
-import org.apache.commons.configuration2.DataConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -34,7 +33,6 @@ import org.springframework.web.server.ServerErrorException;
 
 import javax.annotation.PostConstruct;
 import javax.mail.MessagingException;
-import javax.sql.DataSource;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -136,7 +134,7 @@ public class JwtUserDetailsService implements UserDetailsService {
         }catch (BadCredentialsException bex){
             throw new BadCredentialsException("Bad credentials. Please check your username/password: " + email);
         }
-        logger.debug("user retrived:: %s  for user %s",user ,email );
+        logger.debug("user retrived:: {}  for user {}",user ,email );
         if (!user.isEmpty() || user.isPresent()) {
             userDto.setUsername(user.get().getEmail());
             userDto.setActive(user.get().isActive());
@@ -149,7 +147,7 @@ public class JwtUserDetailsService implements UserDetailsService {
         }else if (user.isPresent() && user.get().getUsername().isEmpty()) {
             throw new UsernameNotFoundException("There is some problem with your account, please contact us to resolve your issue: " + email);
         }else if (user.isPresent() && user.get().isLocked()) {
-            throw new UsernameNotFoundException("Your account is locker. Please Contact us for more info: " + email);
+            throw new UsernameNotFoundException("Your account is lockerd Please Contact us for more info: " + email);
         }
         
         SecurityContext context = SecurityContextHolder.getContext();
@@ -188,7 +186,7 @@ public class JwtUserDetailsService implements UserDetailsService {
         
         if (user == null) {
             throw new UserNotFoundException("User not found with email: " + email);
-        };
+        }
         return user.get();
     }
     
@@ -244,12 +242,12 @@ public class JwtUserDetailsService implements UserDetailsService {
     
     /**
      *
-     * @param userDto
+     * @param registerUserRequest
      * @return
      */
-    public Boolean registerUser(final RegisterUserDto userDto) throws MessagingException {
+    public Boolean registerUser(final RegisterUserRequest registerUserRequest) throws MessagingException {
         AppUsers users = new AppUsers();
-        BeanUtils.copyProperties(userDto, users);
+        BeanUtils.copyProperties(registerUserRequest, users);
         users.setDisabled(false);
         users.setActive(false);
         users.setVerified(false);
@@ -257,8 +255,10 @@ public class JwtUserDetailsService implements UserDetailsService {
         try{
             users = save(users);
         }catch (DuplicateKeyException ex){
-            throw new UserAlreadyRegisteredException("User Already register with email"+userDto.email);
+            users = null;
+            throw new UserAlreadyRegisteredException("User Already register with email"+registerUserRequest.email);
         }catch (DataAccessResourceFailureException ex){
+            users = null;
             throw  new ServerErrorException("Problem with Database, Please contact support team!", ex);
         }
         //TODO generate confirm email and send email

@@ -43,25 +43,29 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     
     
         final String authorizationHeader = request.getHeader("Authorization");
-
+        String requestURI = request.getRequestURI();
+        String requestRemoteIp = request.getRemoteHost();
+        String requestUrl = request.getRequestURL().toString();
+    
         String username = null;
         String jwttoken = null;
         if (StringUtils.isEmpty(authorizationHeader)){
-        
-        }
-        if (!StringUtils.isEmpty(authorizationHeader) && authorizationHeader.startsWith("Bearer ")) {
+            LOGGER.error("No Authorization Header for requestURI: {}  requestRemoteIp : {} requestUrl: {} ",requestURI,requestRemoteIp,requestUrl);
+            //response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Mandatory Authorization header is missing!.");
+        }else if (!StringUtils.isEmpty(authorizationHeader) && authorizationHeader.startsWith("Bearer")) {
             jwttoken = authorizationHeader.substring(7);
             try {
                 username = jwtUtil.extractUsername(jwttoken);
             } catch (IllegalArgumentException ex) {
-                LOGGER.info("Unable to get JWT Token");
-            } catch (ExpiredJwtException ex) {
-                LOGGER.info("JWT Token has expired");
-                response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
+                LOGGER.warn("Unable to get username from JWT Token. requestURI: {}  requestRemoteIp : {} requestUrl: {} ",requestURI,requestRemoteIp,requestUrl);
                 response.sendError(HttpStatus.UNPROCESSABLE_ENTITY.value(), ex.getMessage());
+            } catch (ExpiredJwtException ex) {
+                LOGGER.warn("JWT Token has expired! requestURI: {}  requestRemoteIp : {} requestUrl: {} ",requestURI,requestRemoteIp,requestUrl);
+                response.sendError(HttpStatus.UNAUTHORIZED.value(), ex.getMessage());
             }
         }else {
-            LOGGER.warn("JWT Token does not begin with Bearer String");
+            LOGGER.error("JWT Token does not begin with Bearer String");
+            response.sendError(HttpStatus.UNAUTHORIZED.value(),"JWT Token does not begin with Bearer String");
         }
 
 

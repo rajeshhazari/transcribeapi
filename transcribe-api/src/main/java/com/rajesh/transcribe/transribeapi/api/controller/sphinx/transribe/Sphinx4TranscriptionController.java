@@ -1,5 +1,6 @@
 package com.rajesh.transcribe.transribeapi.api.controller.sphinx.transribe;
 
+import com.c3transcribe.core.utils.EncryptUtils;
 import com.rajesh.transcribe.transribeapi.api.controller.AppServiceUtils;
 import com.rajesh.transcribe.transribeapi.api.models.AppError;
 import com.rajesh.transcribe.transribeapi.api.models.dto.sphinx.TranscriptionResponseDto;
@@ -101,7 +102,7 @@ public class Sphinx4TranscriptionController {
                 .getAuthentication();
         res.addCookie(new Cookie("session", req.getSession().getId()));
         Map<String, Object> resp = new HashMap<String, Object>();
-        resp.put("reqid", appServiceUtils.random(10, null));
+        resp.put("reqid", EncryptUtils.randomString(20, null));
         final String uid = UuidUtil.getTimeBasedUuid().toString();
         resp.put("uid", uid);
         return resp;

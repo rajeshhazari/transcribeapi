@@ -2,12 +2,11 @@ package com.rajesh.transcribe.transribeapi.api.controller;
 
 import com.rajesh.transcribe.transribeapi.api.models.AppError;
 import com.rajesh.transcribe.transribeapi.api.models.dto.digest.DigestResponseDto;
-import com.rajesh.transcribe.transribeapi.api.models.dto.sphinx.TranscriptionResponseDto;
 import io.swagger.annotations.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,25 +17,29 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.activation.MimetypesFileTypeMap;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.Key;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.*;
 
-import static org.apache.commons.codec.digest.MessageDigestAlgorithms.*;
+import static org.apache.commons.codec.digest.MessageDigestAlgorithms.MD5;
 
 @Api(
         value = "EncryptionDecryptionController",
@@ -72,8 +75,8 @@ public class EncryptDecryptController {
                             message = "Accessing the resource you were trying to reach is forbidden"),
                     @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
             })
-    @RequestMapping(value = "/encrypt", method = RequestMethod.POST, produces = "application/json")
-    public Map<String, String> encrypt(@RequestParam String data, @RequestParam String secret,
+    @RequestMapping(value = "/encryptData", method = RequestMethod.POST, produces = "application/json")
+    public Map<String, String> encryptData(@RequestParam String data, @RequestParam String secret,
                                        HttpServletRequest req, HttpServletResponse res) throws Exception {
         final Map<String, String> resp = new HashMap<>();
     
@@ -98,8 +101,8 @@ public class EncryptDecryptController {
                             message = "Accessing the resource you were trying to reach is forbidden"),
                     @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
             })
-    @RequestMapping(value = "/decrypt", method = RequestMethod.POST, produces = "application/json")
-    public Map<String, String> decrypt(@RequestParam String strToDecrypt, @RequestParam String secret,
+    @RequestMapping(value = "/decryptData", method = RequestMethod.POST, produces = "application/json")
+    public Map<String, String> decryptData(@RequestParam String strToDecrypt, @RequestParam String secret,
                                        HttpServletRequest req, HttpServletResponse res) {
         Map<String, String> resp = new HashMap<>();
         try {
@@ -128,8 +131,8 @@ public class EncryptDecryptController {
                             message = "Accessing the resource you were trying to reach is forbidden"),
                     @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
             })
-    @RequestMapping(value = "/bencrypt", method = RequestMethod.POST, produces = "application/json")
-    public Map<String, String> bencrypt(@RequestParam String data,
+    @RequestMapping(value = "/bencryptEncode", method = RequestMethod.POST, produces = "application/json")
+    public Map<String, String> bencryptEncode(@RequestParam String data,
                                        HttpServletRequest req, HttpServletResponse res) throws Exception {
         final Map<String, String> resp = new HashMap<>();
         
@@ -166,8 +169,8 @@ public class EncryptDecryptController {
      */
     public static byte[] encodeUsingGivenAlg(Charset charset,String msg, String algorithm) throws NoSuchAlgorithmException {
         final Charset defaultCharset = StandardCharsets.UTF_8;
-        final String defaultAlgorithm = "MD5";
-        byte [] digest = new DigestUtils(MessageDigestAlgorithms.SHA_224).digest(msg);
+        String defaultAlgorithm = MessageDigestAlgorithms.MD5;
+        //byte [] digest = new DigestUtils(MessageDigestAlgorithms.SHA_224).digest(msg);
         
         if(null == charset){
             charset = defaultCharset;
@@ -185,7 +188,7 @@ public class EncryptDecryptController {
     /**
      *
      * @param data
-     * @param messageDigestAlgorithms
+     * @param algorithmName
      * @param req
      * @param res
      * @return
@@ -200,9 +203,9 @@ public class EncryptDecryptController {
                             message = "Accessing the resource you were trying to reach is forbidden"),
                     @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
             })
-    @RequestMapping(value = "/encode/", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/encode", method = RequestMethod.POST, produces = "application/json")
     public static ResponseEntity<?> encodeDataUsingGivenAlg(@RequestParam @ApiParam(name="data", allowableValues = "" , defaultValue = "" , example = "test") String data,
-                                                            @RequestParam @ApiParam (name = "messageDigestAlgorithms" , defaultValue = MessageDigestAlgorithms.MD5 ) String messageDigestAlgorithms,
+                                                            @RequestParam @ApiParam (name = "messageDigestAlgorithms" , defaultValue = MessageDigestAlgorithms.MD5 ) String algorithmName,
                                                          HttpServletRequest req, HttpServletResponse res){
         String token = req.getHeader("token");
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -210,13 +213,15 @@ public class EncryptDecryptController {
         String defaultAlgorithm = MessageDigestAlgorithms.MD5;
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add("Accept", "application/json");
-        if(CollectionUtils.contains(Arrays.asList(MessageDigestAlgorithms.values()).iterator(),messageDigestAlgorithms)){
-            defaultAlgorithm = messageDigestAlgorithms;
+        if(CollectionUtils.contains(Arrays.asList(MessageDigestAlgorithms.values()).iterator(),algorithmName)){
+            defaultAlgorithm = algorithmName;
         }else {
             defaultAlgorithm = MD5;
         }
         final String hdigest = new DigestUtils(defaultAlgorithm).digestAsHex(data);
-            return new ResponseEntity(hdigest, HttpStatus.OK);
+        response.setData(hdigest);
+        response.setAlgorithm(defaultAlgorithm);
+        return new ResponseEntity(response, HttpStatus.OK);
     }
     
     
@@ -238,10 +243,10 @@ public class EncryptDecryptController {
                             message = "Accessing the resource you were trying to reach is forbidden"),
                     @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
             })
-    @RequestMapping(value = "/encodeFile/", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value = "/encodeFile", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<DigestResponseDto> encodeFileUsingGivenAlg(@RequestParam("file") final MultipartFile file,
                                                                      @RequestParam @ApiParam  String messageDigestAlgorithms,
-                                                                     HttpServletRequest req, HttpServletResponse res) throws IOException {
+                                                                     HttpServletRequest req, HttpServletResponse res)  {
         String token = req.getHeader("token");
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         logger.debug("Upload: name {} and size: {} ", file.getOriginalFilename(), file.getSize());
@@ -249,30 +254,36 @@ public class EncryptDecryptController {
         String content = null;
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add("Accept", "application/json");
-    
-        if(file.isEmpty()){
-            res.setStatus(HttpStatus.BAD_REQUEST.value());
-            res.flushBuffer();
-            AppError error = new AppError(HttpStatus.BAD_REQUEST,"File size is zero OR File is empty!");
-            return new ResponseEntity<DigestResponseDto>(response, HttpStatus.BAD_REQUEST);
-        } else if (!Objects.isNull(file) && !file.isEmpty()) {
-            //TODO handle the file upload status logic and make this service more responsive
-            // rather than user to wait until all of the transcription is completed, which may take some time
-            content = FileUtils.readFileToString(appServiceUtils.convertMultipartFileToFile(file, uploadDir), StandardCharsets.UTF_8);
+        try {
+            if(file.isEmpty()){
+                res.setStatus(HttpStatus.BAD_REQUEST.value());
+                res.flushBuffer();
+                AppError error = new AppError(HttpStatus.BAD_REQUEST,"File size is zero OR File is empty!");
+                return new ResponseEntity<DigestResponseDto>(response, HttpStatus.BAD_REQUEST);
+            } else if (!Objects.isNull(file) && !file.isEmpty() ){
+                    //&& file.getContentType().equalsIgnoreCase(res.getContentType())) {
+                String contentType = Files.probeContentType(Paths.get(file.getName()));
+                //TODO handle the file upload status logic and make this service more responsive
+                // rather than user to wait until all of the transcription is completed, which may take some time
+                content = FileUtils.readFileToString(appServiceUtils.convertMultipartFileToFile(file, uploadDir), StandardCharsets.UTF_8);
+            }
+        }catch (IOException ioException){
+            logger.error("IO Error while reading the file {} {} , contentType: {}  message : {}",file.getName(),uploadDir, file.getContentType(),ioException.getMessage() );
+            AppError appError = new AppError(HttpStatus.INTERNAL_SERVER_ERROR, ioException.getMessage());
+            new ResponseEntity(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
         if(StringUtils.hasText(content)) {
             String defaultAlgorithm = MessageDigestAlgorithms.MD5;
             if (CollectionUtils.contains(Arrays.asList(MessageDigestAlgorithms.values()).iterator(), messageDigestAlgorithms)) {
                 defaultAlgorithm = messageDigestAlgorithms;
-                response.setAlgorithm(messageDigestAlgorithms);
             } else {
                 defaultAlgorithm = MD5;
-                response.setAlgorithm(defaultAlgorithm);
             }
             final String hdigest = new DigestUtils(defaultAlgorithm).digestAsHex(content);
+            response.setAlgorithm(defaultAlgorithm);
             response.setData(hdigest);
         }else{
-            AppError appError = new AppError(HttpStatus.NO_CONTENT,"Either the file is Empty!");
+            AppError appError = new AppError(HttpStatus.NO_CONTENT,"Either File can't be read or the file is Empty!");
             response.setError(appError);
             return new ResponseEntity(response, HttpStatus.NO_CONTENT);
         }

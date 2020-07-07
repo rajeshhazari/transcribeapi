@@ -1,12 +1,13 @@
 package com.rajesh.transcribe.transribeapi.api.controller;
 
+import com.c3transcribe.core.utils.EncryptUtils;
 import com.rajesh.transcribe.transribeapi.api.controller.exceptions.UserAlreadyRegisteredException;
 import com.rajesh.transcribe.transribeapi.api.domian.AppUsers;
 import com.rajesh.transcribe.transribeapi.api.domian.RegisteredUserVerifyLogDetials;
 import com.rajesh.transcribe.transribeapi.api.models.AppError;
 import com.rajesh.transcribe.transribeapi.api.models.dto.AuthenticationRequestDto;
 import com.rajesh.transcribe.transribeapi.api.models.dto.AuthenticationResponseDto;
-import com.rajesh.transcribe.transribeapi.api.models.dto.RegisterUserDto;
+import com.rajesh.transcribe.transribeapi.api.models.dto.RegisterUserRequest;
 import com.rajesh.transcribe.transribeapi.api.repository.RegisteredUsersRepo;
 import com.rajesh.transcribe.transribeapi.api.services.JwtUserDetailsService;
 import com.rajesh.transcribe.transribeapi.api.util.JwtUtil;
@@ -27,17 +28,16 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
 
 import javax.mail.MessagingException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import javax.servlet.http.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -58,6 +58,7 @@ public class JwtAuthenticationController {
 	private JwtUtil jwtTokenUtil;
 	private JwtUserDetailsService jwtUserDetailsService;
 	private RegisteredUsersRepo registeredUserRepo;
+	private EncryptUtils encryptUtils;
 	public JwtAuthenticationController( AuthenticationManager authenticationManager,
 									    PasswordEncoder passwordEncoder,
 									    JwtUtil jwtTokenUtil,
@@ -81,7 +82,9 @@ public class JwtAuthenticationController {
 					@ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
 			})
 	@RequestMapping(value = "/auth", method = RequestMethod.POST, produces = "application/json")
-	public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequestDto authenticationRequestDto) throws Exception {
+	public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequestDto authenticationRequestDto,
+													   HttpServletRequest request,
+													   HttpServletResponse response) throws Exception {
 		final String email = authenticationRequestDto.getUsername();
 		try {
 			//byte[] decoded = java.util.Base64.getDecoder().decode();
@@ -110,10 +113,18 @@ public class JwtAuthenticationController {
 		final UserDetails userDetails = jwtUserDetailsService
 				.loadUserByUsername(authenticationRequestDto.getUsername());
 
-		final String jwt = jwtTokenUtil.generateToken(userDetails);
+		//Add the fingerprint in a hardened cookie - Add cookie manually because
+		//SameSite attribute is not supported by javax.servlet.http.Cookie class
+		String userFingerprint = EncryptUtils.randomToken();
+		final String jwt = jwtTokenUtil.generateToken(userDetails,userFingerprint);
+		String fingerprintCookie = "__Secure-Fgp=" + userFingerprint
+				+ "; SameSite=Strict; HttpOnly; Secure";
+		response.addHeader("Set-Cookie", fingerprintCookie);
+		
 		AuthenticationResponseDto responseDto = new AuthenticationResponseDto(jwt,email, new Date(Instant.now().toEpochMilli()));
 		responseDto.setEmail(authenticationRequestDto.getUsername());
 		responseDto.setError(null);
+		
 		return new ResponseEntity<AuthenticationResponseDto>(responseDto, HttpStatus.OK);
 	}
 	
@@ -129,11 +140,11 @@ public class JwtAuthenticationController {
 			})
 	
 	@RequestMapping(value = "/register", method = RequestMethod.POST, produces = "application/jon")
-	public ResponseEntity<Map<String,String>> registerUser(@RequestBody RegisterUserDto user, HttpServletRequest request, HttpServletResponse response) {
+	public ResponseEntity<Map<String,String>> registerUser(@RequestBody RegisterUserRequest registerUserRequest, HttpServletRequest request, HttpServletResponse response) {
 		// TODO handle session specific logic.
 		Map<String, String> respMap = new ConcurrentHashMap();
 		try {
-			//Boolean isUserCreated  = jwtUserDetailsService.registerUser(user);
+			Boolean isUserCreated  = jwtUserDetailsService.registerUser(registerUserRequest);
 			AppUsers users = new AppUsers();
 			jwtUserDetailsService.save(users);
 		}/*catch (MessagingException ex){
@@ -142,6 +153,9 @@ public class JwtAuthenticationController {
 		}*/catch (UserAlreadyRegisteredException ex){
 			respMap.put("Error", "User is already registered, Please login!.");
 			return  new ResponseEntity<>(respMap, HttpStatus.BAD_REQUEST);
+		} catch (MessagingException ex) {
+			respMap.put("Error", "User is registered, System was uanble to send verification email, Please check your email!.");
+			ex.printStackTrace();
 		}
 		return new ResponseEntity<>(respMap, HttpStatus.CREATED);
 	}
@@ -323,5 +337,28 @@ public class JwtAuthenticationController {
 		}
 		return responseEntity;
 	}
-
+	
+	@RequestMapping(value = "/logout", method = RequestMethod.GET)
+	@ResponseStatus(HttpStatus.OK)
+	public void logout(HttpServletRequest request,HttpServletResponse response) {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		if (auth != null){
+			String jwt = jwtTokenUtil.extractUsername(auth.getPrincipal().toString());
+			new SecurityContextLogoutHandler().logout(request, response, auth);
+		}
+		SecurityContextHolder.getContext().setAuthentication(null);
+		
+	}
+	
+	
+	 Cookie createDomainCookie(String name, String value, int maxAgeInMinutes) {
+		ZonedDateTime time = ZonedDateTime.now().plusMinutes(maxAgeInMinutes);
+		long expiry = time.toInstant().toEpochMilli();
+		Cookie newCookie = new Cookie(name, value);
+				newCookie.setDomain("/");
+				newCookie.setHttpOnly(true);
+				newCookie.setSecure(true);
+				newCookie.setMaxAge(maxAgeInMinutes*60);
+		return newCookie;
+	}
 }
