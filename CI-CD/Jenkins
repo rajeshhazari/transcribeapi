@@ -8,6 +8,7 @@ def readAppInfoFromJson() {
     return status
 }
 
+
 pipeline {
     agent any
     tools {
@@ -32,22 +33,17 @@ pipeline {
         stage ('prepare environment'){
             steps{
                 script {
+
                     last_started = env.STAGE_NAME
-                    cleanWs()
+                    //cleanWs()
                     println("idString:: " + idstring + " id:: " + id)
-                    sh '''
-                
+                        sh """
+
                            #mkdir -pv /opt/apps/  /opt/test/
                            ls -lrth /opt/apps/  /opt/
-                            echo "PATH = ${PATH}"
-                            echo "M2_HOME = ${M2_HOME}"
-                            
-                            #mvn install:install-file -Dfile=/home/devuser/.m2/repository/edu/cmu/sphinx/sphinx4-core/5prealpha-SNAPSHOT/sphinx4-core-5prealpha-SNAPSHOT.jar -DartifactId=sphinx4-core -DgroupId=edu.cmu.sphinx -Dversion=5prealpha-SNAPSHOT -Dpackaging=jar
-                            #mvn install:install-file -Dfile=/home/devuser/.m2/repository/edu/cmu/sphinx/sphinx4-data/5prealpha-SNAPSHOT/sphinx4-data-5prealpha-SNAPSHOT.jar -DartifactId=sphinx4-data -DgroupId=edu.cmu.sphinx -Dversion=5prealpha-SNAPSHOT -Dpackaging=jar
-                            version=$(mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.version -q -DforceStdout --batch-mode -U -e -Dsurefire.useFile=false) 
-                            artifactId=$(mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.artifactId -q -DforceStdout --batch-mode -U -e -Dsurefire.useFile=false)
-                            
-                           '''
+                            echo 'PATH = ${PATH}'
+                            echo 'M2_HOME = ${M2_HOME}'
+                           """
                 }
             }
         }
@@ -55,38 +51,53 @@ pipeline {
             steps{
                 println('Branch name::'+params.BRANCH_NAME)
                 //checkout scm
-                checkout([$class: 'GitSCM', branches: [[name: '${BRANCH_NAME}'], [name: '*/branch1']], doGenerateSubmoduleConfigurations: false,
-                          extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'RH-Transcribe-app-github-creds', url: 'https://github.com/rajeshhazari/transcribeapi.git']]])
+                //checkout([$class: 'GitSCM', branches: [[name: '${BRANCH_NAME}'], [name: '*/branch1']], doGenerateSubmoduleConfigurations: false,
+                //          extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'RH-Transcribe-app-github-creds', url: 'https://github.com/rajeshhazari/transcribeapi.git']]])
                 sh ' chmod +x ${WORKSPACE}/CI-CD/scripts/*.sh  '
             }
+        }
+        stage("Get latest git tag") {
+            steps{
+                script{
+                    if (params.BRANCH_NAME == 'master') {
+                        sh 'git fetch --tags'
+                        TAGGED_COMMIT = sh(script: 'git rev-list --branches=master --tags --max-count=1', returnStdout: true).trim()
+                        LATEST_TAG = sh(script: 'git describe --abbrev=0 --tags ${TAGGED_COMMIT}', returnStdout: true).trim()
+                        env.VERSION_NUMBER = sh(script: "echo ${LATEST_TAG} | cut -d 'v' -f 2", returnStdout: true).trim()
+                        echo "VERSION_NUMBER: ${VERSION_NUMBER}"
+                        sh 'echo "VERSION_NUMBER: ${VERSION_NUMBER}"'
+                    }
+                }
+            }
+
         }
         stage('Build') {
             steps {
                 script {
                     last_started = env.STAGE_NAME
 
+                    artifactId = readMavenPom().getArtifactId()
+                    versionId = readMavenPom().getVersion()
+                    sh """
+                        id -a
 
-                    sh '''
-                        id -a 
-                        
-                        echo "Running ${BUILD_ID} on ${JENKINS_URL}"
-                        version=$(mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.version -q -DforceStdout --batch-mode -U -e -Dsurefire.useFile=false) 
-                        artifactId=$(mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.artifactId -q -DforceStdout --batch-mode -U -e -Dsurefire.useFile=false)
-                        groupId=$(mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.groupId -q -DforceStdout --batch-mode -U -e -Dsurefire.useFile=false)
-                        
-                        echo $version  $groupId $artifactId
-                        
-                        mvn  -U -DskipTests clean package 
-                        ls -lrth 
-                        pwd 
+                        echo 'Running ${BUILD_ID} on ${JENKINS_URL}'
+                    
+                        echo ${artifactId}  ${versionId} 
+
+                        mvn  -U -DskipTests clean package
+                        ls -lrth
+                        pwd
                         mkdir -p ${WORKSPACE}/transcribe-api/target/dependency && (cd ${WORKSPACE}/transcribe-api/target/dependency; jar -xf ../*.jar)
                         cp ${WORKSPACE}/CI-CD/Dockerfile ${WORKSPACE}/transcribe-api/target/dependency/
                         cd ${WORKSPACE}/transcribe-api/target/dependency/
-                        imageId=$(docker build  -q -t transcribeapp/$artifactId:$version --build-arg DEPENDENCY=target/dependency  --build-arg ARTIFACT_NAME=$artifactId-$version.jar --build-arg BUILD_WORKSPACE="${WORKSPACE}" --build-arg MAIN_CLASS="com.rajesh.transcribe.transribeapi.TranscribeapiApplication" . )
-                        echo $imageId
-                        docker images   
-                           
-                        '''
+                        docker build  -t ${artifactId} --build-arg DEPENDENCY=target/dependency  --build-arg ARTIFACT_NAME=${artifactId}-${versionId}.jar --build-arg BUILD_WORKSPACE="${WORKSPACE}" --build-arg MAIN_CLASS="com.rajesh.transcribe.transribeapi.TranscribeapiApplication" .
+                        docker tag ${artifactId} ${artifactId}:${versionId}
+                        docker images
+
+                        """
+                    def buildInfoProps = readProperties interpolate: true, file: '${WORKSPACE}/transcribe-api/target/classes/META-INF/build-info.properties';
+                    println("versionId:: "+versionId);
                 }
             }
         }
@@ -95,6 +106,7 @@ pipeline {
                 script {
                     last_started = env.STAGE_NAME
                     echo 'Testing..'
+                    println("versionId:: "+versionId +" stagename :: "+env.STAGE_NAME);
                     //sh 'mvn -B test package'
                 }
             }
@@ -113,7 +125,7 @@ pipeline {
                     println("Deploying to "+environment)
                     //TODO ssh to prod server
                     JAVA_OPTS='-Dspring.profiles.active=qa -Dlogging.level.org.springframework=WARN   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
-                    sh '  docker run -d --restart -t -p 8585:8585 transcribeapp/${artifactId}:${version}  -e  ARTIFACT_NAME=$artifactId-$version.jar  -e  MAIN_CLASS="com.rajesh.transcribe.transribeapi.TranscribeapiApplication"  --label production_status=qa-testing --label env=qa -e JAVA_OPTS $JAVA_OPTS '
+                    sh '  docker run -d --restart -p 8585:8585 -t ${artifactId}:${versionId}  -e  ARTIFACT_NAME=$artifactId-$version.jar  -e  MAIN_CLASS="com.rajesh.transcribe.transribeapi.TranscribeapiApplication"  --label production_status=qa-testing --label env=qa -e JAVA_OPTS $JAVA_OPTS '
 
                 }
             }
@@ -130,10 +142,11 @@ pipeline {
                 script{
                     last_started = env.STAGE_NAME
                     def workspacePath=pwd();
+                    println("versionId:: "+versionId );
                     JAVA_OPTS='-Dspring.profiles.active=dev -Dlogging.level.org.springframework=DEBUG   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
-                    println("workspace path :: "+workspacePath +" workspace:: +${WORKSPACE}");
-                    sh ' # ./CI-CD/scripts/start.sh'
-                    sh '  docker run -d --restart -t -p 8585:8585 transcribeapp/${artifactId}:${version} --label production_status=development --label env=dev -e JAVA_OPTS $JAVA_OPTS  -e  ARTIFACT_NAME=$artifactId-$version.jar  -e  MAIN_CLASS="com.rajesh.transcribe.transribeapi.TranscribeapiApplication"  '
+                    println("workspace path :: "+workspacePath +" workspace:: +${WORKSPACE}" +"version:: "+versionId);
+
+                    sh '  docker run -d --restart  -p 8585:8585 -t ${artifactId}:${versionId} --label production_status=development --label env=dev -e JAVA_OPTS $JAVA_OPTS  -e  ARTIFACT_NAME=${artifactId}-${versionId}.jar  -e  MAIN_CLASS="com.rajesh.transcribe.transribeapi.TranscribeapiApplication"  '
                     readAppInfoFromJson();
 
                 }
@@ -155,7 +168,7 @@ pipeline {
                     println("Deploying to "+environment)
                     //TODO ssh to prod server
                     JAVA_OPTS='-Dspring.profiles.active=prod -Dlogging.level.org.springframework=WARN   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
-                    sh '  docker run -d --restart -t -p 8585:8585 transcribeapp/${artifactId}:${version}  --label production_status=beta-testing --label env=prod -e JAVA_OPTS=$JAVA_OPTS  -e  ARTIFACT_NAME=$artifactId-$version.jar  -e  MAIN_CLASS="com.rajesh.transcribe.transribeapi.TranscribeapiApplication"  '
+                    sh '  docker run -d --restart -t -p 8585:8585 ${artifactId}:${versionId}  --label production_status=beta-testing --label env=prod -e JAVA_OPTS=$JAVA_OPTS  -e  ARTIFACT_NAME=$artifactId-$version.jar  -e  MAIN_CLASS="com.rajesh.transcribe.transribeapi.TranscribeapiApplication"  '
 
                 }
             }
