@@ -55,7 +55,7 @@ pipeline {
                     last_started = env.STAGE_NAME
                     cleanWs()
                     println("idString:: " + idstring + " id:: " + id)
-                        sh """
+                    sh """
 
                            #mkdir -pv /opt/apps/  /opt/test/
                            ls -lrth /opt/apps/  /opt/
@@ -89,13 +89,32 @@ pipeline {
             }
 
         }
+
+        stage('build-base-dockerimage') {
+            when {
+                expression {
+                    return params.buildSpringBootImage
+                }
+
+            }
+            steps {
+                script {
+                    last_started = env.STAGE_NAME
+                    echo 'build base spring boot runtime image.. '
+                    println(" stagename :: "+env.STAGE_NAME);
+                    script.sh('cat Dockerfile_spring_boot_runtime')
+                    sh "docker build . -t spring-boot-runtime:openjdk-11-slim -f Dockerfile_spring_boot_runtime --progress auto"
+                }
+            }
+        }
+
         stage('Build') {
             steps {
                 script {
                     last_started = env.STAGE_NAME
 
-                    def artifactId = readMavenPom().getArtifactId()
-                    def versionId = readMavenPom().getVersion()
+                    artifactId = readMavenPom().getArtifactId()
+                    versionId = readMavenPom().getVersion()
                     sh """
                         id -a
 
@@ -106,16 +125,15 @@ pipeline {
                         mvn  -U -DskipTests clean package
                         ls -lrth
                         pwd
-                        mkdir -p ${WORKSPACE}/transcribe-api/target/dependency && (cd ${WORKSPACE}/transcribe-api/target/dependency; jar -xf ../*.jar)
-                        cp ${WORKSPACE}/CI-CD/Dockerfile ${WORKSPACE}/transcribe-api/target/dependency/
-                        cd ${WORKSPACE}/transcribe-api/target/dependency/
                         cp ${WORKSPACE}/transcribe-api/target/classes/META-INF/build-info.properties  ${WORKSPACE}  
-                        docker build  -t ${artifactId} --build-arg DEPENDENCY=target/dependency  --build-arg ARTIFACT_NAME=${artifactId}-${versionId}.jar --build-arg BUILD_WORKSPACE="${WORKSPACE}" --build-arg MAIN_CLASS="com.rajesh.transcribe.transribeapi.TranscribeapiApplication" .
+                        cd ${WORKSPACE}/transcribe-api/target/
+                        docker build  -t ${artifactId} --build-arg DEPENDENCY=target/dependency  --build-arg ARTIFACTID=${artifactId}-${versionId}.jar --build-arg ARTIFACT=transcribe-api --build-arg VERSION=${versionId}  .
                         docker tag ${artifactId} ${artifactId}:${versionId}
                         docker images
 
                         """
-                    def buildInfoProps = readProperties interpolate: true, file: '${WORKSPACE}/build-info.properties';
+                    def buildInfoProps = readProperties interpolate: true, file: 'build-info.properties';
+                    println(buildInfoProps)
                 }
             }
         }
@@ -123,8 +141,8 @@ pipeline {
             steps {
                 script {
                     last_started = env.STAGE_NAME
-                    echo 'Testing..'
-                    println("versionId:: "+versionId +" stagename :: "+env.STAGE_NAME);
+                    echo 'Testing.. '
+                    println(" stagename :: "+env.STAGE_NAME);
                     //sh 'mvn -B test package'
                 }
             }
@@ -140,11 +158,13 @@ pipeline {
             steps {
                 script{
                     last_started = env.STAGE_NAME
-                    def buildInfoProps = readProperties interpolate: true, file: '${WORKSPACE}/build-info.properties';
+                    def artifactId = readMavenPom().getArtifactId()
+                    def versionId = readMavenPom().getVersion()
+                    def buildInfoProps = readProperties interpolate: true, file: 'build-info.properties';
                     mainClass = buildInfoProps['build.app.mainClass']
                     imageName = buildInfoProps['build.name']
                     versionId = buildInfoProps['build.version']
-                    println("Deploying to "+environment+"versionId:: "+versionId)
+                    println("Deploying to "+environment+"versionId:: "+versionId + " buildInfoProps:: "+buildInfoProps)
                     //TODO ssh to prod server
                     JAVA_OPTS='-Dspring.profiles.active=qa -Dlogging.level.org.springframework=WARN   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
                     sh "  docker run --restart=always  -p 8585:8585 --label production_status=development --label env=${DEPLOY_TO_ENV} -e JAVA_OPTS ${JAVA_OPTS}  -e  ARTIFACT_NAME=${artifactId}-${versionId}.jar  --label production_status=qa-testing --label env=qa  -e ENV=qa -e production_status=qa-testing -e  MAIN_CLASS=${mainClass}  --cidfile /tmp/docker_test.cid  -t ${artifactId}:${versionId}  "
@@ -163,16 +183,17 @@ pipeline {
             steps{
                 script{
                     last_started = env.STAGE_NAME
-                    def buildInfoProps = readProperties interpolate: true, file: '${WORKSPACE}/build-info.properties';
+                    def artifactId = readMavenPom().getArtifactId()
+                    def versionId = readMavenPom().getVersion()
+                    def buildInfoProps = readProperties interpolate: true, file: 'build-info.properties';
                     mainClass = buildInfoProps['build.app.mainClass']
                     imageName = buildInfoProps['build.name']
                     versionId = buildInfoProps['build.version']
-                    println ("main class :: "+mainClass)
                     JAVA_OPTS='-Dspring.profiles.active=dev -Dlogging.level.org.springframework=INFO   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
-                    println("Deploying to "+environment+"versionId:: "+versionId +" JAVA_OPTS:: "+JAVA_OPTS +"main class :: "+mainClass)
+                    println("Deploying to "+environment+"versionId:: "+versionId +" JAVA_OPTS:: "+JAVA_OPTS +"main class :: "+mainClass + " buildInfoProps:: "+buildInfoProps)
 
                     sh "  docker run --restart=always  -p 8585:8585 --label production_status=development --label env=dev -e JAVA_OPTS ${JAVA_OPTS}  -e  ARTIFACT_NAME=${artifactId}-${versionId}.jar  -e  MAIN_CLASS=${mainClass}  --cidfile /tmp/docker_test.cid  -t ${artifactId}:${versionId}  "
-                    readAppInfoFromJson();
+                    //readAppInfoFromJson();
 
                 }
 
@@ -192,12 +213,14 @@ pipeline {
                     last_started = env.STAGE_NAME
                     //TODO ssh to prod server
                     //TODO install cert
-                    def buildInfoProps = readProperties interpolate: true, file: '${WORKSPACE}/build-info.properties';
+                    def artifactId = readMavenPom().getArtifactId()
+                    def versionId = readMavenPom().getVersion()
+                    def buildInfoProps = readProperties interpolate: true, file: 'build-info.properties';
                     mainClass = buildInfoProps['build.app.mainClass']
                     imageName = buildInfoProps['build.name']
                     versionId = buildInfoProps['build.version']
                     JAVA_OPTS='-Dspring.profiles.active=prod -Dlogging.level.org.springframework=WARN   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
-                    println("Deploying to "+environment+"versionId:: "+versionId +" JAVA_OPTS:: "+JAVA_OPTS)
+                    println("Deploying to "+environment+"versionId:: "+versionId +" JAVA_OPTS:: "+JAVA_OPTS +" buildInfoProps:: "+buildInfoProps)
                     sh "  docker run --restart=always  -p 8585:8585 --label production_status=development --label env=${DEPLOY_TO_ENV} -e JAVA_OPTS ${JAVA_OPTS}  -e  ARTIFACT_NAME=${artifactId}-${versionId}.jar  --label production_status=beta-testing --label env=prod  -e ENV=prod -e production_status=beta-testing -e  MAIN_CLASS=${mainClass}  --cidfile /tmp/docker_test.cid  -t ${artifactId}:${versionId}  "
 
                 }
@@ -212,7 +235,7 @@ pipeline {
         }
         failure {
             //mail to: transcribeappuser@yahoo.com, subject: 'The Pipeline failed '
-            println(" build failed ${last_started}")
+            println(" build failed "+env.STAGE_NAME)
         }
     }
 

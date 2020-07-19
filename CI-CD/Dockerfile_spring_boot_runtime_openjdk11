@@ -1,0 +1,13 @@
+FROM openjdk:11-jdk-slim as jdk-runtime
+RUN ls /usr/local/openjdk-11/bin/
+RUN /usr/local/openjdk-11/bin/jlink     --compress=2     --module-path /usr/local/openjdk-11/jmods     --add-modules java.base,java.logging,java.xml,jdk.unsupported,java.sql,java.naming,java.
+desktop,java.management,java.security.jgss,java.instrument,jdk.jdwp.agent     --output /usr/lib/jvm/jdk11-minimal
+
+FROM debian:stretch-slim
+COPY --from=jdk-runtime  /usr/lib/jvm/jdk11-minimal /usr/lib/jvm/jdk11-minimal
+RUN ln -s /usr/lib/jvm/jdk11-minimal/bin/java  /usr/bin/java
+RUN apt-get  update && apt-get -y  upgrade && rm -rf /var/cache/apt-get/* && \
+	apt-get install -y wget  htop curl openssl
+
+# to build:
+# docker build . -t spring-boot-runtime:openjdk-11-slim -f Dockerfile_spring_boot_runtime --progress auto
