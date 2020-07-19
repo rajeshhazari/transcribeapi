@@ -43,6 +43,7 @@ pipeline {
     parameters {
         string(name: 'BRANCH_NAME', defaultValue: 'branch1', description: 'Branch Name')
         string(name: 'environment', defaultValue: 'dev', description: 'Environment profile for sping app')
+        booleanParam(name: 'buildSpringBootImage', defaultValue: false,  description: 'Please select to build spring boot docker image.')
         booleanParam(name: 'DEPLOY',  description: 'Please select to deploy.')
         choice(name: 'DEPLOY_TO_ENV', choices: ['dev', 'qa', 'prod'], description: 'select and environement for deploying.')
     }
@@ -75,6 +76,12 @@ pipeline {
             }
         }
         stage("Get latest git tag") {
+            when {
+                expression {
+                    return (params.BRANCH_NAME == 'master')
+                }
+
+            }
             steps{
                 script{
                     if (params.BRANCH_NAME == 'master') {
