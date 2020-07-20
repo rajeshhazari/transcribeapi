@@ -141,7 +141,7 @@ pipeline {
                     mainClass = buildInfoProps['build.app.mainClass']
                     imageName = buildInfoProps['build.name']
                     versionId = buildInfoProps['build.version']
-                    def image = docker.build("${imageName}:${versionId}", " --build-arg DEPENDENCY=target/dependency  --build-arg ARTIFACTID=${imageName}-${versionId}.jar --build-arg ARTIFACT=${imageName} --build-arg VERSION=${versionId}  -f ${WORKSPACE}/CI-CD/Dockerfile . ")
+                    def image = docker.build("${imageName}:${versionId}", " --build-arg DEPENDENCY=target/dependency  --build-arg ARTIFACTID=${imageName}-${versionId}.jar --build-arg ARTIFACT=${imageName} --build-arg VERSION=${versionId}  -f ${WORKSPACE}/CI-CD/Dockerfile -f ${WORKSPACE}/CI-CD/Dockerfile ${WORKSPACE}/transcribe-api/target/ ")
                     println(buildInfoProps)
                 }
             }
