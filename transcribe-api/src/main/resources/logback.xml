@@ -11,7 +11,7 @@
 
 <appender name="FILE" class="ch.qos.logback.core.FileAppender">
     <!-- <file>${user.home}/${app.name}/logs/app.log</file> -->
-    <file>${user.home}/temp/logs/app.log</file>
+    <file>./logs/app.log</file>
 
     <encoder>
       <pattern>%date %level [%thread] %logger{10} [%file:%line] %msg%n</pattern>
