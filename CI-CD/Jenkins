@@ -70,8 +70,12 @@ pipeline {
             steps{
                 println('Branch name::'+params.BRANCH_NAME)
                 //checkout scm
-                checkout([$class: 'GitSCM', branches: [[name: '${BRANCH_NAME}'], [name: '*/branch1']], doGenerateSubmoduleConfigurations: false,
-                          extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'RH-Transcribe-app-github-creds', url: 'https://github.com/rajeshhazari/transcribeapi.git']]])
+                checkout([$class: 'GitSCM',
+                          branches: [name: "${BRANCH_NAME}"], doGenerateSubmoduleConfigurations: false,
+                          submoduleCfg: [],
+                          userRemoteConfigs: [[credentialsId: 'RH-Transcribe-app-github-creds', url: 'https://github.com/rajeshhazari/transcribeapi.git']],
+                          changelog: false, 	extensions: [[$class: 'CloneOption', depth: 1, noTags: false, reference: '', shallow: true]],
+                          poll: false ])
                 sh ' chmod +x ${WORKSPACE}/CI-CD/scripts/*.sh  '
             }
         }
@@ -109,8 +113,8 @@ pipeline {
                     last_started = env.STAGE_NAME
                     echo 'build base spring boot runtime image.. '
                     println(" stagename :: "+env.STAGE_NAME);
-                    script.sh('cat Dockerfile_spring_boot_runtime')
-                    sh "docker build . -t spring-boot-runtime:openjdk-11-slim -f Dockerfile_spring_boot_runtime --progress auto"
+                    sh 'cat CI-CD/Dockerfile_spring_boot_runtime_openjdk11 '
+                    def image = docker.build("spring-boot-runtime:openjdk-11-slim", " -f CI-CD/Dockerfile_spring_boot_runtime_openjdk11 --progress auto .")
                 }
             }
         }
@@ -122,23 +126,18 @@ pipeline {
 
                     artifactId = readMavenPom().getArtifactId()
                     versionId = readMavenPom().getVersion()
+                    println( "Running " + env.BUILD_NUMBER +"  on "+ env.JENKINS_URL + "   artifactId::" + artifactId + " versionId :: "+versionId )
                     sh """
                         id -a
-
-                        echo 'Running ${BUILD_ID} on ${JENKINS_URL}'
-                    
-                        echo ${artifactId}  ${versionId} 
-
                         mvn  -U -DskipTests clean package
                         ls -lrth
-                        pwd
                         cp ${WORKSPACE}/transcribe-api/target/classes/META-INF/build-info.properties  ${WORKSPACE}  
                         cd ${WORKSPACE}/transcribe-api/target/
                         docker build  -t ${artifactId} --build-arg DEPENDENCY=target/dependency  --build-arg ARTIFACTID=${artifactId}-${versionId}.jar --build-arg ARTIFACT=transcribe-api --build-arg VERSION=${versionId}  .
                         docker tag ${artifactId} ${artifactId}:${versionId}
                         docker images
-
                         """
+                    //def image = docker.build("${artifactId}:${versionId}.$BUILD_NUMBER", "--build-arg ARTIFACTID=${artifactId}-${versionId}.jar --build-arg ARTIFACT=transcribe-api --build-arg VERSION=${versionId} .")
                     def buildInfoProps = readProperties interpolate: true, file: 'build-info.properties';
                     println(buildInfoProps)
                 }
