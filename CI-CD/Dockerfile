@@ -73,5 +73,5 @@ COPY ./${ARTIFACT}-${VERSION}.jar $APP_HOME/apps/transcribeapi/${ARTIFACT}-${VER
  #docker build -t <image_tag> . && docker run -p 8585:8585 <image_tag>
 #ENTRYPOINT [“/usr/lib/jvm/spring-boot-runtime/bin/java”,"${JAVA_OPTS} -Djava.security.egd=file:/dev/urandom -jar  $APP_HOME/apps/transcribeapi/${ARTIFACT}-${VERSION}.jar”]
 #docker build -t <image_tag> . && docker run -p 8585:8585 -p 5005:5005 --env JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005  --env JAVA_OPTS=-Dlogging.level.org.springframework=DEBUG <image_tag>
-CMD java ${JAVA_OPTS} -DLOGGING_FILE_PATH=$APP_HOME/logs  -jar  $APP_HOME/apps/transcribeapi/${ARTIFACT}-${VERSION}.jar
+CMD java ${JAVA_OPTS} -Dlogging.file.path=$APP_HOME/logs  -jar  $APP_HOME/apps/transcribeapi/${ARTIFACT}-${VERSION}.jar
 #docker build -t <image_tag> . && docker run -p 8080:8080 -v /opt/spring-boot/test/config:$APP_HOME/apps/configs:ro <image_tag>
