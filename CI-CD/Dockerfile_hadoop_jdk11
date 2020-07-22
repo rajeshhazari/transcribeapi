@@ -1,21 +1,21 @@
 FROM openjdk:11-jdk-slim as jdk-runtime
 
-MAINTAINER rajeshhazari@.com
+MAINTAINER rajesh_hazari@yahoo.com
 
 ####installing supervisor
 RUN apt-get -y update && apt-get install -y supervisor
 
 ####downloading & unpacking Spark 1.6.1 [prebuilt for Hadoop 2.7+ and scala 2.10]
-RUN wget http://apache.mirrors.lucidnetworks.net/spark/spark-2.1.0/spark-2.1.0-bin-hadoop2.7.tgz && \
-	tar -xzf spark-2.1.0-bin-hadoop2.7.tgz && \
-	mv spark-2.1.0-bin-hadoop2.7 /opt/apps/spark
+RUN wget http://apache.mirrors.lucidnetworks.net/spark/spark-3.0.0/spark-3.0.0-bin-hadoop2.7.tgz && \
+	tar -xzf spark-3.0.0-bin-hadoop2.7.tgz && \
+	mv spark-3.0.0-bin-hadoop2.7 /opt/apps/spark
 
 #####adding conf files [to be used by supervisord for running spark master/slave]
-COPY master.conf /opt/apps/conf/master.conf
-COPY slave.conf /opt/apps/conf/slave.conf
+#COPY master.conf /opt/apps/conf/master.conf
+#COPY slave.conf /opt/apps/conf/slave.conf
 
 #######exposing port 8080 for spark master UI
-EXPOSE 8080
+EXPOSE 8181
 
 #default command: running an interactive spark shell in the local mode
 CMD ["/opt/apps/spark/bin/spark-shell", “–master”, “local[*]”]

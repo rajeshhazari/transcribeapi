@@ -14,9 +14,6 @@
 # (2) install build dependencies
 #RUN apk --no-cache add openjdk11
 From spring-boot-runtime:openjdk-11-slim
-RUN export JAVA_HOME=$(which java) && \
-    echo $PATH $JAVA_HOME && \
-    export PATH=$PATH:$JAVA_HOME/bin
 
 # to check for open ports in the container: docker run <container id> netstat -tan
 #ARG SSH_KEY
@@ -37,18 +34,22 @@ ARG ARTIFACTID
 
 ENV APP_HOME /opt
 
-RUN  echo $GID $GROUPNAME $USERNAME && \
-	 addgroup -gid $GID  $GROUPNAME  && \
-     useradd -r -g $GROUPNAME $USERNAME
-RUN  chown $USERNAME:$GROUPNAME -R $APP_HOME
-USER $USERNAME
-RUN  mkdir -p /opt/apps/transcribeapi && \
+RUN  export JAVA_HOME=$(which java) && \
+     echo $PATH $JAVA_HOME && \
+     export PATH=$PATH:$JAVA_HOME/bin &&\
+     addgroup -gid $GID  $GROUPNAME  && \
+     useradd -r -g $GROUPNAME $USERNAME && \
+     mkdir -p /opt/apps/transcribeapi && \
 	 mkdir -p /opt/apps/python && \
 	 mkdir -p /opt/apps/solr-data/ && \
      mkdir -p $APP_HOME/configs && \
      mkdir -p $APP_HOME/logs && \
+     mkdir -p $APP_HOME/apps/temp && \
+     chown $USERNAME:$GROUPNAME -R $APP_HOME  && \
+     chown $USERNAME:$GROUPNAME -R $APP_HOME  && \
      chown app_user:devops -R $APP_HOME
 
+USER $USERNAME
 WORKDIR $APP_HOME/apps/
 
 #HEALTHCHECK --interval=5m --timeout=3s \
@@ -63,8 +64,6 @@ EXPOSE 8585
  #COPY ./BOOT-INF/lib $APP_HOME/apps/transcribeapi/lib
  #COPY ./META-INF $APP_HOME/apps/transcribeapi/META-INF
  #COPY ./BOOT-INF/classes $APP_HOME/apps/transcribeapi
- RUN ls -lrth $APP_HOME/apps/transcribeapi/
- COPY ./${ARTIFACT}-${VERSION}.jar $APP_HOME/apps/transcribeapi/${ARTIFACT}-${VERSION}.jar
  #RUN cp $APP_HOME/apps/transcribeapi/classes/sample.jks $APP_HOME/apps/transcribeapi/classes/sample.cert
 #ENTRYPOINT ["sh", "-c", "$JAVA_OPTS -Djava.security.egd=file:/dev/urandom -jar app.jar "]
 #ENTRYPOINT ["java","-cp","$APP_HOME/apps/transcribeapi/lib/*:$APP_HOME/apps/transcribeapi/classes  $JAVA_OPTS  -Djava.security.egd=file:/dev/urandom $MAIN_CLASS"]
