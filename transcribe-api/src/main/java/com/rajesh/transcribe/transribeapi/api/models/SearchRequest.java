@@ -16,7 +16,7 @@ import javax.validation.constraints.PositiveOrZero;
 public class SearchRequest {
     private String query = null;
     private String email = null;
-    private String TranscriptionReqId = null;
+    private String transcriptionReqId = null;
     private String fileName = null;
     private int page = 1;
     private int pageSize = 10;

@@ -1,5 +1,11 @@
 package com.rajesh.transcribe.transribeapi.module.config;
 
+import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.impl.CloudSolrClient;
+import org.apache.solr.client.solrj.impl.HttpSolrClient;
+import org.apache.solr.client.solrj.impl.LBHttpSolrClient;
+import org.apache.solr.client.solrj.impl.SolrClientBuilder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.jdbc.DataSourceHealthIndicator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,6 +18,10 @@ import javax.sql.DataSource;
 @Configuration
 public class DataSourceConfiguration {
     
+    @Value("${solr.server.url}")
+    private String solrUrl ;
+    @Value("${solr.server.zkhost}")
+    private String zkHost ;
     @Bean
     @Profile("default")
     public DataSource embeddedDataSource(){
@@ -20,6 +30,28 @@ public class DataSourceConfiguration {
                 .addScript("classpath:/h2-db/schema_h2.sql")
                 .addScript("classpath:/h2-db/data-temp.sql")
                 .continueOnError(true)
+                .build();
+    }
+    
+    
+    @Bean
+    @Profile("default")
+    public SolrClient getCloudSolrClient(){
+        return new CloudSolrClient.Builder()
+                .withLBHttpSolrClient(getLBHttpSolrClient())
+                .withConnectionTimeout(10000)
+                .withSocketTimeout(60000)
+                .build();
+    }
+    
+    
+    @Bean
+    @Profile("default")
+    public LBHttpSolrClient getLBHttpSolrClient(){
+        return new LBHttpSolrClient.Builder()
+                .withBaseSolrUrl(solrUrl)
+                .withConnectionTimeout(10000)
+                .withSocketTimeout(60000)
                 .build();
     }
     

@@ -153,10 +153,16 @@ pipeline {
                         id -a
                         echo 'Running ${BUILD_ID} on  JENKINS_URL:: ${JENKINS_URL} artifactId :: ${artifactId}  versionId :: ${versionId} ' 
                         
-                        mkdir -p ${WORKSPACE}/transcribe-api/target/dependency && (cd ${WORKSPACE}/transcribe-api/target/dependency; jar -xf ../*.jar)
+                        mkdir -p ${WORKSPACE}/transcribe-api/target/dependency  
+                        cd ${WORKSPACE}/transcribe-api/target/dependency 
+                        jar -xf ../*.jar
                         cp ${WORKSPACE}/CI-CD/Dockerfile ${WORKSPACE}/transcribe-api/target/dependency/
                         cp ${WORKSPACE}/transcribe-api/target/classes/META-INF/build-info.properties  ${WORKSPACE}  
                         cd ${WORKSPACE}/transcribe-api/target/dependency/
+                        docker build  -t ${artifactId} --build-arg DEPENDENCY=target/dependency  --build-arg ARTIFACT_NAME=${artifactId}-${versionId}.jar --build-arg BUILD_WORKSPACE="${WORKSPACE}" --build-arg MAIN_CLASS="com.rajesh.transcribe.transribeapi.TranscribeapiApplication" .
+                        docker tag ${artifactId} ${artifactId}:${versionId}
+                        docker images
+
                         
                         """
                     def buildInfoProps = readProperties interpolate: true, file: 'build-info.properties';

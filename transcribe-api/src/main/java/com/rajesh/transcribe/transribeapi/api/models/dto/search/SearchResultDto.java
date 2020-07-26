@@ -21,15 +21,15 @@ import java.util.Map;
 public class SearchResultDto extends BaseResponseDto {
     
     private String sttTranscriptionModule = null;
-    private String TranscriptionReqId = null;
+    private String transcriptionReqId = null;
     private String fileName = null;
     private Long fileSize = null;
-    private String TranscriptionResp = null;
-    private String OriginalMediaFormat = null;
+    private String transcriptionResp = null;
+    private String originalMediaFormat = null;
     private String mediaFormat = null;
     private Date transcribedDate = null;
     private Date downloadedDate = null;
     private String duration = null;
     private Date lastModified = null;
-    private Map<String, Long> spokenTextMap;
+    private Map<String, Long> spokenText;
 }
