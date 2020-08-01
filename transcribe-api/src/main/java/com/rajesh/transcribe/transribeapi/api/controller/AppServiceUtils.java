@@ -52,9 +52,27 @@ private static final Logger logger = getLogger(AppServiceUtils.class);
          } catch (IOException e) {
              e.printStackTrace();
              numBytesSaved = -1;
-             logger.error("IOException Occurred while reading from mp3Stream {}", e.getMessage());
+             logger.error("IOException occurred while reading from mp3Stream {}", e.getMessage());
          }
          return numBytesSaved;
      }
+    
+    
+    /**
+     *
+     * @param multipartDataStream
+     * @throws UnsupportedAudioFileException
+     */
+    public AudioFormat getMultipartStreamAudioFileFormat(MultipartFile multipartDataStream) throws UnsupportedAudioFileException{
+        AudioFormat audioFormat = null;
+        try {
+            AudioInputStream mp3InputStream = AudioSystem.getAudioInputStream(multipartDataStream.getInputStream());
+            audioFormat = mp3InputStream.getFormat();
+        } catch (IOException e) {
+            e.printStackTrace();
+            logger.error("IOException Occurred while fetching audioFormat from mp3Stream {}", e.getMessage());
+        }
+        return audioFormat;
+    }
      
 }

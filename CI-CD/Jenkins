@@ -152,17 +152,12 @@ pipeline {
                     sh """
                         id -a
                         echo 'Running ${BUILD_ID} on  JENKINS_URL:: ${JENKINS_URL} artifactId :: ${artifactId}  versionId :: ${versionId} ' 
-                        
+                        mvn  -U -DskipTests clean package
                         mkdir -p ${WORKSPACE}/transcribe-api/target/dependency  
                         cd ${WORKSPACE}/transcribe-api/target/dependency 
                         jar -xf ../*.jar
                         cp ${WORKSPACE}/CI-CD/Dockerfile ${WORKSPACE}/transcribe-api/target/dependency/
                         cp ${WORKSPACE}/transcribe-api/target/classes/META-INF/build-info.properties  ${WORKSPACE}  
-                        cd ${WORKSPACE}/transcribe-api/target/dependency/
-                        docker build  -t ${artifactId} --build-arg DEPENDENCY=target/dependency  --build-arg ARTIFACT_NAME=${artifactId}-${versionId}.jar --build-arg BUILD_WORKSPACE="${WORKSPACE}" --build-arg MAIN_CLASS="com.rajesh.transcribe.transribeapi.TranscribeapiApplication" .
-                        docker tag ${artifactId} ${artifactId}:${versionId}
-                        docker images
-
                         
                         """
                     def buildInfoProps = readProperties interpolate: true, file: 'build-info.properties';
@@ -170,8 +165,8 @@ pipeline {
                     imageName = buildInfoProps['build.name']
                     versionId = buildInfoProps['build.version']
                     println(buildInfoProps)
-                    def image = docker.build("${imageName}:${versionId}", " --build-arg DEPENDENCY=target/dependency  --build-arg ARTIFACTID=${imageName}-${versionId}.jar --build-arg ARTIFACT=${imageName} --build-arg VERSION=${versionId}  -f ${WORKSPACE}/CI-CD/Dockerfile  ${WORKSPACE}/transcribe-api/target/ ")
-
+                    def image = docker.build("${imageName}:${versionId}-${env.BUILD_ID}", " --build-arg DEPENDENCY=target/dependency  --build-arg ARTIFACTID=${imageName}-${versionId}.jar --build-arg ARTIFACT=${imageName} --build-arg VERSION=${versionId}  --build-arg BUILD_WORKSPACE=${WORKSPACE}   --build-arg MAIN_CLASS=${mainClass}  -f ./transcribe-api/target/dependency/Dockerfile  ./transcribe-api/target/dependency/ ")
+                    println("build image id:: "+image.id)
                 }
             }
         }
@@ -204,8 +199,8 @@ pipeline {
                     versionId = buildInfoProps['build.version']
                     println("Deploying to "+environment+"versionId:: "+versionId + " buildInfoProps:: "+buildInfoProps)
                     //TODO ssh to prod server
-                    JAVA_OPTS='-Dspring.profiles.active=qa -Dlogging.level.org.springframework=WARN  -Dapp.io.uploadDir=/opt/apps/temp -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
-                    sh "  docker run  --privileged   --restart=always  -p 8585:8585 --label production_status=development --label env=${DEPLOY_TO_ENV} -e JAVA_OPTS='${JAVA_OPTS}'  -e  ARTIFACTID=${imageName}-${versionId}.jar  -e  ARTIFACT=${imageName} -e  VERSION=${versionId}    --label production_status=qa-testing --label env=qa  -e ENV=qa -e production_status=qa-testing    ${imageName}:${versionId}  "
+                    JAVA_OPTS='-Dspring.profiles.active=qa  -Dlogging.level.org.springframework=WARN  -Dapp.io.uploadDir=/opt/apps/temp -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
+                    sh "  docker run  --privileged   --restart=always  -p 8585:8585 --label production_status=development --label env=${DEPLOY_TO_ENV}  -e JAVA_OPTS=\"'${JAVA_OPTS}'\"  -e  ARTIFACTID=${imageName}-${versionId}.jar  -e  ARTIFACT=${imageName}   -u app_user  -w /opt/apps/transcribeapi  -e  VERSION=${versionId}    --label production_status=qa-testing --label env=qa  -e ENV=qa -e production_status=qa-testing    ${imageName}:${versionId}-${env.BUILD_ID}  "
 
                 }
             }
@@ -227,10 +222,12 @@ pipeline {
                     mainClass = buildInfoProps['build.app.mainClass']
                     imageName = buildInfoProps['build.name']
                     versionId = buildInfoProps['build.version']
-                    JAVA_OPTS='-Dspring.profiles.active=dev -Dlogging.level.org.springframework=INFO    -Dapp.io.uploadDir=/opt/apps/temp   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
+                    JAVA_OPTS="-Dspring.profiles.active=dev -Dlogging.level.org.springframework=INFO    -Dapp.io.uploadDir=/opt/apps/temp   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n "
                     println("Deploying to :: "+environment+"  versionId:: "+versionId +" JAVA_OPTS:: "+JAVA_OPTS +"main class :: "+mainClass + " buildInfoProps:: "+buildInfoProps)
 
-                    sh "  docker run  --privileged   --restart=always  -p 8585:8585 --label production_status=development --label env=dev -e JAVA_OPTS='${JAVA_OPTS}'  -e  ARTIFACT_ID=${imageName}-${versionId}.jar  -e  ARTIFACT=${imageName}  -e  VERSION=${versionId}      -t  ${imageName}:${versionId}  "
+                    sh """
+                          docker run  --privileged   --restart=always  -p 8585:8585 --label production_status=development --label env=dev --name ${imageName}-dev -e JAVA_OPTS='${JAVA_OPTS}'  -e  ARTIFACT_ID=${imageName}-${versionId}.jar  -e  ARTIFACT=${imageName}  -e  VERSION=${versionId}  -u app_user  -e MAIN_CLASS='"${mainClass}"' -t  ${imageName}:${versionId}-${env.BUILD_ID}  
+                        """
                     //readAppInfoFromJson();
 
                 }
@@ -259,7 +256,7 @@ pipeline {
                     versionId = buildInfoProps['build.version']
                     JAVA_OPTS='-Dspring.profiles.active=prod -Dlogging.level.org.springframework=WARN    -Dapp.io.uploadDir=/opt/apps/temp   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
                     println("Deploying to "+environment+"versionId:: "+versionId +" JAVA_OPTS:: "+JAVA_OPTS +" buildInfoProps:: "+buildInfoProps)
-                    sh "  docker run --privileged    --restart=always  -p 8585:8585 --label production_status=development --label env=${DEPLOY_TO_ENV} -e JAVA_OPTS ${JAVA_OPTS}  -e  ARTIFACTID=${imageName}-${versionId}.jar  -e  ARTIFACT=${imageName}  -e  VERSION=${versionId}     --label production_status=beta-testing --label env=prod  -e ENV=prod -e production_status=beta-testing    -t ${imageName}:${versionId}  "
+                    sh "  docker run --privileged    --restart=always  -p 8585:8585 --label production_status=development --label env=${DEPLOY_TO_ENV}  -e JAVA_OPTS=\"'${JAVA_OPTS}'\"  -e  ARTIFACTID=${imageName}-${versionId}.jar  -e  ARTIFACT=${imageName}  -e  VERSION=${versionId}     --label production_status=beta-testing --label env=prod  -e ENV=prod -e production_status=beta-testing    -t ${imageName}:${versionId}-${env.BUILD_ID}  "
 
                 }
             }

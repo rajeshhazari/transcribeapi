@@ -5,44 +5,31 @@
 package com.rajesh.transcribe.transribeapi.api.services.solr.manager;
 
 
-import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import com.rajesh.transcribe.transribeapi.api.models.dto.TranscribedRespSolrInputDoc;
 import com.rajesh.transcribe.transribeapi.api.models.dto.sphinx.TranscriptionResponseDto;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.ListUtils;
-import org.apache.commons.collections.MapUtils;
 import org.apache.logging.log4j.Logger;
-import org.apache.lucene.util.CollectionUtil;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.request.UpdateRequest;
 
 import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.util.NamedList;
-import org.apache.solr.util.SolrPluginUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.relational.repository.query.DtoInstantiatingConverter;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AutoPopulatingList;
-import org.springframework.util.MultiValueMap;
-import org.springframework.util.ObjectUtils;
 
 import static org.apache.logging.log4j.LogManager.getLogger;
 
 @Component
-public class SolrManager {
-private static final Logger logger = getLogger(SolrManager.class);
+public class SolrSearchService {
+private static final Logger logger = getLogger(SolrSearchService.class);
     
     
     private UpdateRequest updateRequest = null;

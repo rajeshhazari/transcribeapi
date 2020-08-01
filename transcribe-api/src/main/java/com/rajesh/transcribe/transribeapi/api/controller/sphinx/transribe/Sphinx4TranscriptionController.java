@@ -127,12 +127,14 @@ public class Sphinx4TranscriptionController {
         //getFileChunkFromStream(file);
         TranscriptionResponseDto response = new TranscriptionResponseDto();
         if(file.isEmpty()){
+            //TranscribeReqFileMetadata transcribeReqFileMetadata = getFileMetadata(file)
             res.setStatus(HttpStatus.BAD_REQUEST.value());
             res.flushBuffer();
             AppError error = new AppError(HttpStatus.BAD_REQUEST,"File size is zero OR File is empty!");
             response.setError(error);
             return new ResponseEntity<TranscriptionResponseDto>(response, HttpStatus.BAD_REQUEST);
-        } // MetaData document = objectMapper.readValue(metaData, MetaData.class);
+        }
+        // MetaData document = objectMapper.readValue(metaData, MetaData.class);
         response.setTrancriptionId(reqId);
         response.setFileName(file.getOriginalFilename());
         HttpHeaders httpHeaders = new HttpHeaders();
