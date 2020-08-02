@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true">
-    <property name="LOG_PATH" value="/opt" />
     <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
     <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
         <resetJUL>true</resetJUL>
@@ -11,7 +10,7 @@
 
 <appender name="FILE" class="ch.qos.logback.core.FileAppender">
     <!-- <file>${user.home}/${app.name}/logs/app.log</file> -->
-    <file>${LOG_PATH}/logs/app.log</file>
+    <file>logs/app.log</file>
 
     <encoder>
       <pattern>%date %level [%thread] %logger{10} [%file:%line] %msg%n</pattern>
@@ -29,7 +28,7 @@
   
   <appender name="rollingFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-        <fileNamePattern>${user.home}/temp/logs/applog-%d{yyyy-MM-dd}.log</fileNamePattern>
+        <fileNamePattern>logs/applog-%d{yyyy-MM-dd}.log</fileNamePattern>
         <maxHistory>10</maxHistory> 
         <totalSizeCap>500MB</totalSizeCap>
     </rollingPolicy>

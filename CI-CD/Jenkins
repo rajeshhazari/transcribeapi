@@ -27,6 +27,18 @@ def runCommand(cmd, args){
 
 }
 
+def checkApiContainerHealthStatus( cid , purge){
+    response=script.sh(" docker inspect --format='{{json .State.Health}}'  ${cid} ")
+    // echo "response code: $http_response"
+    if ($response != "0" ) {
+        println("Container is not healthy");
+        exit 1
+    } else {
+        println("Container is healthy");
+        return true;
+    }
+}
+
 pipeline {
     agent any
     tools {

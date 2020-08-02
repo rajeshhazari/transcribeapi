@@ -64,9 +64,9 @@ COPY ./BOOT-INF/lib $APP_HOME/apps/transcribeapi/lib
 COPY ./META-INF $APP_HOME/apps/transcribeapi/META-INF
 COPY ./BOOT-INF/classes $APP_HOME/apps/transcribeapi
 COPY ./org $APP_HOME/apps/transcribeapi/org
-RUN ls -lrth $APP_HOME/apps/transcribeapi/
- #RUN cp $APP_HOME/apps/transcribeapi/classes/sample.jks $APP_HOME/apps/transcribeapi/classes/sample.cert
+#RUN cp $APP_HOME/apps/transcribeapi/classes/sample.jks $APP_HOME/apps/transcribeapi/classes/sample.cert
 #ENTRYPOINT ["sh", "-c", "$JAVA_OPTS -Djava.security.egd=file:/dev/urandom -jar app.jar "]
+HEALTHCHECK --interval=5s --timeout=5s   CMD curl -k --fail https://localhost:8585/api/v1/actuator/health || exit 1
 ENTRYPOINT ["sh", "-c",  "java  -cp  /opt/apps/transcribeapi:/opt/apps/transcribeapi/lib/*:/opt/apps/transcribeapi/classes:/opt/apps/transcribeapi/org  $JAVA_OPTS  -Djava.security.egd=file:/dev/urandom   $MAIN_CLASS " ]
 
 #docker build -t <image_tag> . && docker run -p 8585:8585 <image_tag>

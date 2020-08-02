@@ -6,7 +6,10 @@ import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.impl.LBHttpSolrClient;
 import org.apache.solr.client.solrj.impl.SolrClientBuilder;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.actuate.autoconfigure.solr.SolrHealthContributorAutoConfiguration;
 import org.springframework.boot.actuate.jdbc.DataSourceHealthIndicator;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.solr.SolrAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -16,14 +19,17 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import javax.sql.DataSource;
 
 @Configuration
+@EnableAutoConfiguration(exclude = {
+        SolrAutoConfiguration.class,
+        SolrHealthContributorAutoConfiguration.class})
 public class DataSourceConfiguration {
     
-    @Value("${solr.server.url}")
+    @Value("${solr.solrUrl}")
     private String solrUrl ;
-    @Value("${solr.server.zkhost}")
+    @Value("${solr.zkhosts}")
     private String zkHost ;
     @Bean
-    @Profile("default")
+    @Profile("default-dev")
     public DataSource embeddedDataSource(){
         return new EmbeddedDatabaseBuilder()
                 .setType(EmbeddedDatabaseType.H2)
@@ -35,7 +41,7 @@ public class DataSourceConfiguration {
     
     
     @Bean
-    @Profile("default")
+    @Profile("default-dev")
     public SolrClient getCloudSolrClient(){
         return new CloudSolrClient.Builder()
                 .withLBHttpSolrClient(getLBHttpSolrClient())
@@ -46,7 +52,6 @@ public class DataSourceConfiguration {
     
     
     @Bean
-    @Profile("default")
     public LBHttpSolrClient getLBHttpSolrClient(){
         return new LBHttpSolrClient.Builder()
                 .withBaseSolrUrl(solrUrl)
