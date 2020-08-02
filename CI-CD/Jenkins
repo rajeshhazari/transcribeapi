@@ -48,6 +48,10 @@ pipeline {
         def JAVA_OPTS='-Dspring.profiles.active=dev -Dlogging.level.org.springframework=DEBUG   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
         def idstring = UUID.randomUUID().toString();
         id = "tmp-${UUID.randomUUID()}"
+        HEALTHCHECK_URL="api/v1/actuator/health"
+        SOLRHEALTHCHECK_URL="api/v1/actuator/health/solr"
+        DBHEALTHCHECK_URL="api/v1/actuator/health"
+
 
 
 
@@ -238,9 +242,8 @@ pipeline {
                     println("Deploying to :: "+environment+"  versionId:: "+versionId +" JAVA_OPTS:: "+JAVA_OPTS +"main class :: "+mainClass + " buildInfoProps:: "+buildInfoProps)
 
                     sh """
-                          docker run  --privileged   --restart=always  -p 8585:8585 --label production_status=development --label env=dev --name ${imageName}-dev -e JAVA_OPTS='${JAVA_OPTS}'  -e  ARTIFACT_ID=${imageName}-${versionId}.jar  -e  ARTIFACT=${imageName}  -e  VERSION=${versionId}  -u app_user  -e MAIN_CLASS='"${mainClass}"' -t  ${imageName}:${versionId}-${env.BUILD_ID}  
+                          docker run  --privileged   --restart=always  -p 8585:8585 --label production_status=development --label env=dev --name ${imageName}-dev -e JAVA_OPTS='${JAVA_OPTS}'  -e  ARTIFACT_ID=${imageName}-${versionId}.jar  -e  ARTIFACT=${imageName}  -e  VERSION=${versionId}  -u app_user  -e MAIN_CLASS='\"${mainClass}\"'   -e HEALTHCHECK_URL="${HEALTHCHECK_URL}"  -t  ${imageName}:${versionId}-${env.BUILD_ID}  
                         """
-                    //readAppInfoFromJson();
 
                 }
 
