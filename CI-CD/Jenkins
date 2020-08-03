@@ -215,7 +215,7 @@ pipeline {
                     versionId = buildInfoProps['build.version']
                     println("Deploying to "+environment+"versionId:: "+versionId + " buildInfoProps:: "+buildInfoProps)
                     //TODO ssh to prod server
-                    JAVA_OPTS='-Dspring.profiles.active=qa  -Dlogging.level.org.springframework=WARN  -Dapp.io.uploadDir=/opt/apps/temp -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
+                    JAVA_OPTS='-Dspring.profiles.active=qa  -Dlogging.level.org.springframework=WARN  -Dlogging.file.path=/opt  -Dapp.io.uploadDir=/opt/apps/temp -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
                     sh "  docker run  --privileged   --restart=always  -p 8585:8585 --label production_status=development --label env=${DEPLOY_TO_ENV}  -e JAVA_OPTS=\"'${JAVA_OPTS}'\"  -e  ARTIFACTID=${imageName}-${versionId}.jar  -e  ARTIFACT=${imageName}   -u app_user  -w /opt/apps/transcribeapi  -e  VERSION=${versionId}    --label production_status=qa-testing --label env=qa  -e ENV=qa -e production_status=qa-testing    ${imageName}:${versionId}-${env.BUILD_ID}  "
 
                 }
@@ -238,11 +238,15 @@ pipeline {
                     mainClass = buildInfoProps['build.app.mainClass']
                     imageName = buildInfoProps['build.name']
                     versionId = buildInfoProps['build.version']
-                    JAVA_OPTS="-Dspring.profiles.active=dev -Dlogging.level.org.springframework=INFO    -Dapp.io.uploadDir=/opt/apps/temp   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n "
+                    JAVA_OPTS="-Dspring.profiles.active=dev -Dlogging.level.org.springframework=INFO   -Dlogging.file.path=/opt  -Dapp.io.uploadDir=/opt/apps/temp   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n "
                     println("Deploying to :: "+environment+"  versionId:: "+versionId +" JAVA_OPTS:: "+JAVA_OPTS +"main class :: "+mainClass + " buildInfoProps:: "+buildInfoProps)
 
                     sh """
-                          docker run  --privileged   --restart=always  -p 8585:8585 --label production_status=development --label env=dev --name ${imageName}-dev -e JAVA_OPTS='${JAVA_OPTS}'  -e  ARTIFACT_ID=${imageName}-${versionId}.jar  -e  ARTIFACT=${imageName}  -e  VERSION=${versionId}  -u app_user  -e MAIN_CLASS='\"${mainClass}\"'   -e HEALTHCHECK_URL="${HEALTHCHECK_URL}"  -t  ${imageName}:${versionId}-${env.BUILD_ID}  
+                            echo "JAVA_OPTS:: ${JAVA_OPTS} MAIN_CLASS:: ${mainClass}"
+                            echo "stopping the container..."
+                            docker ps -a && docker stop  ${imageName}-dev  && docker container stop ${imageName}-dev && docker rm -f ${imageName}-dev && docker ps -a && docker images  
+                            docker run --restart=always  -p 8585:8585 --label production_status=development --name=${imageName}-dev --label env=dev -e JAVA_OPTS='${JAVA_OPTS}'  -e  MAIN_CLASS='\\"${mainClass}\\"'   -e HEALTHCHECK_URL="${HEALTHCHECK_URL}"   -u app_user  -t ${imageName}:${versionId}-${env.BUILD_ID}  
+                      
                         """
 
                 }
@@ -269,7 +273,7 @@ pipeline {
                     mainClass = buildInfoProps['build.app.mainClass']
                     imageName = buildInfoProps['build.name']
                     versionId = buildInfoProps['build.version']
-                    JAVA_OPTS='-Dspring.profiles.active=prod -Dlogging.level.org.springframework=WARN    -Dapp.io.uploadDir=/opt/apps/temp   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
+                    JAVA_OPTS='-Dspring.profiles.active=prod -Dlogging.level.org.springframework=WARN  -Dlogging.file.path=/opt  -Dapp.io.uploadDir=/opt/apps/temp   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
                     println("Deploying to "+environment+"versionId:: "+versionId +" JAVA_OPTS:: "+JAVA_OPTS +" buildInfoProps:: "+buildInfoProps)
                     sh "  docker run --privileged    --restart=always  -p 8585:8585 --label production_status=development --label env=${DEPLOY_TO_ENV}  -e JAVA_OPTS=\"'${JAVA_OPTS}'\"  -e  ARTIFACTID=${imageName}-${versionId}.jar  -e  ARTIFACT=${imageName}  -e  VERSION=${versionId}     --label production_status=beta-testing --label env=prod  -e ENV=prod -e production_status=beta-testing    -t ${imageName}:${versionId}-${env.BUILD_ID}  "
 
