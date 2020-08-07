@@ -5,6 +5,7 @@ import org.apache.solr.client.solrj.impl.CloudSolrClient;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.impl.LBHttpSolrClient;
 import org.apache.solr.client.solrj.impl.SolrClientBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.autoconfigure.solr.SolrHealthContributorAutoConfiguration;
 import org.springframework.boot.actuate.jdbc.DataSourceHealthIndicator;
@@ -28,8 +29,11 @@ public class DataSourceConfiguration {
     private String solrUrl ;
     @Value("${solr.zkhosts}")
     private String zkHost ;
+    @Autowired
+    private DataSource dataSource;
+    
     @Bean
-    @Profile("default-dev")
+    @Profile("default-local")
     public DataSource embeddedDataSource(){
         return new EmbeddedDatabaseBuilder()
                 .setType(EmbeddedDatabaseType.H2)
@@ -73,4 +77,9 @@ public class DataSourceConfiguration {
     }
     
     */
+    
+    @Bean
+    public DataSourceHealthIndicator dataSourceHealthIndicator() {
+        return new DataSourceHealthIndicator(dataSource);
+    }
 }

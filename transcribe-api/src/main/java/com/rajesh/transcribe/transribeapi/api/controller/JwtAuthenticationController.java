@@ -139,7 +139,7 @@ public class JwtAuthenticationController {
 					@ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
 			})
 	
-	@RequestMapping(value = "/register", method = RequestMethod.POST, produces = "application/jon")
+	@RequestMapping(value = "/public/register", method = RequestMethod.POST, produces = "application/jon")
 	public ResponseEntity<Map<String,String>> registerUser(@RequestBody RegisterUserRequest registerUserRequest, HttpServletRequest request, HttpServletResponse response) {
 		// TODO handle session specific logic.
 		Map<String, String> respMap = new ConcurrentHashMap();

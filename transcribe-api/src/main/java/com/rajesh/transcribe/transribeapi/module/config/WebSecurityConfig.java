@@ -19,7 +19,7 @@ class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	
 	private static final String[] AUTH_WHITELIST = {
 			// -- swagger ui
-			"/actuator/*",
+			"/actuator/**",
 			"/v2/api-docs/**",           // swagger
 			"/webjars/**",            // swagger-ui webjars
 			"/swagger-ui.html/**",  // swagger-ui resources
@@ -29,8 +29,8 @@ class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 			"/public/**",
 			"h2-console",
 			"/csrf/**",
-			"/version/",           // app version
-			"/register/",           // register customer
+			"/version/**",           // app version
+			"/register/**",           // register customer
 			// other public endpoints of your API may be appended to this array
 	};
 	
