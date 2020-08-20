@@ -36,11 +36,9 @@ RUN  export JAVA_HOME=$(which java) && \
      echo $PATH $JAVA_HOME && \
      export PATH=$PATH:$JAVA_HOME/bin &&\
      addgroup -gid $GID  $GROUPNAME  && \
-     useradd -r -g $GROUPNAME $USERNAME && \
+     useradd -m -r -g $GROUPNAME $USERNAME && \
      mkdir -p /opt/apps/transcribeapi && \
-	 mkdir -p /opt/apps/python && \
-	 mkdir -p /opt/apps/solr-data/ && \
-     mkdir -p $APP_HOME/configs && \
+	 mkdir -p $APP_HOME/configs && \
      mkdir -p $APP_HOME/logs && \
      mkdir -p $APP_HOME/apps/temp && \
      echo $HOME && \

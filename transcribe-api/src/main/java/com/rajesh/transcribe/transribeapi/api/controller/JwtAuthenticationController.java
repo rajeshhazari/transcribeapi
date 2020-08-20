@@ -9,6 +9,7 @@ import com.rajesh.transcribe.transribeapi.api.models.dto.AuthenticationRequestDt
 import com.rajesh.transcribe.transribeapi.api.models.dto.AuthenticationResponseDto;
 import com.rajesh.transcribe.transribeapi.api.models.dto.RegisterUserRequest;
 import com.rajesh.transcribe.transribeapi.api.repository.RegisteredUsersRepo;
+import com.rajesh.transcribe.transribeapi.api.services.AppEmailServiceImpl;
 import com.rajesh.transcribe.transribeapi.api.services.JwtUserDetailsService;
 import com.rajesh.transcribe.transribeapi.api.util.JwtUtil;
 import io.swagger.annotations.Api;
@@ -59,16 +60,20 @@ public class JwtAuthenticationController {
 	private JwtUserDetailsService jwtUserDetailsService;
 	private RegisteredUsersRepo registeredUserRepo;
 	private EncryptUtils encryptUtils;
+	private AppEmailServiceImpl appEmailService;
+	
 	public JwtAuthenticationController( AuthenticationManager authenticationManager,
 									    PasswordEncoder passwordEncoder,
 									    JwtUtil jwtTokenUtil,
-										JwtUserDetailsService jwtUserDetailsService,  RegisteredUsersRepo registeredUserRepo
+										JwtUserDetailsService jwtUserDetailsService,  RegisteredUsersRepo registeredUserRepo,
+										AppEmailServiceImpl appEmailService
 	) {
 		this.authenticationManager = authenticationManager;
 		this.passwordEncoder = passwordEncoder;
 		this.jwtTokenUtil = jwtTokenUtil;
 		this.jwtUserDetailsService = jwtUserDetailsService;
 		this.registeredUserRepo = registeredUserRepo;
+		this.appEmailService = appEmailService;
 	}
 	
 	@ApiOperation(value = "Authenticate to api service", response = AuthenticationResponseDto.class, httpMethod = "POST")
@@ -86,6 +91,7 @@ public class JwtAuthenticationController {
 													   HttpServletRequest request,
 													   HttpServletResponse response) throws Exception {
 		final String email = authenticationRequestDto.getUsername();
+		AuthenticationResponseDto responseDto = null;
 		try {
 			//byte[] decoded = java.util.Base64.getDecoder().decode();
 			logger.debug("encode passwd:: {}", Base64.getDecoder().decode(authenticationRequestDto.getPassword().getBytes()));
@@ -101,12 +107,19 @@ public class JwtAuthenticationController {
 			//TODO save login tries to DB
 			// Check login retries with value and if retries >= MAX_LOGIN_TRIES  update the user to lock
 			AppError error = new AppError(HttpStatus.UNAUTHORIZED, String.format(message, authenticationRequestDto.getUsername()));
-			return new ResponseEntity<AppError>(error, HttpStatus.UNAUTHORIZED);
+			responseDto = new AuthenticationResponseDto();
+			responseDto.setError(error);
+			return new ResponseEntity<AuthenticationResponseDto>(responseDto, HttpStatus.UNAUTHORIZED);
 		}catch (AuthenticationException authEx){
 			//TODO save login tries to DB
 			// Check login retries with value and if retries >= MAX_LOGIN_TRIES  update the user to lock
-			AppError error = new AppError(HttpStatus.UNAUTHORIZED, "Server Error!");
-			return new ResponseEntity<AppError>(error, HttpStatus.UNAUTHORIZED);
+			if(!jwtUserDetailsService.updateLoginTries(email)){
+				logger.error("unable to save user retries in db for email :: %s  ", email);
+			}
+			AppError error = new AppError(HttpStatus.BAD_REQUEST, "Please check your email/password and try again. ");
+			responseDto = new AuthenticationResponseDto();
+			responseDto.setError(error);
+			return new ResponseEntity<AuthenticationResponseDto>(responseDto, HttpStatus.BAD_REQUEST);
 		}
 
 
@@ -121,9 +134,8 @@ public class JwtAuthenticationController {
 				+ "; SameSite=Strict; HttpOnly; Secure";
 		response.addHeader("Set-Cookie", fingerprintCookie);
 		
-		AuthenticationResponseDto responseDto = new AuthenticationResponseDto(jwt,email, new Date(Instant.now().toEpochMilli()));
+		responseDto = new AuthenticationResponseDto(jwt,email, new Date(Instant.now().toEpochMilli()));
 		responseDto.setEmail(authenticationRequestDto.getUsername());
-		responseDto.setError(null);
 		
 		return new ResponseEntity<AuthenticationResponseDto>(responseDto, HttpStatus.OK);
 	}
@@ -140,13 +152,14 @@ public class JwtAuthenticationController {
 			})
 	
 	@RequestMapping(value = "/public/register", method = RequestMethod.POST, produces = "application/jon")
-	public ResponseEntity<Map<String,String>> registerUser(@RequestBody RegisterUserRequest registerUserRequest, HttpServletRequest request, HttpServletResponse response) {
+	public ResponseEntity<?> registerUser(@RequestBody RegisterUserRequest registerUserRequest, HttpServletRequest request, HttpServletResponse response) {
 		// TODO handle session specific logic.
 		Map<String, String> respMap = new ConcurrentHashMap();
 		try {
 			Boolean isUserCreated  = jwtUserDetailsService.registerUser(registerUserRequest);
 			AppUsers users = new AppUsers();
 			jwtUserDetailsService.save(users);
+			appEmailService.sendMailWithUsername(registerUserRequest.getEmail(), registerUserRequest.getLastName());
 		}/*catch (MessagingException ex){
 			respMap.put("Error", "Error occured while sending email, Please check your email.");
 			return  new ResponseEntity<>(respMap, HttpStatus.BAD_REQUEST);
@@ -154,8 +167,11 @@ public class JwtAuthenticationController {
 			respMap.put("Error", "User is already registered, Please login!.");
 			return  new ResponseEntity<>(respMap, HttpStatus.BAD_REQUEST);
 		} catch (MessagingException ex) {
-			respMap.put("Error", "User is registered, System was uanble to send verification email, Please check your email!.");
+			respMap.put("Error", "User is registered, System was unable to send verification email, Please check your email!.");
 			ex.printStackTrace();
+		}catch (Exception ex){
+			respMap.put("Error", "Error occured while sending email, Please check your email.");
+			return  new ResponseEntity<>(respMap, HttpStatus.BAD_REQUEST);
 		}
 		return new ResponseEntity<>(respMap, HttpStatus.CREATED);
 	}

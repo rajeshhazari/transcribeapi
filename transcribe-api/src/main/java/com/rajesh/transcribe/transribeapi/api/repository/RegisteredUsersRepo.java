@@ -16,5 +16,7 @@ public interface RegisteredUsersRepo extends CrudRepository<RegisteredUserVerify
 
 	@Query("select * from USERREGVERIFYLOGDETAILS where email = :email ")
 	RegisteredUserVerifyLogDetials findByEmail(String email);
-	//RegisteredUserVerifyLogDetials findByEmailAndCode(String email, Integer code);
+    
+    List<RegisteredUserVerifyLogDetials> findByEmailAndCode(String email);
+    //RegisteredUserVerifyLogDetials findByEmailAndCode(String email, Integer code);
 }

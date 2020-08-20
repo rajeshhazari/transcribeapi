@@ -8,6 +8,8 @@ import org.springframework.data.relational.core.mapping.Table;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.List;
 
 @Table("APPUSERS")
 @NoArgsConstructor
@@ -34,6 +36,22 @@ public class AppUsers implements Serializable {
 	@Column(value = "registered_date")
 	private LocalDateTime lastModified;
 	
+	private List<AppUsersAuth> appUsersAuthList;
 	
 	
+	
+}
+
+@Table("appusers_auth")
+@NoArgsConstructor
+@Data
+class AppUsersAuth {
+	@Column("auth_user_id")
+	private String authUserId;
+	private String userid;
+	private String email;
+	@Column("role_id")
+	private String roleId;
+	@Column("updated_time")
+	private Date updatedTime;
 }

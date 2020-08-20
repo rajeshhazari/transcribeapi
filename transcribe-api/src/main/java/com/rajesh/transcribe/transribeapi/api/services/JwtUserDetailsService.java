@@ -286,6 +286,12 @@ public class JwtUserDetailsService implements UserDetailsService {
         return  false;
     }
     
+    public boolean updateLoginTries(final String email) {
+        List<RegisteredUserVerifyLogDetials> registeredUserVerifyLogDetialsList =  registeredUsersRepo.findByEmailAndCode(email);
+        //return registeredUsersRepo.save()
+        return  false;
+    }
+    
     
     /*private List<GrantedAuthority> getUserAuthorities(String email) {
         List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
