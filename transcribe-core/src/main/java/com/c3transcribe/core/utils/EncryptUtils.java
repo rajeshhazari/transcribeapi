@@ -4,6 +4,7 @@ import org.apache.calcite.util.Static;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.logging.log4j.Logger;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.security.NoSuchAlgorithmException;
@@ -11,9 +12,13 @@ import java.security.SecureRandom;
 
 import static org.apache.logging.log4j.LogManager.getLogger;
 
+@Component
 public final class EncryptUtils {
 
     private static final Logger logger = getLogger(EncryptUtils.class);
+    private static final char[] CHARACTERS = ("abcdefghijklmnopqrstuvwxyz" +
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+            "0123456789").toCharArray();
     /**
      * Encryption strength.
      */
@@ -25,8 +30,18 @@ public final class EncryptUtils {
      * @param text Text to encode
      * @return Returns encoded text encrypted with STRENGTH of 12
      */
-    public static String encryptWithBCryptAlgo(final String text) {
+    public  String encryptWithBCryptAlgo(final String text) {
         return new BCryptPasswordEncoder(STRENGTH).encode(text);
+    }
+    
+    /**
+     *
+     * @param text
+     * @param strength
+     * @return
+     */
+    public  String encryptWithBCryptAlgo(final String text, final Integer strength) {
+        return new BCryptPasswordEncoder(strength).encode(text);
     }
     
     /**
@@ -36,14 +51,20 @@ public final class EncryptUtils {
      * @param text2 Text to compare code with text
      * @return Returns TRUE if texts are the same with encryption algorith as BCryptPasswordEncode and Stength of 12
      */
-    public static boolean matches(final String text, final String text2) {
+    public  boolean matches(final String text, final String text2) {
         return new BCryptPasswordEncoder(STRENGTH).matches(text, text2);
     }
     
-    
-    private static final char[] CHARACTERS = ("abcdefghijklmnopqrstuvwxyz" +
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
-            "0123456789").toCharArray();
+    /**
+     *
+     * @param text
+     * @param text2
+     * @param strength
+     * @return
+     */
+    public boolean matches(final String text, final String text2, final Integer strength) {
+        return new BCryptPasswordEncoder(strength).matches(text, text2);
+    }
     
     /**
      * This method generates a alphanumeric password
@@ -51,7 +72,7 @@ public final class EncryptUtils {
      *
      * @see #CHARACTERS
      */
-    public static String randomPassword() {
+    public String randomPassword() {
         final java.util.Random random = new java.util.Random();
         final byte randomLength = (byte) (random.nextInt(14) + 6);
         byte randomElementNumber;
@@ -72,7 +93,7 @@ public final class EncryptUtils {
      *
      * @return Returns the generated token.
      */
-    public static String randomToken() {
+    public String randomToken() {
         final java.util.Random random = new java.util.Random();
         
         final byte randomLength = (byte) (random.nextInt(28) + 12);

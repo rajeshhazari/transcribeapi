@@ -8,9 +8,8 @@ import org.springframework.data.relational.core.mapping.Table;
 import java.time.Instant;
 import java.util.Date;
 
-@Data
-@AllArgsConstructor
 @Table("USERREGVERIFYLOGDETAILS")
+@Data @AllArgsConstructor @NoArgsConstructor
 public class RegisteredUserVerifyLogDetials {
     
     @Id
@@ -31,10 +30,5 @@ public class RegisteredUserVerifyLogDetials {
     public Instant verificationDate;
     public String verifiedRegClientIp;
     
-    
-    public RegisteredUserVerifyLogDetials(final String username, final String email) {
-        this.username = username;
-        this.email = email;
-    }
 }
 

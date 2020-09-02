@@ -226,6 +226,13 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.5.11</version>
+		</dependency>
+
 		<!--
 		Test dependencies.
 		-->
@@ -245,7 +252,36 @@
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
 	</dependencies>
+        <build>
+            <plugins>
+
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>0.8.3</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>prepare-agent</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>report</id>
+                            <phase>prepare-package</phase>
+                            <goals>
+                                <goal>report</goal>
+                            </goals>
+                            <configuration>
+                               <outputDirectory>${project.reporting.outputDirectory}/jacoco_test</outputDirectory>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+
+            </plugins>
+        </build>
 
 	<!--<build>
 		<plugins>

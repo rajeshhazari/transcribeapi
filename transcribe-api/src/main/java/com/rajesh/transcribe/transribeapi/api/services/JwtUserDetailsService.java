@@ -5,9 +5,11 @@ import com.rajesh.transcribe.transribeapi.api.domian.AppUsers;
 import com.rajesh.transcribe.transribeapi.api.domian.RegisteredUserVerifyLogDetials;
 import com.rajesh.transcribe.transribeapi.api.models.dto.AuthUserProfileDto;
 import com.rajesh.transcribe.transribeapi.api.models.dto.RegisterUserRequest;
+import com.rajesh.transcribe.transribeapi.api.models.dto.UserRegReqResponseDto;
 import com.rajesh.transcribe.transribeapi.api.repository.AppUsersRepository;
 import com.rajesh.transcribe.transribeapi.api.repository.RegisteredUsersRepo;
 import com.rajesh.transcribe.transribeapi.api.repository.exceptions.UserNotFoundException;
+import com.rajesh.transcribe.transribeapi.api.util.SystemConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -34,10 +36,13 @@ import org.springframework.web.server.ServerErrorException;
 import javax.annotation.PostConstruct;
 import javax.mail.MessagingException;
 import java.security.SecureRandom;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+
+import static com.rajesh.transcribe.transribeapi.api.util.SystemConstants.*;
 
 @Service
 public class JwtUserDetailsService implements UserDetailsService {
@@ -245,51 +250,126 @@ public class JwtUserDetailsService implements UserDetailsService {
      * @param registerUserRequest
      * @return
      */
-    public Boolean registerUser(final RegisterUserRequest registerUserRequest) throws MessagingException {
-        AppUsers users = new AppUsers();
-        BeanUtils.copyProperties(registerUserRequest, users);
-        users.setDisabled(false);
-        users.setActive(false);
-        users.setVerified(false);
-        users.setLocked(false);
+    public UserRegReqResponseDto registerUser(final RegisterUserRequest registerUserRequest) throws MessagingException {
+        
+        UserRegReqResponseDto userRegReqResponseDto = new UserRegReqResponseDto();
+        final String emailRegReq = registerUserRequest.getEmail();
+        userRegReqResponseDto.setEmail(emailRegReq);
         try{
-            users = save(users);
+            Optional<AppUsers> users = userRepo.findByEmail(emailRegReq);
+    
+            if( isEmailRegistered(emailRegReq) && users.isPresent() && users.get().isVerified()){
+                userRegReqResponseDto.setEmail(emailRegReq);
+                userRegReqResponseDto.setAlreadyRegistered(true);
+                userRegReqResponseDto.setDisabledEmail(users.get().isDisabled());
+                userRegReqResponseDto.setVerificationPending(users.get().isVerified());
+                userRegReqResponseDto.setErrorMessage(REGISTERED_AND_VERIFIED_EMAIL_SYSTEM_ERROR_MSG);
+                return userRegReqResponseDto;
+            }else if( isEmailRegistered(emailRegReq) && !users.isPresent() && !users.get().isVerified()) {
+                logger.debug("verifying if email is registered and not verified %s", emailRegReq);
+                if(isRegisteredEmailVerified(emailRegReq)){
+                    userRegReqResponseDto.setErrorMessage(REGISTERED_EMAIL_PENDING_VERIFICATION_SYSTEM_ERROR_MSG);
+                    userRegReqResponseDto.setVerificationPending(true);
+                }
+            } else if( !isEmailRegistered(emailRegReq)){
+                logger.debug("Email is not registered %s, registering the user", emailRegReq);
+                AppUsers appUsers = new AppUsers();
+                appUsers.setEmail(emailRegReq);
+                BeanUtils.copyProperties(registerUserRequest, appUsers);
+                userRepo.save(appUsers);
+                RegisteredUserVerifyLogDetials newUser = new RegisteredUserVerifyLogDetials();
+                newUser.setEmail(emailRegReq);
+                newUser.setUsername(registerUserRequest.getUsername());
+                newUser = registeredUsersRepo.save(newUser);
+                appEmailServiceImpl.sendMailWithEmailChangeToken( emailRegReq,null);
+            } else {
+                userRegReqResponseDto.setErrorMessage(USER_REGISITRATION_SYSTEM_ERROR_MSG);
+                logger.debug(USER_REGISITRATION_SYSTEM_ERROR_MSG + " %s ", emailRegReq);
+            }
+            
         }catch (DuplicateKeyException ex){
-            users = null;
+            userRegReqResponseDto.setErrorMessage("User Already register with email!");
+            if ( isRegisteredEmailVerified(emailRegReq)){
+                userRegReqResponseDto.setVerificationPending(true);
+            }
             throw new UserAlreadyRegisteredException("User Already register with email"+registerUserRequest.email);
         }catch (DataAccessResourceFailureException ex){
-            users = null;
-            throw  new ServerErrorException("Problem with Database, Please contact support team!", ex);
+            userRegReqResponseDto.setErrorMessage(SystemConstants.DB_UNAVAILABLE_MSG);
+            throw  new ServerErrorException(SystemConstants.DB_UNAVAILABLE_MSG, ex);
         }
-        //TODO generate confirm email and send email
-        RegisteredUserVerifyLogDetials newUser = new RegisteredUserVerifyLogDetials(users.getUsername(),users.getEmail());
-        RegisteredUserVerifyLogDetials registeredUserVerifyLogDetials = registeredUsersRepo.save(newUser);
-        appEmailServiceImpl.sendMailWithEmailChangeToken( registeredUserVerifyLogDetials.email,null);
-       return Objects.nonNull(save(users).getUserid());
+        
+       return userRegReqResponseDto;
     }
     
     /**
      * 
-     * @param emailId
+     * @param email
      * @param code
      * @return
      */
-    public Boolean verifyEmailForUserRegistration(final String emailId, final String code) {
+    public Boolean verifyEmailForUserActivation(final String email, final String code) {
         Boolean result = false;
-        List<RegisteredUserVerifyLogDetials> registeredUserVerifyLogDetialsList =  registeredUsersRepo.findByEmailAndCode(emailId, Integer.parseInt(code));
+        if(!isEmailRegistered(email)){
+            logger.debug("Suspicious Alert:: Wrong email or wrong token manipulation email:: %s token :: %s ", email, code);
+            result =  false;
+        }
+        List<RegisteredUserVerifyLogDetials> registeredUserVerifyLogDetialsList =  registeredUsersRepo.findByEmailAndCode(email, Integer.parseInt(code));
         RegisteredUserVerifyLogDetials registeredUserVerifyLogDetials = registeredUserVerifyLogDetialsList.stream().filter(user -> user.isVerified()).findFirst().get();
         if(registeredUserVerifyLogDetials.isVerificationEmailSent() && registeredUserVerifyLogDetials.isVerified()){
             result = true;
         } else if(registeredUserVerifyLogDetials.isVerificationEmailSent() && !registeredUserVerifyLogDetials.isVerified()){
-            logger.warn("Email is is alreadry verified.{}", emailId);
+            logger.warn("Email is is already verified.{}", email);
+            //TODO handle other usecase  like multiple submission or more.
+            return true;
         }
         return  false;
     }
     
+    /**
+     * This method will validate if the given email is registerd and verified.
+     * @param email
+     * @return
+     */
+    public boolean isRegisteredEmailVerified(String email){
+        boolean isVerified = false;
+        if(!isEmailRegistered(email)){
+            return false;
+        } else {
+            List<RegisteredUserVerifyLogDetials> registeredUserVerifyLogDetialsList = registeredUsersRepo.findByEmail(email);
+            if (!registeredUserVerifyLogDetialsList.isEmpty()) {
+                RegisteredUserVerifyLogDetials regUser = registeredUserVerifyLogDetialsList.stream().findFirst().get();
+                isVerified = regUser.isVerified();
+            } else {
+                isVerified = false;
+            }
+        }
+        return isVerified;
+    }
+    
+    /**
+     * This method will validate if the given email is registered.
+     * @param email
+     * @return
+     */
+    public boolean isEmailRegistered(String email){
+        boolean isRegistered = false;
+        Optional<AppUsers> appUsers = userRepo.findByEmail(email);
+        if(!appUsers.isEmpty() && !appUsers.get().isDisabled()){
+            isRegistered = true;
+        } else {
+            isRegistered = false;
+        }
+        return isRegistered;
+    }
+    
+    /**
+     *
+     * @param email
+     * @return
+     */
     public boolean updateLoginTries(final String email) {
-        List<RegisteredUserVerifyLogDetials> registeredUserVerifyLogDetialsList =  registeredUsersRepo.findByEmailAndCode(email);
-        //return registeredUsersRepo.save()
-        return  false;
+       //TODO implement the method
+        return false;
     }
     
     

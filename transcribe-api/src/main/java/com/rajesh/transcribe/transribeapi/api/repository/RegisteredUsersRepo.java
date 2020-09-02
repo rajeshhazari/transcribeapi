@@ -15,8 +15,10 @@ public interface RegisteredUsersRepo extends CrudRepository<RegisteredUserVerify
 	List<RegisteredUserVerifyLogDetials> findByEmailAndCode(@Param("email") String email, @Param("code") Integer code);
 
 	@Query("select * from USERREGVERIFYLOGDETAILS where email = :email ")
-	RegisteredUserVerifyLogDetials findByEmail(String email);
+	List<RegisteredUserVerifyLogDetials> findByEmail(@Param("email")  String email);
     
-    List<RegisteredUserVerifyLogDetials> findByEmailAndCode(String email);
-    //RegisteredUserVerifyLogDetials findByEmailAndCode(String email, Integer code);
+    //List<RegisteredUserVerifyLogDetials> findByEmailAndCode(String email, String code);
+	
+	@Query("select * from USERREGVERIFYLOGDETAILS where email = :email and confEmailToken = :confEmailToken ")
+	RegisteredUserVerifyLogDetials findByEmailAndConfEmailToken(@Param("email") String email, @Param("confEmailToken")  String confEmailToken);
 }

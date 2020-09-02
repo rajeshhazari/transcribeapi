@@ -1,5 +1,6 @@
 package com.rajesh.transcribe.transribeapi.api.domian;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
@@ -12,8 +13,9 @@ import java.util.Date;
 import java.util.List;
 
 @Table("APPUSERS")
-@NoArgsConstructor
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class AppUsers implements Serializable {
 	@Id
 	private  Long userid;
@@ -52,6 +54,26 @@ class AppUsersAuth {
 	private String email;
 	@Column("role_id")
 	private String roleId;
+	@Column("username")
+	private String username;
 	@Column("updated_time")
 	private Date updatedTime;
+	
+	private AppUsersAuthRolesMaster appUsersAuthRolesMaster;
+}
+
+@Table("appusers_auth")
+@NoArgsConstructor @AllArgsConstructor
+@Data
+class AppUsersAuthRolesMaster{
+	@Column("role_id")
+	private String roleId;
+	@Column("roledesc")
+	private String roledesc;
+	@Column("max_file_size")
+	private Integer maxUploadFileSize;
+	@Column("max_number_files")
+	private String maxFilesCount;
+	
+	
 }

@@ -8,6 +8,7 @@ import com.rajesh.transcribe.transribeapi.api.models.AppError;
 import com.rajesh.transcribe.transribeapi.api.models.dto.AuthenticationRequestDto;
 import com.rajesh.transcribe.transribeapi.api.models.dto.AuthenticationResponseDto;
 import com.rajesh.transcribe.transribeapi.api.models.dto.RegisterUserRequest;
+import com.rajesh.transcribe.transribeapi.api.models.dto.UserRegReqResponseDto;
 import com.rajesh.transcribe.transribeapi.api.repository.RegisteredUsersRepo;
 import com.rajesh.transcribe.transribeapi.api.services.AppEmailServiceImpl;
 import com.rajesh.transcribe.transribeapi.api.services.JwtUserDetailsService;
@@ -66,7 +67,7 @@ public class JwtAuthenticationController {
 									    PasswordEncoder passwordEncoder,
 									    JwtUtil jwtTokenUtil,
 										JwtUserDetailsService jwtUserDetailsService,  RegisteredUsersRepo registeredUserRepo,
-										AppEmailServiceImpl appEmailService
+										AppEmailServiceImpl appEmailService, EncryptUtils encryptUtils
 	) {
 		this.authenticationManager = authenticationManager;
 		this.passwordEncoder = passwordEncoder;
@@ -74,6 +75,7 @@ public class JwtAuthenticationController {
 		this.jwtUserDetailsService = jwtUserDetailsService;
 		this.registeredUserRepo = registeredUserRepo;
 		this.appEmailService = appEmailService;
+		this.encryptUtils = encryptUtils;
 	}
 	
 	@ApiOperation(value = "Authenticate to api service", response = AuthenticationResponseDto.class, httpMethod = "POST")
@@ -93,13 +95,20 @@ public class JwtAuthenticationController {
 		final String email = authenticationRequestDto.getUsername();
 		AuthenticationResponseDto responseDto = null;
 		try {
-			//byte[] decoded = java.util.Base64.getDecoder().decode();
-			logger.debug("encode passwd:: {}", Base64.getDecoder().decode(authenticationRequestDto.getPassword().getBytes()));
-			String hashedPassword = passwordEncoder.encode(authenticationRequestDto.getPassword());
-			logger.debug("hashedpasswd:: {}", hashedPassword);
-			Authentication auth = authenticationManager.authenticate(
-					new UsernamePasswordAuthenticationToken(authenticationRequestDto.getUsername(), authenticationRequestDto.getPassword()) );
-			SecurityContextHolder.getContext().setAuthentication(auth);
+			if(jwtUserDetailsService.isEmailRegistered(email)) {
+				logger.debug("encode passwd:: {}", Base64.getDecoder().decode(authenticationRequestDto.getPassword().getBytes()));
+				String hashedPassword = passwordEncoder.encode(authenticationRequestDto.getPassword());
+				logger.debug("hashedpasswd:: {}", hashedPassword);
+				Authentication auth = authenticationManager.authenticate(
+						new UsernamePasswordAuthenticationToken(authenticationRequestDto.getUsername(), authenticationRequestDto.getPassword()));
+				SecurityContextHolder.getContext().setAuthentication(auth);
+			}else if(!jwtUserDetailsService.isEmailRegistered(email) && jwtUserDetailsService.isRegisteredEmailVerified(email)){
+				logger.debug("User tried to login before verifying email {} ::", email);
+				AppUsers appUsers = jwtUserDetailsService.getCurrentUser();
+				logger.debug("User tried to login before verifying email {} ::", appUsers);
+			} else {
+			
+			}
 		}
 		catch (BadCredentialsException e) {
 			logger.error("Incorrect username or password {}, exception message :: {}", authenticationRequestDto.getUsername(), e.getMessage());
@@ -128,7 +137,7 @@ public class JwtAuthenticationController {
 
 		//Add the fingerprint in a hardened cookie - Add cookie manually because
 		//SameSite attribute is not supported by javax.servlet.http.Cookie class
-		String userFingerprint = EncryptUtils.randomToken();
+		String userFingerprint = encryptUtils.randomToken();
 		final String jwt = jwtTokenUtil.generateToken(userDetails,userFingerprint);
 		String fingerprintCookie = "__Secure-Fgp=" + userFingerprint
 				+ "; SameSite=Strict; HttpOnly; Secure";
@@ -152,28 +161,31 @@ public class JwtAuthenticationController {
 			})
 	
 	@RequestMapping(value = "/public/register", method = RequestMethod.POST, produces = "application/jon")
-	public ResponseEntity<?> registerUser(@RequestBody RegisterUserRequest registerUserRequest, HttpServletRequest request, HttpServletResponse response) {
+	public ResponseEntity<UserRegReqResponseDto> registerUser(@RequestBody RegisterUserRequest registerUserRequest, HttpServletRequest request, HttpServletResponse response) {
 		// TODO handle session specific logic.
-		Map<String, String> respMap = new ConcurrentHashMap();
+		UserRegReqResponseDto userRegReqResponseDto = new UserRegReqResponseDto();
 		try {
-			Boolean isUserCreated  = jwtUserDetailsService.registerUser(registerUserRequest);
+			userRegReqResponseDto.setEmail(registerUserRequest.getEmail());
+			userRegReqResponseDto = jwtUserDetailsService.registerUser(registerUserRequest);
+			/*
 			AppUsers users = new AppUsers();
 			jwtUserDetailsService.save(users);
-			appEmailService.sendMailWithUsername(registerUserRequest.getEmail(), registerUserRequest.getLastName());
-		}/*catch (MessagingException ex){
+			appEmailService.sendMailWithUsername(registerUserRequest.getEmail(), registerUserRequest.getLastName());*/
+		/*}catch (MessagingException ex){
 			respMap.put("Error", "Error occured while sending email, Please check your email.");
 			return  new ResponseEntity<>(respMap, HttpStatus.BAD_REQUEST);
-		}*/catch (UserAlreadyRegisteredException ex){
-			respMap.put("Error", "User is already registered, Please login!.");
-			return  new ResponseEntity<>(respMap, HttpStatus.BAD_REQUEST);
+			*/
+		}catch (UserAlreadyRegisteredException ex){
+			userRegReqResponseDto.setErrorMessage("User is already registered, Please login!.");
+			return  new ResponseEntity<>(userRegReqResponseDto, HttpStatus.BAD_REQUEST);
 		} catch (MessagingException ex) {
-			respMap.put("Error", "User is registered, System was unable to send verification email, Please check your email!.");
+			userRegReqResponseDto.setErrorMessage("User is registered, System was unable to send verification email, Please check your email!.");
 			ex.printStackTrace();
 		}catch (Exception ex){
-			respMap.put("Error", "Error occured while sending email, Please check your email.");
-			return  new ResponseEntity<>(respMap, HttpStatus.BAD_REQUEST);
+			userRegReqResponseDto.setErrorMessage("Error occured while sending email, Please check your email.");
+			return  new ResponseEntity<>(userRegReqResponseDto, HttpStatus.BAD_REQUEST);
 		}
-		return new ResponseEntity<>(respMap, HttpStatus.CREATED);
+		return new ResponseEntity<>(userRegReqResponseDto, HttpStatus.CREATED);
 	}
 	/*
 	@RequestMapping(method = RequestMethod.POST, value = "/resetpwd", produces = "application/jon")

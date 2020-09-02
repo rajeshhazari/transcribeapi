@@ -1,10 +1,12 @@
 /** */
 package com.rajesh.transcribe.transribeapi.module.config;
 
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import org.apache.catalina.Context;
 import org.apache.catalina.connector.Connector;
+import org.apache.tomcat.util.descriptor.web.SecurityCollection;
+import org.apache.tomcat.util.descriptor.web.SecurityConstraint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,11 +14,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.jdbc.DataSourceHealthIndicator;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.h2.H2ConsoleAutoConfiguration;
+import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
+import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jdbc.repository.config.EnableJdbcRepositories;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcOperations;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -34,9 +36,13 @@ public class TranscribeApiModuleConfig {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(TranscribeApiModuleConfig.class);
 	@Autowired DataSource dataSource;
+	private static final String USER_CONSTRAINT = "CONFIDENTIAL";
+	private static final String HTTP = "http";
 	
 	@Value("${server.port}")
 	private int port;
+	@Value("${server.http.port}")
+	private int httpPort;
 	
 	@Value("${server.servlet.contextPath}")
 	private String context;
@@ -105,15 +111,6 @@ public class TranscribeApiModuleConfig {
 		return SecureRandom.getInstance("SHA1PRNG");
 	}
 	
-	@Bean
-	public Connector redirectConnector() {
-		Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
-		connector.setScheme("http");
-		connector.setPort(port);
-		connector.setSecure(false);
-		connector.setRedirectPort(8443);
-		return connector;
-	}
 	
 	@Bean
 	public JavaMailSender javaMailSender(){
@@ -127,45 +124,32 @@ public class TranscribeApiModuleConfig {
 		return mapper;
 	}
 	
-  /*@Bean(name = "asyncExecutor")
-  public Executor asyncExecutor() {
-      ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-      executor.setCorePoolSize(5);
-      executor.setMaxPoolSize(5);
-      executor.setQueueCapacity(100);
-      executor.setThreadNamePrefix("AsynchThread-");
-      executor.initialize();
-      return executor;
-  }*/
-
-  /* @Bean
-  public TomcatServletWebServerFactory servletContainer(){
-      TomcatServletWebServerFactory factory = new TomcatServletWebServerFactory(context,port);
-      LOGGER.info("Setting custom configuration for Mainstay:");
-      LOGGER.info("Setting port to {}",port);
-      LOGGER.info("Setting context to {}",context);
-      //factory.setErrorPages(pageHandlers);
-      return factory;
-  }*/
-
-  /*
-  @Bean
-  public EmbeddedServletContainerFactory servletContainer() {
-  	TomcatEmbeddedServletContainerFactory tomcat = new TomcatEmbeddedServletContainerFactory() {
-  		@Override
-  		protected void postProcessContext(Context context) {
-  			SecurityConstraint securityConstraint = new SecurityConstraint();
-  			securityConstraint.setUserConstraint("CONFIDENTIAL");
-  			SecurityCollection collection = new SecurityCollection();
-  			collection.addPattern("/*");
-  			securityConstraint.addCollection(collection);
-  			context.addConstraint(securityConstraint);
-  		}
-  	};
-
-  	tomcat.addAdditionalTomcatConnectors(redirectConnector());
-  	return tomcat;
-  }*/
+	@Bean
+	public ServletWebServerFactory servletContainer() {
+		TomcatServletWebServerFactory tomcat = new TomcatServletWebServerFactory() {
+			@Override
+			protected void postProcessContext(Context context) {
+				SecurityConstraint securityConstraint = new SecurityConstraint();
+				securityConstraint.setUserConstraint(USER_CONSTRAINT);
+				SecurityCollection collection = new SecurityCollection();
+				collection.addPattern("/*");
+				securityConstraint.addCollection(collection);
+				context.addConstraint(securityConstraint);
+			}
+		};
+		tomcat.addAdditionalTomcatConnectors(redirectConnector());
+		return tomcat;
+	}
+	
+	private Connector redirectConnector() {
+		Connector connector = new Connector(
+				TomcatServletWebServerFactory.DEFAULT_PROTOCOL);
+		connector.setScheme(HTTP);
+		connector.setPort(httpPort);
+		connector.setSecure(false);
+		connector.setRedirectPort(port);
+		return connector;
+	}
 	
 	
   /*
