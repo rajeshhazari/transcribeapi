@@ -38,7 +38,7 @@ public class AppInfoController {
                     @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
             })
     @PreAuthorize("hasAnyRole({'ROLE_ADMIN','ROLE_DEVOPS'})")
-    @RequestMapping(value= "/version" , method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(value= "/version" , method = RequestMethod.GET, produces = "application/json")
     public @ResponseBody
     ResponseEntity<Map<String,String>> greeting(HttpServletRequest request, HttpServletResponse response) {
         Map<String,String> respMap = new ConcurrentHashMap<>();
