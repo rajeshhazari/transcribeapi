@@ -27,7 +27,7 @@ public class AppInfoController {
     private BuildProperties buildProperties;
     
     
-    @ApiOperation(value = "Give Api app build and release info. ", response = ResponseEntity.class, httpMethod = "POST")
+    @ApiOperation(value = "Give Api app build and release info. ", response = ResponseEntity.class, httpMethod = "GET")
     @ApiResponses(
             value = {
                     @ApiResponse(code = 200, message = "Application info received."),

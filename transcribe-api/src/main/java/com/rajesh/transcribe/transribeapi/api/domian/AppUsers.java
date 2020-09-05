@@ -45,7 +45,7 @@ public class AppUsers implements Serializable {
 }
 
 @Table("appusers_auth")
-@NoArgsConstructor
+@NoArgsConstructor @AllArgsConstructor
 @Data
 class AppUsersAuth {
 	@Column("auth_user_id")
@@ -62,7 +62,7 @@ class AppUsersAuth {
 	private AppUsersAuthRolesMaster appUsersAuthRolesMaster;
 }
 
-@Table("appusers_auth")
+@Table("authorities_master")
 @NoArgsConstructor @AllArgsConstructor
 @Data
 class AppUsersAuthRolesMaster{
