@@ -14,16 +14,25 @@ import org.springframework.boot.autoconfigure.solr.SolrAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.jdbc.core.convert.JdbcCustomConversions;
+import org.springframework.data.jdbc.repository.config.AbstractJdbcConfiguration;
+import org.springframework.data.relational.core.mapping.Embedded;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 
 import javax.sql.DataSource;
+import java.sql.Clob;
+import java.sql.SQLException;
+
+import static org.apache.calcite.linq4j.tree.Primitive.asList;
 
 @Configuration
 @EnableAutoConfiguration(exclude = {
         SolrAutoConfiguration.class,
         SolrHealthContributorAutoConfiguration.class})
-public class DataSourceConfiguration {
+public class AppDataSourceAggregateAndSolrConfiguration  {
+        //extends AbstractJdbcConfiguration {
     
     @Value("${solr.solrUrl}")
     private String solrUrl ;
@@ -82,4 +91,27 @@ public class DataSourceConfiguration {
     public DataSourceHealthIndicator dataSourceHealthIndicator() {
         return new DataSourceHealthIndicator(dataSource);
     }
+    
+    /*@Override
+     // more info @ https://github.com/spring-projects/spring-data-examples/blob/master/jdbc/basics/src/main/java/example/springdata/jdbc/basics/aggregate/AggregateConfiguration.java
+    public JdbcCustomConversions jdbcCustomConversions() {
+        
+        return new JdbcCustomConversions(asList(new Converter<Clob, String>() {
+            
+            @Embedded.Nullable
+            @Override
+            public String convert(Clob clob) {
+                
+                try {
+                    
+                    return Math.toIntExact(clob.length()) == 0 //
+                            ? "" //
+                            : clob.getSubString(1, Math.toIntExact(clob.length()));
+                    
+                } catch (SQLException e) {
+                    throw new IllegalStateException("Failed to convert CLOB to String.", e);
+                }
+            }
+        }));
+    }*/
 }

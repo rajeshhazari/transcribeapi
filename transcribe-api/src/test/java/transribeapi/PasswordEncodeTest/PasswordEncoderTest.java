@@ -2,12 +2,11 @@ package transribeapi.PasswordEncodeTest;
 
 
 import org.junit.jupiter.api.Test;
-import org.junit.platform.commons.annotation.Testable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Testable
+
 public class PasswordEncoderTest {
     
     @Test

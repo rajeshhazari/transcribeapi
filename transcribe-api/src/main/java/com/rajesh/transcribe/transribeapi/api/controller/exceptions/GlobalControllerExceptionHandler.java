@@ -8,6 +8,8 @@ import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -45,6 +47,7 @@ public class GlobalControllerExceptionHandler {
     @ExceptionHandler(MessagingException.class)
     public ResponseEntity<?> emailExceptions(MessagingException ex, HttpRequest request) {
         AppError errorDetails = new AppError(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), Instant.now());
+        errorDetails.setHttpStatus(HttpStatus.BAD_REQUEST);
         return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
     }
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -54,7 +57,7 @@ public class GlobalControllerExceptionHandler {
                     HttpHeaders headers, HttpStatus status, WebRequest request)     {
         AppError errorDetails = new AppError(HttpStatus.BAD_REQUEST.value(),
                 ex.getMessage(), Instant.now());
-    
+        errorDetails.setHttpStatus(HttpStatus.BAD_REQUEST);
         return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
     }
     
@@ -65,7 +68,37 @@ public class GlobalControllerExceptionHandler {
                     HttpHeaders headers, HttpStatus status, WebRequest request)     {
         AppError errorDetails = new AppError(HttpStatus.BAD_REQUEST.value(),
                 ex.getMessage(), Instant.now());
-        
+        errorDetails.setHttpStatus(HttpStatus.BAD_REQUEST);
         return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public final ResponseEntity<AppError> handleAllRuntimeApiExceptions(RuntimeException ex) {
+        AppError errorDetails = new AppError(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                ex.getMessage(), Instant.now());
+        errorDetails.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        errorDetails.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+        ex.printStackTrace();
+        return new ResponseEntity<AppError>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(AuthenticationCredentialsNotFoundException.class)
+    public final ResponseEntity<AppError> handleAuthtenticationCredentialsNotFoundApiExceptions(AuthenticationCredentialsNotFoundException ex) {
+        AppError errorDetails = new AppError(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                ex.getMessage(), Instant.now());
+        errorDetails.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        errorDetails.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+        ex.printStackTrace();
+        return new ResponseEntity<AppError>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public final ResponseEntity<AppError> handleBadCredentialsNotFoundApiExceptions(BadCredentialsException ex) {
+        AppError errorDetails = new AppError(HttpStatus.BAD_REQUEST.value(),
+                ex.getMessage(), Instant.now());
+        errorDetails.setCode(HttpStatus.BAD_REQUEST.value());
+        errorDetails.setHttpStatus(HttpStatus.BAD_REQUEST);
+        ex.printStackTrace();
+        return new ResponseEntity<AppError>(errorDetails, HttpStatus.BAD_REQUEST);
     }
 }

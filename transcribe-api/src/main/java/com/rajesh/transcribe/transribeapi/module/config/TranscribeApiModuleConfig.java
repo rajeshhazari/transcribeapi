@@ -7,6 +7,7 @@ import org.apache.catalina.Context;
 import org.apache.catalina.connector.Connector;
 import org.apache.tomcat.util.descriptor.web.SecurityCollection;
 import org.apache.tomcat.util.descriptor.web.SecurityConstraint;
+import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.jdbc.DataSourceHealthIndicator;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.h2.H2ConsoleAutoConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
@@ -32,6 +34,7 @@ import java.security.SecureRandom;
 @Configuration
 @EnableAutoConfiguration(exclude = { H2ConsoleAutoConfiguration.class})
 @EnableJdbcRepositories("com.rajesh.transcribe.transribeapi.api")
+@EnableConfigurationProperties(ApiModuleProperties.class)
 public class TranscribeApiModuleConfig {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(TranscribeApiModuleConfig.class);
@@ -150,7 +153,11 @@ public class TranscribeApiModuleConfig {
 		connector.setRedirectPort(port);
 		return connector;
 	}
-	
+
+	@Bean
+	public ModelMapper modelMapper() {
+		return new ModelMapper();
+	}
 	
   /*
   @Bean

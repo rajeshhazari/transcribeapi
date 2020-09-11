@@ -61,7 +61,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 response.sendError(HttpStatus.UNPROCESSABLE_ENTITY.value(), ex.getMessage());
             } catch (ExpiredJwtException ex) {
                 LOGGER.warn("JWT Token has expired! requestURI: {}  requestRemoteIp : {} requestUrl: {} ",requestURI,requestRemoteIp,requestUrl);
-                response.sendError(HttpStatus.UNAUTHORIZED.value(), ex.getMessage());
+                response.sendError(HttpStatus.UNAUTHORIZED.value(), "JWT Token has expired, Please Login again! email:  "+request.getParameterNames());
             }
         }else {
             LOGGER.error("JWT Token does not begin with Bearer String");

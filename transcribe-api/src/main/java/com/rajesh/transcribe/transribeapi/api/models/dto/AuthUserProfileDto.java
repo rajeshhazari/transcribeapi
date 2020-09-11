@@ -3,12 +3,11 @@
  */
 package com.rajesh.transcribe.transribeapi.api.models.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import org.springframework.data.relational.core.mapping.Column;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * @author rajesh
@@ -36,5 +35,18 @@ public class AuthUserProfileDto extends BaseResponseDto{
 	public String altEmail;
 	private LocalDateTime registeredDate;
 	private LocalDateTime lastLoggedin;
+	private List<AuthUsersRole> authUsersRolesList;
+	private Integer systemSupportedFileTypes;
+	private Integer systemMaxUploadFileSizeMb;
+	private Integer availableFilesCount;
 	
+}
+
+@Data
+class AuthUsersRole {
+	private String roleId;
+	private String roleDesc;
+	private Integer maxUploadFileSizeMb;
+	private Integer maxFilesCount;
+
 }

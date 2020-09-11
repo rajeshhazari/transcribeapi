@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.MappedCollection;
 import org.springframework.data.relational.core.mapping.Table;
 
 @Table("APPUSERS_TRANSCRIPTIONS")
@@ -34,11 +35,11 @@ public class UserTranscriptions {
 	public String   transcribeResAvailableFormat ;
 	@Column(value = "transcribe_res_downloaded_format")
 	public String   transcribeResDownloadedFormat;
-	@Column("tflog_id")
+	@MappedCollection(idColumn="tflog_id", keyColumn="transcription_req_id")
 	public TranscribeFileLog transcribeFileLog;
 	
 }
-/* enum class TranscibeResponseTypes {
-	application/json, application/text,application/pdf
-}*/
+ enum TranscodeResponseTypes {
+	JSON, PLAIN_TEXT, PDF_DOC, CSV
+}
 

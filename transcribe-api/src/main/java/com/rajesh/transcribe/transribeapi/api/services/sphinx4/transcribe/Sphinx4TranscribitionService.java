@@ -73,7 +73,9 @@ public class Sphinx4TranscribitionService {
 	 * @return
 	 * @throws Exception
 	 */
-	public TranscriptionResponseDto transribeAudioforText(File file, String TranscriptionReqId, final String token, final String userEmail,final @NotNull @NotBlank String sessionId, final Long size) throws IOException, ExecutionException{
+	public TranscriptionResponseDto transribeAudioforText(File file, String TranscriptionReqId, final String token,
+														  final String userEmail,final @NotNull @NotBlank String sessionId,
+														  final Long size) throws IOException, ExecutionException{
 		
 		SimpleAsyncTaskExecutor delegateExecutor =
 				new SimpleAsyncTaskExecutor();
@@ -94,10 +96,12 @@ public class Sphinx4TranscribitionService {
 			userTranscriptions.setTranscribeResAvailableFormat("text/plain");
 			userTranscriptions.setTranscribed(true);
 			userTranscriptions.setDownloaded(false);
-			Optional<AppUsers> appUsers = appUsersRepo.findByEmail(userEmail);
-			if(Objects.nonNull(appUsers.get())){
+			Optional<AppUsers> appUsers = Optional.ofNullable(appUsersRepo.findByEmail(userEmail));
+			if(appUsers.isPresent()){
 				userTranscriptions.setUsername(appUsers.get().getUsername());
 				userTranscriptions.setUserid(appUsers.get().getUserid());
+				//TODO
+				//create TranscribeFileLog object to save or create TranscribeFileLog Trigger
 			} else {
 				throw new UserNotFoundException("Username not found for this Transcription request with Email: "+userEmail);
 			}

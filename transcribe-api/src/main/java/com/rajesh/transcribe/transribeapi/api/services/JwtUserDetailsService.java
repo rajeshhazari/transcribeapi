@@ -2,11 +2,14 @@ package com.rajesh.transcribe.transribeapi.api.services;
 
 import com.rajesh.transcribe.transribeapi.api.controller.exceptions.UserAlreadyRegisteredException;
 import com.rajesh.transcribe.transribeapi.api.domian.AppUsers;
+import com.rajesh.transcribe.transribeapi.api.domian.AppUsersAuth;
+import com.rajesh.transcribe.transribeapi.api.domian.AuthoritiesMaster;
 import com.rajesh.transcribe.transribeapi.api.domian.RegisteredUserVerifyLogDetials;
 import com.rajesh.transcribe.transribeapi.api.models.dto.AuthUserProfileDto;
 import com.rajesh.transcribe.transribeapi.api.models.dto.RegisterUserRequest;
 import com.rajesh.transcribe.transribeapi.api.models.dto.UserRegReqResponseDto;
 import com.rajesh.transcribe.transribeapi.api.repository.AppUsersRepository;
+import com.rajesh.transcribe.transribeapi.api.repository.AuthoritiesMasterRepo;
 import com.rajesh.transcribe.transribeapi.api.repository.RegisteredUsersRepo;
 import com.rajesh.transcribe.transribeapi.api.repository.exceptions.UserNotFoundException;
 import com.rajesh.transcribe.transribeapi.api.util.SystemConstants;
@@ -37,10 +40,7 @@ import javax.annotation.PostConstruct;
 import javax.mail.MessagingException;
 import java.security.SecureRandom;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 import static com.rajesh.transcribe.transribeapi.api.util.SystemConstants.*;
 
@@ -56,6 +56,7 @@ public class JwtUserDetailsService implements UserDetailsService {
     @Autowired private AppMailService appEmailServiceImpl;
     @Autowired private DataSourceHealthIndicator dataSourceHealthIndicator;
     @Autowired private SecureRandom secureRandom;
+    @Autowired private AuthoritiesMasterRepo authoritiesMasterRepo;
 
     /*@Autowired
     public JwtUserDetailsService (PasswordEncoder bcryptEncoder,
@@ -91,7 +92,7 @@ public class JwtUserDetailsService implements UserDetailsService {
         //List<AppUsers> appuser = userRepo.findByEmail(s);
         Optional<AppUsers> user = null;
         try{
-            user = userRepo.findByEmail(email);
+            user = Optional.ofNullable(userRepo.findByEmail(email));
         }catch (BadCredentialsException bex){
             throw new BadCredentialsException("Bad credentials. Please check your username/password: " + email);
         }
@@ -135,12 +136,12 @@ public class JwtUserDetailsService implements UserDetailsService {
         Optional<AppUsers> user = null;
         AuthUserProfileDto userDto = new AuthUserProfileDto();
         try{
-            user = userRepo.findByEmail(email);
+            user = Optional.ofNullable(userRepo.findByEmail(email));
         }catch (BadCredentialsException bex){
             throw new BadCredentialsException("Bad credentials. Please check your username/password: " + email);
         }
         logger.debug("user retrived:: {}  for user {}",user ,email );
-        if (!user.isEmpty() || user.isPresent()) {
+        if (!user.isPresent() || user.isPresent()) {
             userDto.setUsername(user.get().getEmail());
             userDto.setActive(user.get().isActive());
             userDto.setLocked(user.get().isLocked());
@@ -202,7 +203,7 @@ public class JwtUserDetailsService implements UserDetailsService {
      * @throws UserNotFoundException
      */
     public AppUsers getUserByEmail(String email) throws UserNotFoundException {
-        Optional<AppUsers> user = userRepo.findByEmail(email);
+        Optional<AppUsers> user = Optional.ofNullable(userRepo.findByEmail(email));
         
         if (user.isEmpty() || !user.isPresent()) {
             throw new UserNotFoundException("User not found with email: " + email);
@@ -256,7 +257,7 @@ public class JwtUserDetailsService implements UserDetailsService {
         final String emailRegReq = registerUserRequest.getEmail();
         userRegReqResponseDto.setEmail(emailRegReq);
         try{
-            Optional<AppUsers> users = userRepo.findByEmail(emailRegReq);
+            Optional<AppUsers> users = Optional.ofNullable(userRepo.findByEmail(emailRegReq));
     
             if( isEmailRegistered(emailRegReq) && users.isPresent() && users.get().isVerified()){
                 userRegReqResponseDto.setEmail(emailRegReq);
@@ -353,8 +354,8 @@ public class JwtUserDetailsService implements UserDetailsService {
      */
     public boolean isEmailRegistered(String email){
         boolean isRegistered = false;
-        Optional<AppUsers> appUsers = userRepo.findByEmail(email);
-        if(!appUsers.isEmpty() && !appUsers.get().isDisabled()){
+        Optional<AppUsers> appUsers = Optional.ofNullable(userRepo.findByEmail(email));
+        if(!appUsers.isPresent() && !appUsers.get().isDisabled()){
             isRegistered = true;
         } else {
             isRegistered = false;
@@ -389,4 +390,18 @@ public class JwtUserDetailsService implements UserDetailsService {
     }
     
      */
+
+    /**
+     *
+     * @param roleId
+     * @return AuthoritiesMaster
+     */
+    public AuthoritiesMaster getMasterAuthoritiesUsingRoleId(String roleId) {
+        return authoritiesMasterRepo.findByRoleId(roleId);
+    }
+
+
+    public List<AuthoritiesMaster> getMasterAuthoritiesUsingRolesId(final List<String> roleIdList) {
+        return  authoritiesMasterRepo.findByRolesId(roleIdList);
+    }
 }
