@@ -5,6 +5,7 @@ import com.rajesh.transcribe.transribeapi.api.repository.AppUsersRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.autoconfigure.data.jdbc.DataJdbcTest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -18,6 +19,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 @ExtendWith(SpringExtension.class)
 public class SampleRepoNonTransactionalTests {
+
+    @Autowired
+    BuildProperties  buildProperties;
     
     @Autowired
     private AppUsersRepository appUsersRepository;

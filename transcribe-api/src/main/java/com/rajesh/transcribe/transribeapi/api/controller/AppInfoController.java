@@ -40,12 +40,8 @@ public class AppInfoController {
     @PreAuthorize("hasAnyRole({'ROLE_ADMIN','ROLE_DEVOPS'})")
     @RequestMapping(value= "/version" , method = RequestMethod.GET, produces = "application/json")
     public @ResponseBody
-    ResponseEntity<Map<String,String>> greeting(HttpServletRequest request, HttpServletResponse response) {
-        Map<String,String> respMap = new ConcurrentHashMap<>();
-        respMap.put("appVersion",buildProperties.getVersion());
-        respMap.put("appName",buildProperties.getName());
-        respMap.put("appBuildTime", buildProperties.getTime().toString());
-        return ResponseEntity.ok(respMap);
+    ResponseEntity<BuildProperties> greeting(HttpServletRequest request, HttpServletResponse response) {
+        return ResponseEntity.ok(buildProperties);
     }
     
 }

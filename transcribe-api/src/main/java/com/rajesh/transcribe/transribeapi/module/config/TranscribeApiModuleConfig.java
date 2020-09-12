@@ -33,7 +33,6 @@ import java.security.SecureRandom;
 /** @author rajesh */
 @Configuration
 @EnableAutoConfiguration(exclude = { H2ConsoleAutoConfiguration.class})
-@EnableJdbcRepositories("com.rajesh.transcribe.transribeapi.api")
 @EnableConfigurationProperties(ApiModuleProperties.class)
 public class TranscribeApiModuleConfig {
 	

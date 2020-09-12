@@ -14,30 +14,31 @@ import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.data.jdbc.repository.config.EnableJdbcRepositories;
 
-
-@EnableAutoConfiguration
 @SpringBootApplication
+@EnableAutoConfiguration
+@EnableJdbcRepositories("com.rajesh.transcribe.transribeapi.api")
 @ComponentScan({"com.rajesh.transcribe.*","com.c3transcribe.core"})
 public class TranscribeapiApplication extends SpringBootServletInitializer  {
 //implements ApplicationContextInitializer<ContextRefreshedEvent> {
-	
+
 	private final Logger logger = LoggerFactory.getLogger(TranscribeapiApplication.class);
-	
-	
+
+
 	/*@Bean
 	public ServletWebServerFactory servletContainer() {
 		TomcatServletWebServerFactory tomcat = new TomcatServletWebServerFactory();
 		tomcat.addAdditionalTomcatConnectors(createStandardConnector());
 		return tomcat;
 	}
-	
+
 	private Connector createStandardConnector() {
 		Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
 		connector.setPort(8080);
 		return connector;
 	}*/
-	
+
 	public static void main(String[] args) throws Exception {
 		new TranscribeapiApplication().configure(new SpringApplicationBuilder(TranscribeapiApplication.class))
 				.bannerMode(Banner.Mode.OFF)
@@ -51,6 +52,6 @@ public class TranscribeapiApplication extends SpringBootServletInitializer  {
        public void initialize(final ContextRefreshedEvent contextRefreshedEvent) {
        logger.info("Application context is create successfully! {}",contextRefreshedEvent.getApplicationContext().getApplicationName());
  }*/
-	
-	
+
+
 }
