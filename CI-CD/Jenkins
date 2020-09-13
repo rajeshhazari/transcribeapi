@@ -125,8 +125,8 @@ pipeline {
                     last_started = env.STAGE_NAME
                     echo 'build base spring boot runtime image.. '
                     println(" stagename :: "+env.STAGE_NAME);
-                    sh 'ls -lrth CI-CD/Dockerfile_spring_boot_runtime_openjdk11	 && cat CI-CD/Dockerfile_spring_boot_runtime_openjdk11	'
-                    def image = docker.build("spring-boot-runtime:openjdk-11-slim", " -f CI-CD/Dockerfile_spring_boot_runtime_openjdk11	 --progress auto .")
+                    sh 'ls -lrth CI-CD/Dockerfile_spring_boot_runtime_openjdk	 && cat CI-CD/Dockerfile_spring_boot_runtime_openjdk	'
+                    def image = docker.build("spring-boot-runtime:openjdk-11-slim", " -f CI-CD/Dockerfile_spring_boot_runtime_openjdk	 --progress auto .")
                 }
             }
         }
