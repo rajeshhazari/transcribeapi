@@ -39,6 +39,10 @@ def checkApiContainerHealthStatus( cid , purge){
     }
 }
 
+def getEnvContainerIdForName( name , env) {
+    return script.sh(" docker ps -aqf 'name=^${name}-${env}' ");
+}
+
 pipeline {
     agent any
     tools {
@@ -169,6 +173,40 @@ pipeline {
                 }
             }
         }
+        stage('Deploy-devappserver'){
+            when{
+                allOf {
+                    environment ignoreCase: true, name: 'DEPLOY_TO_ENV', value: 'dev'
+                    environment name: 'DEPLOY', value: 'true'
+                    //currentBuild.result == null || currentBuild.result == 'SUCCESS'
+                }
+            }
+            steps{
+                script{
+                    println("built lite image id:: "+image.id)
+                    last_started = env.STAGE_NAME
+                    def artifactId = readMavenPom().getArtifactId()
+                    def versionId = readMavenPom().getVersion()
+                    def buildInfoProps = readProperties interpolate: true, file: 'build-info.properties';
+                    mainClass = buildInfoProps['build.app.mainClass']
+                    imageName = buildInfoProps['build.name']
+                    versionId = buildInfoProps['build.version']
+                    JAVA_OPTS="-Dspring.profiles.active=dev -Dlogging.level.org.springframework=INFO   -Dlogging.file.path=/opt  -Dapp.io.uploadDir=/opt/apps/temp   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n "
+                    println("Deploying to :: "+environment+"  versionId:: "+versionId +" JAVA_OPTS:: "+JAVA_OPTS +"main class :: "+mainClass + " buildInfoProps:: "+buildInfoProps)
+                    cid = getEnvContainerIdForName(${imageName},${DEPLOY_TO_ENV})
+                    sh """
+                            echo "JAVA_OPTS:: ${JAVA_OPTS} MAIN_CLASS:: ${mainClass}"
+                            echo "stopping the container..."
+                            docker ps -a && docker images && docker stop  ${cid}   && docker container stop ${imageName}-${DEPLOY_TO_ENV}  && docker rm -f ${imageName}-${DEPLOY_TO_ENV} 
+                            docker ps -a && docker images  
+                            docker run --restart=always  -p 8585:8585 --label production_status=development --name=${imageName}-${DEPLOY_TO_ENV}  --label env=dev -e JAVA_OPTS='${JAVA_OPTS}'  -e  MAIN_CLASS='\\"${mainClass}\\"'   -e HEALTHCHECK_URL="${HEALTHCHECK_URL}"   -u app_user  -t ${imageName}:${versionId}-${env.BUILD_ID}  
+                      
+                        """
+
+                }
+
+            }
+        }
         stage('Deploy-to-qa') {
             when {
                 allOf {
@@ -202,38 +240,6 @@ pipeline {
                             
                     """
                 }
-            }
-        }
-        stage('Deploy-devappserver'){
-            when{
-                allOf {
-                    environment ignoreCase: true, name: 'DEPLOY_TO_ENV', value: 'dev'
-                    environment name: 'DEPLOY', value: 'true'
-                    //currentBuild.result == null || currentBuild.result == 'SUCCESS'
-                }
-            }
-            steps{
-                script{
-                    last_started = env.STAGE_NAME
-                    def artifactId = readMavenPom().getArtifactId()
-                    def versionId = readMavenPom().getVersion()
-                    def buildInfoProps = readProperties interpolate: true, file: 'build-info.properties';
-                    mainClass = buildInfoProps['build.app.mainClass']
-                    imageName = buildInfoProps['build.name']
-                    versionId = buildInfoProps['build.version']
-                    JAVA_OPTS="-Dspring.profiles.active=dev -Dlogging.level.org.springframework=INFO   -Dlogging.file.path=/opt  -Dapp.io.uploadDir=/opt/apps/temp   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n "
-                    println("Deploying to :: "+environment+"  versionId:: "+versionId +" JAVA_OPTS:: "+JAVA_OPTS +"main class :: "+mainClass + " buildInfoProps:: "+buildInfoProps)
-
-                    sh """
-                            echo "JAVA_OPTS:: ${JAVA_OPTS} MAIN_CLASS:: ${mainClass}"
-                            echo "stopping the container..."
-                            docker ps -a && docker stop  ${imageName}-${DEPLOY_TO_ENV}   && docker container stop ${imageName}-${DEPLOY_TO_ENV}  && docker rm -f ${imageName}-${DEPLOY_TO_ENV}  && docker ps -a && docker images  
-                            docker run --restart=always  -p 8585:8585 --label production_status=development --name=${imageName}-${DEPLOY_TO_ENV}  --label env=dev -e JAVA_OPTS='${JAVA_OPTS}'  -e  MAIN_CLASS='\\"${mainClass}\\"'   -e HEALTHCHECK_URL="${HEALTHCHECK_URL}"   -u app_user  -t ${imageName}:${versionId}-${env.BUILD_ID}  
-                      
-                        """
-
-                }
-
             }
         }
         stage('Deploy-prod') {

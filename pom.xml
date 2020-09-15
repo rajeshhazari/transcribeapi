@@ -298,7 +298,7 @@
 		</dependency>
 
 	</dependencies>
-        <build>
+        <!-- <build>
             <plugins>
 
                 <plugin>
@@ -327,7 +327,7 @@
 
             </plugins>
         </build>
-
+-->
 	<!--<build>
 		<plugins>
 			<plugin>
