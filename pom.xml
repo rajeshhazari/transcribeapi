@@ -322,17 +322,6 @@
                                <outputDirectory>${project.reporting.outputDirectory}/jacoco_test</outputDirectory>
                             </configuration>
                         </execution>
-						<execution>
-							<id>post-unit-test</id>
-							<phase>test</phase>
-							<goals>
-								<goal>report</goal>
-							</goals>
-							<configuration>
-								<dataFile>target/jacoco.exec</dataFile>
-								<outputDirectory>target/jacoco-ut</outputDirectory>
-							</configuration>
-						</execution>
                     </executions>
                 </plugin>
 
