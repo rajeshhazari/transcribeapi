@@ -13,7 +13,7 @@
 #    --add-modules java.base,java.logging,java.xml,jdk.unsupported,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument \
 #    --output /jdk-minimal
 
-From spring-boot-runtime/openjdk-14-slim
+From spring-boot-runtime:openjdk-14-slim
 
 
 # to check for open ports in the container: docker run <container id> netstat -tan
