@@ -15,6 +15,7 @@ public class AppError {
     private Instant timestamp;
     
     public AppError(final HttpStatus status, final String message) {
+        this.code = status.value();
         this.httpStatus = status;
         this.message = message;
         this.timestamp = Instant.now();

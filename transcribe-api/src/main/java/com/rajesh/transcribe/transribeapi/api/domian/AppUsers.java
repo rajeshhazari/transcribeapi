@@ -41,7 +41,7 @@ public class AppUsers implements Serializable {
 	private LocalDateTime lastModified;
 
 	@MappedCollection(idColumn="userid", keyColumn="userid")
-	private Set<AppUsersAuth> appUsersAuthList ;
+	private List<AppUsersAuth> appUsersAuthList ;
 
 }
 

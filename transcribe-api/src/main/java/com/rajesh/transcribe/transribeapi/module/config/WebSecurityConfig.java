@@ -4,6 +4,7 @@ import com.rajesh.transcribe.transribeapi.api.filters.JwtRequestFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -13,6 +14,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
 
 @EnableWebSecurity
 class WebSecurityConfig extends WebSecurityConfigurerAdapter {
@@ -42,7 +44,14 @@ class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
 	@Autowired
 	public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-		auth.userDetailsService(jwtUserDetailService);
+		DaoAuthenticationProvider authDaoProvider = new DaoAuthenticationProvider();
+		authDaoProvider.setPasswordEncoder(passwordEncoder());
+		authDaoProvider.setUserDetailsService(jwtUserDetailService);
+		auth.authenticationProvider(authDaoProvider);
+		/*
+		auth.userDetailsService(jwtUserDetailService)
+		 	.passwordEncoder(passwordEncoder());
+		 */
 	}
 
 	@Bean

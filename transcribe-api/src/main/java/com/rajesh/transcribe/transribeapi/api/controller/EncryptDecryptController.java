@@ -6,7 +6,6 @@ import io.swagger.annotations.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 import org.apache.commons.io.FileUtils;
-import org.apache.http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.activation.MimetypesFileTypeMap;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.HttpServletRequest;
@@ -55,14 +53,15 @@ public class EncryptDecryptController {
     
     private SecureRandom secureRandom;
     private BCryptPasswordEncoder bCryptPasswordEncoder;
-    private AppServiceUtils appServiceUtils;
+    private AppStreamingIOServiceUtils appStreamingIOServiceUtils;
     
     public EncryptDecryptController(BCryptPasswordEncoder bCryptPasswordEncoder,
                                     SecureRandom secureRandom,
-                                    AppServiceUtils appServiceUtils){
+                                    AppStreamingIOServiceUtils appStreamingIOServiceUtils
+    ){
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
         this.secureRandom = secureRandom;
-        this.appServiceUtils = appServiceUtils;
+        this.appStreamingIOServiceUtils = appStreamingIOServiceUtils;
     }
     
     @ApiOperation(value = "Encrypt given string api service", response = Map.class, httpMethod = "POST")
@@ -265,7 +264,7 @@ public class EncryptDecryptController {
                 String contentType = Files.probeContentType(Paths.get(file.getName()));
                 //TODO handle the file upload status logic and make this service more responsive
                 // rather than user to wait until all of the transcription is completed, which may take some time
-                content = FileUtils.readFileToString(appServiceUtils.convertMultipartFileToFile(file, uploadDir), StandardCharsets.UTF_8);
+                content = FileUtils.readFileToString(appStreamingIOServiceUtils.convertMultipartFileToFile(file, uploadDir), StandardCharsets.UTF_8);
             }
         }catch (IOException ioException){
             logger.error("IO Error while reading the file {} {} , contentType: {}  message : {}",file.getName(),uploadDir, file.getContentType(),ioException.getMessage() );

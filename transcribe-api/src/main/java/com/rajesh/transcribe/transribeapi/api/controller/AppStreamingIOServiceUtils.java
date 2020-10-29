@@ -1,24 +1,22 @@
 package com.rajesh.transcribe.transribeapi.api.controller;
 
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.sound.sampled.*;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 
 import static org.apache.logging.log4j.LogManager.getLogger;
 
 @Service
-public class AppServiceUtils {
-private static final Logger logger = getLogger(AppServiceUtils.class);
+public class AppStreamingIOServiceUtils {
+private static final Logger logger = getLogger(AppStreamingIOServiceUtils.class);
     
+    final int chunkSize = 4 * 1024; // 4KB chunks
     /**
      * @param file
      * @param uploadDir
@@ -66,13 +64,49 @@ private static final Logger logger = getLogger(AppServiceUtils.class);
     public AudioFormat getMultipartStreamAudioFileFormat(MultipartFile multipartDataStream) throws UnsupportedAudioFileException{
         AudioFormat audioFormat = null;
         try {
-            AudioInputStream mp3InputStream = AudioSystem.getAudioInputStream(multipartDataStream.getInputStream());
-            audioFormat = mp3InputStream.getFormat();
+            AudioInputStream stream = AudioSystem.getAudioInputStream(multipartDataStream.getInputStream());
+            audioFormat = stream.getFormat();
         } catch (IOException e) {
             e.printStackTrace();
             logger.error("IOException Occurred while fetching audioFormat from mp3Stream {}", e.getMessage());
         }
         return audioFormat;
+    }
+    
+    
+    
+    /**
+     *
+     * @param fileInputStream
+     * @throws UnsupportedAudioFileException
+     */
+    public AudioFormat getAudioFileFormatFromStream(FileInputStream fileInputStream) throws UnsupportedAudioFileException{
+        AudioFormat audioFormat = null;
+        try {
+            AudioInputStream stream = AudioSystem.getAudioInputStream(fileInputStream);
+            audioFormat = stream.getFormat();
+        } catch (IOException e) {
+            e.printStackTrace();
+            logger.error("IOException Occurred while fetching audioFormat from fileInputStream {}", e.getMessage());
+        }
+        return audioFormat;
+    }
+    
+    
+    /**
+     *
+     * @param fileInputStream
+     * @throws UnsupportedAudioFileException
+     */
+    public AudioInputStream getAudioInputStreamFromFileInputStream(FileInputStream fileInputStream) throws UnsupportedAudioFileException{
+        AudioInputStream stream = null;
+        try {
+            stream = AudioSystem.getAudioInputStream(fileInputStream);
+        } catch (IOException e) {
+            e.printStackTrace();
+            logger.error("IOException Occurred while creating AudioInputStream from fileInputStream {}", e.getMessage());
+        }
+        return stream;
     }
      
 }

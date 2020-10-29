@@ -15,6 +15,6 @@ public interface  AuthoritiesMasterRepo extends CrudRepository<AuthoritiesMaster
     @Query("select * from authorities_master where upper(email) = upper(:email)   ")
     AuthoritiesMaster findByRoleId(String roleId);
 
-    @Query("select * from authorities_master where role_id in roleIds   ")
+    @Query("select * from authorities_master where role_id in :roleIds   ")
     List<AuthoritiesMaster> findByRolesId(List<String> roleIds);
 }

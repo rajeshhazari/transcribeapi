@@ -9,8 +9,8 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.concurrent.Executor;
 
-//@Configuration
-//@EnableAsync
+/*@Configuration
+@EnableAsync*/
 public class AppAsyncConfiguration {
     
     @Bean
@@ -19,7 +19,8 @@ public class AppAsyncConfiguration {
         executor.setCorePoolSize(10);
         executor.setMaxPoolSize(10);
         executor.setQueueCapacity(100);
-        executor.setThreadNamePrefix("AppAsynchThread-");
+        executor.setAwaitTerminationSeconds(5);
+        executor.setThreadNamePrefix("TranscribeAppAsyncThread-");
         executor.initialize();
         return executor;
     }

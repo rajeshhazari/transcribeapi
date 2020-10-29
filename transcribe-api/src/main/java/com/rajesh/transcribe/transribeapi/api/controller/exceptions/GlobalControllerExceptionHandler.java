@@ -3,6 +3,7 @@ package com.rajesh.transcribe.transribeapi.api.controller.exceptions;
 import com.rajesh.transcribe.transribeapi.api.models.AppError;
 import com.rajesh.transcribe.transribeapi.api.repository.exceptions.UserNotFoundException;
 import io.jsonwebtoken.security.SignatureException;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
@@ -15,13 +16,21 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import javax.mail.MessagingException;
+import javax.servlet.http.HttpServletRequest;
+import java.net.MalformedURLException;
 import java.time.Instant;
+
+import static org.apache.logging.log4j.LogManager.getLogger;
 
 @RestControllerAdvice
 public class GlobalControllerExceptionHandler {
+    
+    private static final Logger logger = getLogger(GlobalControllerExceptionHandler.class);
     
     @ExceptionHandler(NoHandlerFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -101,4 +110,31 @@ public class GlobalControllerExceptionHandler {
         ex.printStackTrace();
         return new ResponseEntity<AppError>(errorDetails, HttpStatus.BAD_REQUEST);
     }
+    @ExceptionHandler(MalformedURLException.class)
+    public final ResponseEntity<AppError> handleMalformedURLException(MalformedURLException ex, HttpServletRequest request) {
+        String requestUri = request.getRequestURI();
+        String fileName = request.getParameter("name");
+        AppError errorDetails = new AppError(HttpStatus.BAD_REQUEST.value(),
+                ex.getMessage(), Instant.now());
+        errorDetails.setCode(HttpStatus.BAD_REQUEST.value());
+        errorDetails.setHttpStatus(HttpStatus.BAD_REQUEST);
+        ex.printStackTrace();
+        return new ResponseEntity<AppError>(errorDetails, HttpStatus.BAD_REQUEST);
+    }
+    
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity handleMaxSizeException(Exception ex) {
+        logger.warn(ex.getMessage());
+        AppError errorDetails = new AppError(HttpStatus.PAYLOAD_TOO_LARGE.value(), ex.getMessage(), Instant.now());
+        return new ResponseEntity<AppError>(errorDetails, HttpStatus.PAYLOAD_TOO_LARGE);
+    }
+    
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity handleMultiPartException(Exception ex) {
+        logger.warn(ex.getMessage());
+        AppError errorDetails = new AppError(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), Instant.now());
+        return new ResponseEntity<AppError>(errorDetails, HttpStatus.BAD_REQUEST);
+    }
+    
+    
 }

@@ -12,6 +12,7 @@
 #    --module-path /usr/lib/jvm/default-jvm/jmods \
 #    --add-modules java.base,java.logging,java.xml,jdk.unsupported,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument \
 #    --output /jdk-minimal
+#-Djava.security.egd=file:/dev/./urandom 
 
 From spring-boot-runtime:openjdk-14-slim
 

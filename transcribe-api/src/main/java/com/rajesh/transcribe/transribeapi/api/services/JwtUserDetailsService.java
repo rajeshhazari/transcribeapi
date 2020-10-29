@@ -6,6 +6,7 @@ import com.rajesh.transcribe.transribeapi.api.domian.AppUsersAuth;
 import com.rajesh.transcribe.transribeapi.api.domian.AuthoritiesMaster;
 import com.rajesh.transcribe.transribeapi.api.domian.RegisteredUserVerifyLogDetials;
 import com.rajesh.transcribe.transribeapi.api.models.dto.AuthUserProfileDto;
+import com.rajesh.transcribe.transribeapi.api.models.dto.AuthUsersRole;
 import com.rajesh.transcribe.transribeapi.api.models.dto.RegisterUserRequest;
 import com.rajesh.transcribe.transribeapi.api.models.dto.UserRegReqResponseDto;
 import com.rajesh.transcribe.transribeapi.api.repository.AppUsersRepository;
@@ -17,12 +18,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.jdbc.DataSourceHealthIndicator;
+import org.springframework.boot.autoconfigure.web.servlet.MultipartProperties;
 import org.springframework.core.env.Environment;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.AuthorityUtils;
@@ -34,13 +39,16 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.unit.DataSize;
 import org.springframework.web.server.ServerErrorException;
 
 import javax.annotation.PostConstruct;
 import javax.mail.MessagingException;
+import java.lang.reflect.InvocationTargetException;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.rajesh.transcribe.transribeapi.api.util.SystemConstants.*;
 
@@ -57,6 +65,13 @@ public class JwtUserDetailsService implements UserDetailsService {
     @Autowired private DataSourceHealthIndicator dataSourceHealthIndicator;
     @Autowired private SecureRandom secureRandom;
     @Autowired private AuthoritiesMasterRepo authoritiesMasterRepo;
+    @Autowired private AuthenticationManager authenticationManager;
+    @Autowired private MultipartProperties multipartProperties;
+    
+    @Value("${spring.servlet.multipart.max-file-size}")
+    private DataSize appMaxUplaodLimit;
+    
+    
 
     /*@Autowired
     public JwtUserDetailsService (PasswordEncoder bcryptEncoder,
@@ -85,18 +100,18 @@ public class JwtUserDetailsService implements UserDetailsService {
     /**
      *
      * @param email
-     * @return
+     * @param password
+     * @return @code UserDetails
      * @throws UsernameNotFoundException
      */
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        //List<AppUsers> appuser = userRepo.findByEmail(s);
-        Optional<AppUsers> user = null;
+    public UserDetails loadUserByUsername(String email, String password) throws UsernameNotFoundException {
+        /*Optional<AppUsers> user = null;
         try{
             user = Optional.ofNullable(userRepo.findByEmail(email));
         }catch (BadCredentialsException bex){
             throw new BadCredentialsException("Bad credentials. Please check your username/password: " + email);
         }
-        logger.debug("user retrived:: %s  for user %s",user ,email );
+        logger.debug("user retrived:: {}  for user {}",user ,email );
     
         if (user.isEmpty() || !user.isPresent()) {
             throw new UsernameNotFoundException("User not found with username: " + email);
@@ -104,7 +119,20 @@ public class JwtUserDetailsService implements UserDetailsService {
             throw new UsernameNotFoundException("There is some problem with your account, please contact us to resolve your issue: " + email);
         }else if (user.isPresent() && user.get().isLocked()) {
             throw new UsernameNotFoundException("Your account is locker. Please Contact us for more info: " + email);
+        }*/
+    
+        Optional<AppUsers> user = Optional.ofNullable(userRepo.findByEmail(email));
+        if (user == null) {
+            throw new UsernameNotFoundException("User not found with username: " + email);
+        } else  if (user.isEmpty() || !user.isPresent()) {
+            throw new UsernameNotFoundException("User not found with username: " + email);
+        }else if (user.isPresent() && user.get().getUsername().isEmpty()) {
+            throw new UsernameNotFoundException("There is some problem with your account, please contact us to resolve your issue: " + email);
+        }else if (user.isPresent() && user.get().isLocked()) {
+            throw new UsernameNotFoundException("Your account is locker. Please Contact us for more info: " + email);
         }
+        return new org.springframework.security.core.userdetails.User(user.get().getEmail(), user.get().getPassword(),
+                AuthorityUtils.NO_AUTHORITIES);
     
     
         /*
@@ -117,49 +145,62 @@ public class JwtUserDetailsService implements UserDetailsService {
          * username); } }
          */
         //Principal authentication = new HttpTrace.Principal()
-        SecurityContext context = SecurityContextHolder.getContext();
-        Authentication authentication =
-                new UsernamePasswordAuthenticationToken(user.get().getEmail(),user.get().getPassword(), AuthorityUtils.createAuthorityList("ROLE_USER"));
-        context.setAuthentication(authentication);
-        return new User(user.get().getEmail(), user.get().getPassword(),
-                new ArrayList<>());
         /*return new User("admin", "admin321",
                 new ArrayList<>());*/
     }
     
     /**
      *
+     * @param username
+     * @param password
+     * @throws Exception
+     */
+    public void authenticate(String username, String password) throws Exception {
+        try {
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+        } catch (DisabledException e) {
+            throw new Exception("USER_DISABLED"+e.getMessage(), e);
+        } catch (BadCredentialsException e) {
+            throw new BadCredentialsException("INVALID_CREDENTIALS"+e.getMessage(),e);
+        }
+    }
+    /**
+     *
      * @param email
      * @return
      */
-    private AuthUserProfileDto getUserDto(String email) throws UsernameNotFoundException {
-        Optional<AppUsers> user = null;
+    public AuthUserProfileDto getUserDto(String email) throws UsernameNotFoundException {
+        AppUsers user = null;
         AuthUserProfileDto userDto = new AuthUserProfileDto();
         try{
-            user = Optional.ofNullable(userRepo.findByEmail(email));
+            user = getUserByEmail(email);
         }catch (BadCredentialsException bex){
             throw new BadCredentialsException("Bad credentials. Please check your username/password: " + email);
+        }catch (UserNotFoundException ex){
+            throw new UserNotFoundException("User not found with email: " + email);
         }
         logger.debug("user retrived:: {}  for user {}",user ,email );
-        if (!user.isPresent() || user.isPresent()) {
-            userDto.setUsername(user.get().getEmail());
-            userDto.setActive(user.get().isActive());
-            userDto.setLocked(user.get().isLocked());
-            userDto.setEnabled(user.get().isDisabled());
-            userDto.setLastLoggedin(user.get().getLastModified());
+        if (Objects.nonNull(user)) {
+            BeanUtils.copyProperties(user,userDto);
+            userDto.setLastLoggedin(user.getLastModified());
         }
-        if (user.isEmpty() || !user.isPresent()) {
-            throw new UsernameNotFoundException("User not found with username: " + email);
-        }else if (user.isPresent() && user.get().getUsername().isEmpty()) {
-            throw new UsernameNotFoundException("There is some problem with your account, please contact us to resolve your issue: " + email);
-        }else if (user.isPresent() && user.get().isLocked()) {
-            throw new UsernameNotFoundException("Your account is lockerd Please Contact us for more info: " + email);
+        if (user.getUsername().isEmpty()) {
+            throw new UsernameNotFoundException("There is some problem with your account, please contact support team to resolve issue with your account: " + email);
+        }else if ( user.isLocked()) {
+            throw new UsernameNotFoundException("Your account is locked. Please contact support team for more info: " + email);
         }
-        
-        SecurityContext context = SecurityContextHolder.getContext();
-        Authentication authentication =
-                new UsernamePasswordAuthenticationToken(user.get().getEmail(),user.get().getPassword(), AuthorityUtils.createAuthorityList("ROLE_USER"));
-        context.setAuthentication(authentication);
+    
+        List<AuthUsersRole> roles = new ArrayList<>();
+        user.getAppUsersAuthList()
+                .stream()
+                .forEach(appUsersAuth -> {
+                    AuthUsersRole authUsersRole = new AuthUsersRole();
+                    BeanUtils.copyProperties(appUsersAuth, authUsersRole);
+                    roles.add(authUsersRole);
+                });
+        multipartProperties.getMaxFileSize();
+        userDto.setSystemSupportedFileTypes(String.valueOf(multipartProperties.getMaxFileSize().toMegabytes()));
+        userDto.setAuthUsersRolesList(roles);
         return userDto;
         
     }
@@ -373,6 +414,51 @@ public class JwtUserDetailsService implements UserDetailsService {
         return false;
     }
     
+    /**
+     *
+     * @param email
+     * @return
+     */
+    public boolean saveLogedinJwtToken(final String email, final String jwtToken) {
+        //TODO implement the method
+        return false;
+    }
+    
+    /**
+     *
+     * @param email
+     * @return
+     */
+    public boolean deleteLogedinJwtToken(final String email, final String jwtToken) {
+        //TODO implement the method
+        return false;
+    }
+    
+    
+    /**
+     *
+     * @param email
+     * @return
+     */
+    public boolean blackListLogedinJwtToken(final String email, final String jwtToken) {
+        //TODO implement the method
+        return false;
+    }
+    
+    /**
+     *
+     * @param email
+     * @return Boolean
+     */
+    public Boolean findIfRequestedEmailMatchesWithAnyOfRegisteredEmails(final String email){
+        final List<AppUsers> appUsersList = userRepo.findAllEmailList(email+'%');
+        if(!appUsersList.isEmpty()){
+            return true;
+        }else {
+            return false;
+        }
+    }
+    
     
     /*private List<GrantedAuthority> getUserAuthorities(String email) {
         List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
@@ -403,5 +489,26 @@ public class JwtUserDetailsService implements UserDetailsService {
 
     public List<AuthoritiesMaster> getMasterAuthoritiesUsingRolesId(final List<String> roleIdList) {
         return  authoritiesMasterRepo.findByRolesId(roleIdList);
+    }
+    
+    /**
+     *
+     * @param email
+     * @return @UserDetails
+     * @throws UsernameNotFoundException
+     */
+    @Override
+    public UserDetails loadUserByUsername(final String email) throws UsernameNotFoundException {
+        Optional<AppUsers> user = null;
+        try{
+            user = Optional.ofNullable(userRepo.findByEmail(email));
+        }catch (BadCredentialsException bex){
+            throw new BadCredentialsException("Bad credentials. Please check your username/password: " + email);
+        }
+        Authentication authentication =
+                new UsernamePasswordAuthenticationToken(user.get().getEmail(),user.get().getPassword(), AuthorityUtils.createAuthorityList("ROLE_USER"));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        return new User(user.get().getEmail(), user.get().getPassword(), new ArrayList<>());
+        
     }
 }

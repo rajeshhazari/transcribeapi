@@ -1,12 +1,12 @@
 package com.rajesh.transcribe.transribeapi.api.util;
 
 import com.rajesh.transcribe.transribeapi.api.global.exceptions.CustomException;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +20,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.logging.log4j.LogManager.getLogger;
 
 @Service
 public class JwtUtil {
@@ -29,6 +30,9 @@ public class JwtUtil {
     @Value("${app.io.sessionTimeout}")
     private int timeoutinMin;
     
+    private static final Logger logger = getLogger(JwtUtil.class);
+    
+    public static final String ROLES = "ROLES";
    /* @PostConstruct
     protected void init() {
         secretKey = Base64.getEncoder().encodeToString(secretKey.getBytes());
@@ -98,12 +102,26 @@ public class JwtUtil {
      * @param userDetails
      * @return
      */
-    public String generateToken(UserDetails userDetails,String userFingerprint) {
+    public String generateJwtToken(UserDetails userDetails, String userFingerprint) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("owner", "auth0");
         claims.put("userFingerPrint", userFingerprint);
         claims.put("typ", "JWT");
         return createToken(claims, userDetails.getUsername());
+    }
+    
+    //generate token for user
+    public String generateToken(Authentication authentication) {
+        final Map<String, Object> claims = new HashMap<>();
+        final UserDetails user = (UserDetails) authentication.getPrincipal();
+        
+        final List<String> roles = authentication.getAuthorities()
+                .stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+        
+        claims.put(ROLES, roles);
+        return createToken(claims, user.getUsername());
     }
     
     /**
@@ -129,24 +147,34 @@ public class JwtUtil {
      * @param userDetails
      * @return
      */
-    public Boolean validateToken(String token, UserDetails userDetails, HttpServletRequest request) {
+    public Boolean validateJwtToken(String token, UserDetails userDetails, HttpServletRequest request) {
         try {
             String userFingerprint = null;
             if (request.getCookies() != null && request.getCookies().length > 0) {
                 List<Cookie> cookies = Arrays.stream(request.getCookies()).collect(Collectors.toList());
                 Optional<Cookie> cookie = cookies.stream().filter(c -> "__Secure-Fgp"
-                        .equals(c.getName())).findFirst();
+                        .equalsIgnoreCase(c.getName())).findFirst();
                 if (cookie.isPresent()) {
                     userFingerprint = cookie.get().getValue();
                 }
             }
+            logger.debug("userFingerprint extracted from cookie:: {} ", userFingerprint);
             final String username = extractUsername(token);
             Claims claims = extractAllClaims(token);
     
             return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        }catch (SignatureException e) {
+            logger.error("Invalid JWT signature: {}", e.getMessage());
+        } catch (MalformedJwtException e) {
+            logger.error("Invalid JWT token: {}", e.getMessage());
+        } catch (ExpiredJwtException e) {
+            logger.error("JWT token is expired: {}", e.getMessage());
+        } catch (UnsupportedJwtException e) {
+            logger.error("JWT token is unsupported: {}", e.getMessage());
         }catch (JwtException | IllegalArgumentException e) {
             throw new CustomException("Expired or invalid JWT token", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+        return  false;
     }
     
     /**
@@ -155,8 +183,13 @@ public class JwtUtil {
      * @param username
      * @return
      */
-    public Boolean validateToken(String token, String username) {
+    public Boolean validateJwtToken(String token, String username) {
         return (username.equalsIgnoreCase(extractUsername(token)) && !isTokenExpired(token));
+    }
+    
+    public Boolean validateJwtToken(String token) {
+        final String username = extractUsername(token);
+        return username != null && !isTokenExpired(token);
     }
     
     /**
@@ -168,5 +201,16 @@ public class JwtUtil {
     public Boolean inValidateToken(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername()) && updateExpiration(token));
+    }
+    
+    
+    public List<String> getRoles(String token) {
+        return getClaimFromToken(token, claims -> (List) claims.get(ROLES));
+    }
+    
+    
+    public <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver) {
+        final Claims claims = extractAllClaims(token);
+        return claimsResolver.apply(claims);
     }
 }

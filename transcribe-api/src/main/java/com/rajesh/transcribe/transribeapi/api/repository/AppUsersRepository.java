@@ -41,6 +41,9 @@ public interface AppUsersRepository extends CrudRepository<AppUsers, Long> {
 	  @Query("select * from APPUSERS where upper(email) = upper(:email) and  upper(username) = upper(:username)  and disabled=true  ")
 	  Optional<AppUsers> findByEmailAndUsernameAndDisabled(@Param("email") String email, @Param("username") String username);
 	
+	@Query("select email from APPUSERS where upper(email) like upper(:email)   ")
+	List<AppUsers> findAllEmailList(String email);
+	
 	/*List<AppUsers> findByEmail(String email);
 	Optional<AppUsers> findByUserName(String username);
 	Optional<AppUsers> findByEmailAndInactive(String email);

@@ -1,23 +1,17 @@
-package com.rajesh.transcribe.transribeapi.api.domian;
+package com.rajesh.transcribe.transribeapi.api.models.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
-@Table("authorities_master")
-@Data
-public class AuthoritiesMaster {
-
-
-    @Column("id")
-    private Integer id;
-    @Column("role_id")
+@Data @AllArgsConstructor @NoArgsConstructor
+public class AuthoritiesMasterDto {
+    
     private String roleId;
-    @Column("roledesc")
     private String roleDesc;
-    @Column("max_file_size")
     private Integer maxUploadFileSize;
-    @Column("max_number_files")
     private Integer maxFilesCount;
 
 }

@@ -8,8 +8,15 @@ package com.rajesh.transcribe.transribeapi.api.services.solr.manager;
 import com.rajesh.transcribe.transribeapi.api.models.SearchRequest;
 import com.rajesh.transcribe.transribeapi.api.models.dto.TranscribedRespSolrInputDoc;
 import com.rajesh.transcribe.transribeapi.api.models.dto.sphinx.TranscriptionResponseDto;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.apache.commons.beanutils.BeanUtilsBean2;
+import static org.apache.logging.log4j.LogManager.getLogger;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
@@ -19,18 +26,14 @@ import org.apache.solr.client.solrj.request.UpdateRequest;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrDocument;
+import org.apache.solr.common.SolrInputDocument;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AutoPopulatingList;
-
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import static org.apache.logging.log4j.LogManager.getLogger;
 
 @Component
 public class SolrSearchService {
@@ -173,25 +176,77 @@ public class SolrSearchService {
     //TODO this need to be revisted
 
     /**
-     * @param solrCollName
+     * @param solrColName
      * @param searchRequest
      * @return
      */
-    public List<SolrDocument> getSolrDocList(final String solrCollName, final SearchRequest searchRequest) {
+    public List<SolrDocument> getSolrDocList(final Optional<String> solrColName, final SearchRequest searchRequest) {
         SolrQuery solrQuery = new SolrQuery();
-        solrQuery.add("email", searchRequest.getFileName());
+        List<SolrDocument> solrDocumentList = new ArrayList<>();
+        solrQuery.add("fileName", searchRequest.getFileName());
+        String colName = null;
+        if(solrColName.isPresent()){
+            colName = solrColName.orElse(solrCollectionName);
+        }
         try {
 
-            QueryResponse response = solrClient.query(solrCollName, solrQuery);
-            return response.getResults();
+            QueryResponse response = solrClient.query(colName, solrQuery);
+            solrDocumentList = response.getResults();
         } catch (SolrServerException e) {
             e.printStackTrace();
             logger.error("SolrServer error:: ", e.getMessage());
 
         } catch (IOException ioException) {
             ioException.printStackTrace();
+            logger.error("IOException occured error:: ", ioException.getMessage());
         }
-        return null;
+        return solrDocumentList;
+    }
+    
+    
+    /**
+     * 
+     * @param pageJsonObject
+     * @return
+     * @throws JSONException 
+     */
+    public SolrInputDocument createPageSolrDoc(JSONObject pageJsonObject) throws JSONException {
+
+        SolrInputDocument doc = new SolrInputDocument();
+        doc.addField("id", pageJsonObject.get("id"));
+        doc.addField("title", pageJsonObject.get("title"));
+        doc.addField("body", pageJsonObject.get("body"));
+        doc.addField("url", pageJsonObject.get("url"));
+        doc.addField("description", pageJsonObject.get("description"));
+        doc.addField("lastModified", pageJsonObject.get("lastModified"));
+        doc.addField("contentType", pageJsonObject.get("contentType"));
+        doc.addField("tags", pageJsonObject.get("tags"));
+        return doc;
+
+    }
+    
+    
+    /**
+     * This method connects to the Solr server and indexes page content using
+     * Solrj api. This is used by bulk update handler (servlet)
+     *
+     * @param Takes Json array and iterates over each object and index to solr
+     * @return boolean true if it indexes successfully to solr server, else
+     * false.
+     */
+    public boolean indexPagesToSolr(JSONArray indexPageData, String  colName) throws JSONException, SolrServerException,
+            IOException {
+
+        if (null != indexPageData) {
+            for (int i = 0; i < indexPageData.length(); i++) {
+                JSONObject pageJsonObject = indexPageData.getJSONObject(i);
+                SolrInputDocument doc = createPageSolrDoc(pageJsonObject);
+                solrClient.add(doc);
+            }
+            return true;
+        }
+
+        return false;
     }
 }
 

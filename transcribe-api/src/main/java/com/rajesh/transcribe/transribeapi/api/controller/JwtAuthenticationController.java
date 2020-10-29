@@ -6,9 +6,11 @@ import com.rajesh.transcribe.transribeapi.api.domian.AppUsers;
 import com.rajesh.transcribe.transribeapi.api.models.AppError;
 import com.rajesh.transcribe.transribeapi.api.models.dto.*;
 import com.rajesh.transcribe.transribeapi.api.repository.RegisteredUsersRepo;
+import com.rajesh.transcribe.transribeapi.api.repository.exceptions.UserNotFoundException;
 import com.rajesh.transcribe.transribeapi.api.services.AppEmailServiceImpl;
 import com.rajesh.transcribe.transribeapi.api.services.JwtUserDetailsService;
 import com.rajesh.transcribe.transribeapi.api.util.JwtUtil;
+import io.micrometer.core.annotation.Timed;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -16,20 +18,24 @@ import io.swagger.annotations.ApiResponses;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.mail.MessagingException;
 import javax.servlet.http.Cookie;
@@ -37,8 +43,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.util.Base64;
 import java.util.Date;
+import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @CrossOrigin
@@ -78,7 +85,8 @@ public class JwtAuthenticationController {
 		this.encryptUtils = encryptUtils;
 		this.modelMapper = modelMapper;
 	}
-
+	
+	@Timed ( description = "createAuthenticationToken")
 	@ApiOperation(value = "Authenticate to api service", response = AuthenticationResponseDto.class, httpMethod = "POST")
 	@ApiResponses(
 			value = {
@@ -90,56 +98,86 @@ public class JwtAuthenticationController {
 					@ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
 			})
 	@RequestMapping(value = "/auth", method = RequestMethod.POST, produces = "application/json")
-	public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequestDto authenticationRequestDto,
+	public ResponseEntity<AuthenticationResponseDto> createAuthenticationToken(@RequestBody AuthenticationRequestDto authenticationRequestDto,
 													   HttpServletRequest request,
 													   HttpServletResponse response) throws Exception {
 		final String email = authenticationRequestDto.getUsername();
 		AuthenticationResponseDto responseDto = null;
+		AuthUserProfileDto authUserProfileDto = null;
+		StringBuilder loginErrorMsg = new StringBuilder("Incorrect username or password : %s");
+		/*Authentication auth = authenticationManager.authenticate(
+				new UsernamePasswordAuthenticationToken(authenticationRequestDto.getUsername(), authenticationRequestDto.getPassword()));
+		SecurityContextHolder.getContext().setAuthentication(auth);*/
+		UserDetails userdetails ;
 		try {
-			if(jwtUserDetailsService.isEmailRegistered(email)) {
-				logger.debug("encode passwd:: {}", Base64.getDecoder().decode(authenticationRequestDto.getPassword().getBytes()));
-				String hashedPassword = passwordEncoder.encode(authenticationRequestDto.getPassword());
-				logger.debug("hashedpasswd:: {}", hashedPassword);
-				Authentication auth = authenticationManager.authenticate(
-						new UsernamePasswordAuthenticationToken(authenticationRequestDto.getUsername(), authenticationRequestDto.getPassword()));
-				SecurityContextHolder.getContext().setAuthentication(auth);
-			}else if(!jwtUserDetailsService.isEmailRegistered(email) && jwtUserDetailsService.isRegisteredEmailVerified(email)){
-				logger.debug("User tried to login before verifying email {} ::", email);
-				AppUsers appUsers = jwtUserDetailsService.getCurrentUser();
-				logger.debug("User tried to login before verifying email {} ::", appUsers);
-			} else {
-			
+			jwtUserDetailsService.authenticate(email, authenticationRequestDto.getPassword());
+			userdetails = jwtUserDetailsService.loadUserByUsername(email,authenticationRequestDto.getPassword());
+			if(Objects.isNull(userdetails) ){
+				loginErrorMsg = new StringBuilder("Bypassed filtered and Unregistered User tried to login/OR could be an bot ::");
+				loginErrorMsg.append(email);
+				logger.debug(loginErrorMsg.toString());
+				throw new UserNotFoundException(loginErrorMsg.toString());
+			}else {
+				authUserProfileDto = jwtUserDetailsService.getUserDto(email);
+				logger.info("User retrieved from DB {} ::", authUserProfileDto.getEmail());
+				if(!authUserProfileDto.isActive()){
+					throw new BadCredentialsException("Registered User tried to login email before activating.");
+				}else if(authUserProfileDto.isActive() && authUserProfileDto.isLocked()){
+					logger.debug("User tried to login email, but email is marked as locked {} ::", authUserProfileDto.getEmail());
+					throw new BadCredentialsException("User tried to login email, but email is marked as locked");
+				}else if(!authUserProfileDto.isActive() && authUserProfileDto.isLocked()){
+					logger.debug("User tried to login email, but email is marked as locked {} ::", authUserProfileDto.getEmail());
+					throw new BadCredentialsException("User tried to login email, but email is marked as locked");
+				}else if (authUserProfileDto.isVerified() && authUserProfileDto.isActive() && !authUserProfileDto.isLocked()) {
+					//logger.debug("encode passwd:: {}", Base64.getDecoder().decode(authenticationRequestDto.getPassword().getBytes()));
+					String passwordHash = passwordEncoder.encode(authenticationRequestDto.getPassword());
+					logger.debug("hash passwd:: {}", passwordHash);
+					
+				} else if (!authUserProfileDto.isVerified()) {
+					logger.debug("User tried to login before verifying email {} ::", authUserProfileDto.getEmail());
+					throw new BadCredentialsException("User tried to login before verifying email. ");
+					
+				} else if (authUserProfileDto.isLocked()) {
+					logger.debug("Bypassed filtered and Unregistered User tried to login/OR could be an bot {} ::", email);
+					throw new BadCredentialsException("Bypassed filtered and Unregistered User tried to login/OR could be an bot ");
+					
+				} else {
+					logger.debug("Last else:  Unhandled use case : User tried to login before verifying email {} ::", email);
+				}
 			}
-		}
-		catch (BadCredentialsException e) {
+		}catch (BadCredentialsException e) {
 			logger.error("Incorrect username or password {}, exception message :: {}", authenticationRequestDto.getUsername(), e.getMessage());
-			final  String message = "Incorrect username or password : %s";
+			loginErrorMsg = new StringBuilder(e.getMessage());
 			//TODO save login tries to DB
 			// Check login retries with value and if retries >= MAX_LOGIN_TRIES  update the user to lock
-			AppError error = new AppError(HttpStatus.UNAUTHORIZED, String.format(message, authenticationRequestDto.getUsername()));
+			AppError error = new AppError(HttpStatus.UNAUTHORIZED, String.format(loginErrorMsg.toString(), authenticationRequestDto.getUsername()));
 			responseDto = new AuthenticationResponseDto();
 			responseDto.setError(error);
 			return new ResponseEntity<AuthenticationResponseDto>(responseDto, HttpStatus.UNAUTHORIZED);
 		}catch (AuthenticationException authEx){
 			//TODO save login tries to DB
 			// Check login retries with value and if retries >= MAX_LOGIN_TRIES  update the user to lock
+			authEx.printStackTrace();
 			if(!jwtUserDetailsService.updateLoginTries(email)){
-				logger.error("unable to save user retries in db for email :: %s  ", email);
+				logger.error("unable to save user retries in db for email :: {}  ", email);
 			}
-			AppError error = new AppError(HttpStatus.BAD_REQUEST, "Please check your email/password and try again. ");
+			AppError error = new AppError(HttpStatus.BAD_REQUEST, authEx.getMessage());
+			responseDto = new AuthenticationResponseDto();
+			responseDto.setError(error);
+			return new ResponseEntity<AuthenticationResponseDto>(responseDto, HttpStatus.BAD_REQUEST);
+		}catch (BadSqlGrammarException badSqlGex){
+			// Check login retries with value and if retries >= MAX_LOGIN_TRIES  update the user to lock
+			logger.error("unable to authenticate used in db for email :: {}  ", email);
+			AppError error = new AppError(HttpStatus.INTERNAL_SERVER_ERROR, "InternalServer Error please try again, after some time!. ");
 			responseDto = new AuthenticationResponseDto();
 			responseDto.setError(error);
 			return new ResponseEntity<AuthenticationResponseDto>(responseDto, HttpStatus.BAD_REQUEST);
 		}
 
-
-		final UserDetails userDetails = jwtUserDetailsService
-				.loadUserByUsername(authenticationRequestDto.getUsername());
-
 		//Add the fingerprint in a hardened cookie - Add cookie manually because
 		//SameSite attribute is not supported by javax.servlet.http.Cookie class
 		String userFingerprint = encryptUtils.randomToken();
-		final String jwt = jwtTokenUtil.generateToken(userDetails,userFingerprint);
+		final String jwt = jwtTokenUtil.generateJwtToken(userdetails,userFingerprint);
 		String fingerprintCookie = "__Secure-Fgp=" + userFingerprint
 				+ "; SameSite=Strict; HttpOnly; Secure";
 		response.addHeader("Set-Cookie", fingerprintCookie);
@@ -161,7 +199,7 @@ public class JwtAuthenticationController {
 					@ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
 			})
 	
-	@RequestMapping(value = "/public/register", method = RequestMethod.POST, produces = "application/jon")
+	@RequestMapping(value = "/public/register", method = RequestMethod.POST, produces = "application/json")
 	public ResponseEntity<UserRegReqResponseDto> registerUser(@RequestBody RegisterUserRequest registerUserRequest, HttpServletRequest request, HttpServletResponse response) {
 		// TODO handle session specific logic.
 		UserRegReqResponseDto userRegReqResponseDto = new UserRegReqResponseDto();
@@ -331,22 +369,35 @@ public class JwtAuthenticationController {
 	public  ResponseEntity <AuthUserProfileDto> getUserProfile(@RequestParam("email") @Validated String email,
 															   HttpServletRequest request, HttpServletResponse response){
 		//TODO handle error scenarios
-		AppUsers appUsers = jwtUserDetailsService.getUserByEmail(email);
-		AuthUserProfileDto authUserProfileDto = convertToDto(appUsers);
-		//Optional<String> rolesIds = appUsers.getAppUsersAuthList().stream().reduce("",(obj1, obj2) ->  obj1.getRoleId() + "," + obj2.getRoleId());
-		//List<AuthoritiesMaster> authoritiesMasterList = jwtUserDetailsService.getMasterAuthoritiesUsingRolesId(rolesIds);
-		/*authUserProfileDto.setRoleDesc(authoritiesMaster.getRoledesc());
-		authUserProfileDto.setMaxFilesCount(authoritiesMaster.getMaxFilesCount());
-		authUserProfileDto.setMaxUploadFileSizeMb(authoritiesMaster.getMaxUploadFileSize());*/
-		authUserProfileDto.setSystemMaxUploadFileSizeMb(Integer.parseInt(appMaxUploadLimit));
+		AuthUserProfileDto authUserProfileDto = jwtUserDetailsService.getUserDto(email);
 		HttpStatus status = authUserProfileDto != null ?
 				HttpStatus.OK : HttpStatus.NOT_FOUND;
 		return new ResponseEntity<AuthUserProfileDto>(authUserProfileDto, status);
 	}
-
-
-	private AuthUserProfileDto convertToDto(AppUsers appUsers) {
-		AuthUserProfileDto authUserProfileDto = modelMapper.map(appUsers, AuthUserProfileDto.class);
-		return authUserProfileDto;
+	
+	
+	@ApiOperation(value = "Request for to update user profile .", response = Boolean.class, httpMethod = "POST")
+	@ApiResponses(
+			value = {
+					@ApiResponse(code = 200, message = "Successfully Send User profile."),
+					@ApiResponse(code = 401, message = "You are not authorized to encrypt."),
+					@ApiResponse(
+							code = 403,
+							message = "Accessing the resource you were trying to reach is forbidden"),
+					@ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
+			})
+	@PostMapping(value = "/profile" ,produces = "application/json"  )
+	public ResponseEntity<Boolean> updateProfile(@RequestParam("email") @Validated String email,
+								HttpServletRequest request, HttpServletResponse response,
+			@RequestAttribute AuthUserProfileDto authUserProfileDto ) {
+		
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		User authorizedUser = (User) authentication.getPrincipal();
+		AppUsers appUsers = new AppUsers();
+		BeanUtils.copyProperties(authUserProfileDto, appUsers);
+		Boolean updateStatus = jwtUserDetailsService.save(appUsers) != null ? Boolean.TRUE : Boolean.FALSE;
+		HttpStatus status = authUserProfileDto != null ?
+				HttpStatus.OK : HttpStatus.NOT_FOUND;
+		return new ResponseEntity<Boolean>(updateStatus, status);
 	}
 }
