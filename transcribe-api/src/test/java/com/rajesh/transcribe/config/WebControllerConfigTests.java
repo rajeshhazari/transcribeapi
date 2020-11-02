@@ -1,7 +1,7 @@
 package transribeapi.config;
 
-import com.rajesh.transcribe.transribeapi.api.controller.AppInfoController;
-import com.rajesh.transcribe.transribeapi.api.controller.JwtAuthenticationController;
+import com.c3transcribe.transcribeapi.api.controller.AppInfoController;
+import com.c3transcribe.transcribeapi.api.controller.JwtAuthenticationController;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;

@@ -1,5 +1,5 @@
 /** */
-package transribeapi;
+package com.rajesh.transcribe;
 
 import edu.cmu.sphinx.api.Configuration;
 import edu.cmu.sphinx.api.SpeechResult;
@@ -10,6 +10,8 @@ import java.io.InputStream;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
+
+import org.apache.commons.configuration2.io.InputStreamSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,9 +32,9 @@ public class TranscriberDemoTest_1 {
   @Test
   public void testStreamSpeechRecognizer() throws Exception {
 
-    StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(configuration);
+    
     InputStream stream = new FileInputStream(new File("/home/rajesh/Music/10001-90210-01803.wav"));
-
+    StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(configuration);
     recognizer.startRecognition(stream);
     SpeechResult result;
     while ((result = recognizer.getResult()) != null) {

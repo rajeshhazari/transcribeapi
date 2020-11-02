@@ -1,7 +1,7 @@
 package transribeapi;
 
-import com.rajesh.transcribe.transribeapi.TranscribeapiApplication;
-import com.rajesh.transcribe.transribeapi.api.controller.AppInfoController;
+import com.c3transcribe.transcribeapi.TranscribeapiApplication;
+import com.c3transcribe.transcribeapi.api.controller.AppInfoController;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

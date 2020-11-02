@@ -5,7 +5,7 @@ package com.c3trTranscribe.springboot.test.repository.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.rajesh.transcribe.transribeapi.TranscribeapiApplication;
+import com.c3transcribe.transcribeapi.TranscribeapiApplication;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.concurrent.Executor;

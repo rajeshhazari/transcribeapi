@@ -1,18 +1,14 @@
 package com.rajesh.transcribe.utils;
 
-import com.rajesh.transcribe.transribeapi.api.domian.AppUsers;
-import com.rajesh.transcribe.transribeapi.api.domian.AppUsersAuth;
-import com.rajesh.transcribe.transribeapi.api.models.dto.AuthUserProfileDto;
-import org.apache.log4j.Logger;
+import com.c3transcribe.transcribeapi.api.domian.AppUsers;
+import com.c3transcribe.transcribeapi.api.models.dto.AuthUserProfileDto;
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.FatalBeanException;
 
 import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;
-import java.util.HashSet;
 
 public class SpringBeanUtilsTest {
     
