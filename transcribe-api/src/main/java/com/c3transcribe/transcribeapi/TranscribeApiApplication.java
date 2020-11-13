@@ -15,10 +15,10 @@ import org.springframework.data.jdbc.repository.config.EnableJdbcRepositories;
 @EnableAutoConfiguration
 @EnableJdbcRepositories("com.rajesh.transcribe.transribeapi.api")
 @ComponentScan({"com.rajesh.transcribe.*","com.c3transcribe.core"})
-public class TranscribeapiApplication extends SpringBootServletInitializer  {
+public class TranscribeApiApplication extends SpringBootServletInitializer  {
 //implements ApplicationContextInitializer<ContextRefreshedEvent> {
 
-	private final Logger logger = LoggerFactory.getLogger(TranscribeapiApplication.class);
+	private final Logger logger = LoggerFactory.getLogger(TranscribeApiApplication.class);
 
 
 	/*@Bean
@@ -35,7 +35,7 @@ public class TranscribeapiApplication extends SpringBootServletInitializer  {
 	}*/
 
 	public static void main(String[] args) throws Exception {
-		new TranscribeapiApplication().configure(new SpringApplicationBuilder(TranscribeapiApplication.class))
+		new TranscribeApiApplication().configure(new SpringApplicationBuilder(TranscribeApiApplication.class))
 				.bannerMode(Banner.Mode.OFF)
 				.web(WebApplicationType.SERVLET)
 				.logStartupInfo(true)

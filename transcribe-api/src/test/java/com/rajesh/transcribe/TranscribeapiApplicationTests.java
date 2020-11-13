@@ -1,6 +1,6 @@
 package transribeapi;
 
-import com.c3transcribe.transcribeapi.TranscribeapiApplication;
+import com.c3transcribe.transcribeapi.TranscribeApiApplication;
 import com.c3transcribe.transcribeapi.api.controller.AppInfoController;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -11,7 +11,7 @@ import org.springframework.test.context.ContextConfiguration;
 
 @SpringBootTest
 @Profile("dev-test")
-@ContextConfiguration(classes = TranscribeapiApplication.class)
+@ContextConfiguration(classes = TranscribeApiApplication.class)
 class TranscribeapiApplicationTests {
 	
 	@Autowired

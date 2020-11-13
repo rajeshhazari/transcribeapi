@@ -5,7 +5,7 @@ package com.c3trTranscribe.springboot.test.repository.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.c3transcribe.transcribeapi.TranscribeapiApplication;
+import com.c3transcribe.transcribeapi.TranscribeApiApplication;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.concurrent.Executor;
@@ -22,7 +22,7 @@ import org.springframework.test.context.ContextConfiguration;
  * @author rajesh
  *
  */
-@ContextConfiguration(classes = TranscribeapiApplication.class)
+@ContextConfiguration(classes = TranscribeApiApplication.class)
 public class TranscriptionModuleConfigTest  {
 
 	

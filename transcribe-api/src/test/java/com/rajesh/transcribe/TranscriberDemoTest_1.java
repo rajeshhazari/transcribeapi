@@ -7,13 +7,14 @@ import edu.cmu.sphinx.api.StreamSpeechRecognizer;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
+import java.net.InetAddress;
+import javax.sound.sampled.*;
 
+import edu.cmu.sphinx.tools.audio.AudioDataInputStream;
 import org.apache.commons.configuration2.io.InputStreamSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
 
 /** @author rajesh */
 
@@ -31,8 +32,9 @@ public class TranscriberDemoTest_1 {
 
   @Test
   public void testStreamSpeechRecognizer() throws Exception {
-
-    
+  
+    SimpleAsyncTaskExecutor simpleAsyncTaskExecutor = new SimpleAsyncTaskExecutor();
+    System.out.println(simpleAsyncTaskExecutor.isThrottleActive());
     InputStream stream = new FileInputStream(new File("/home/rajesh/Music/10001-90210-01803.wav"));
     StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(configuration);
     recognizer.startRecognition(stream);
@@ -48,7 +50,23 @@ public class TranscriberDemoTest_1 {
 
     StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(configuration);
     InputStream stream = new FileInputStream(new File("/home/rajesh/Music/10001-90210-01803.wav"));
-
+    byte[] data = new byte[4096];
+    
+    AudioFormat.Encoding encoding = AudioFormat.Encoding.PCM_SIGNED;
+    float rate = 44100.0f;
+    int channels = 2;
+    int sampleSize = 16;
+    boolean bigEndian = true;
+    InetAddress addr;
+  
+    AudioFormat pcmSignedAudioFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, rate, sampleSize, channels, (sampleSize / 8) * channels, rate, bigEndian);
+  
+    DataLine.Info info = new DataLine.Info(TargetDataLine.class, pcmSignedAudioFormat);
+    if (!AudioSystem.isLineSupported(info)) {
+      System.out.println("Line matching " + info + " not supported.");
+      return;
+    }
+    
     try {
       AudioInputStream astream = AudioSystem.getAudioInputStream(stream);
       this.clip = AudioSystem.getClip();

@@ -63,6 +63,7 @@ pipeline {
     parameters {
         string(name: 'BRANCH_NAME', defaultValue: 'branch1', description: 'Branch Name')
         string(name: 'environment', defaultValue: 'dev', description: 'Environment profile for sping app')
+        string(name: 'openJdkVersion', defaultValue: '14', description: 'OpenJdk Version')
         booleanParam(name: 'buildSpringBootImage', defaultValue: false,  description: 'Please select to build spring boot docker image.')
         booleanParam(name: 'DEPLOY',  description: 'Please select to deploy.')
         choice(name: 'DEPLOY_TO_ENV', choices: ['dev', 'qa', 'prod'], description: 'select and environement for deploying.')
@@ -130,7 +131,8 @@ pipeline {
                     echo 'build base spring boot runtime image.. '
                     println(" stagename :: "+env.STAGE_NAME);
                     sh 'ls -lrth CI-CD/Dockerfile_spring_boot_runtime_openjdk	 && cat CI-CD/Dockerfile_spring_boot_runtime_openjdk	'
-                    def image = docker.build("spring-boot-runtime:openjdk-11-slim", " -f CI-CD/Dockerfile_spring_boot_runtime_openjdk	 --progress auto .")
+                    openJdkImageName = sprintf("%s:openjdk-%s-slim","spring-boot-runtime",params.openJdkVersion);
+                    def image = docker.build(openJdkImageName, " -f CI-CD/Dockerfile_spring_boot_runtime_openjdk	 --progress auto .")
                 }
             }
         }
@@ -282,4 +284,8 @@ pipeline {
         }
     }
 
+}
+
+def getJobName() {
+    return sprintf('%s-%s-%s-04-create_docker_image', project.namePrefix, component.name, environment.namePrefix);
 }

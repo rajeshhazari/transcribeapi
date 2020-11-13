@@ -156,6 +156,7 @@ public class Sphinx4TranscribitionService {
 		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(sphinxConfiguration);
 		InputStream stream = new FileInputStream(audioFile);
 		TranscriptionResponseDto rdto = new TranscriptionResponseDto();
+		
 		recognizer.startRecognition(stream);
 		
 		//TODO call formatting method/service
