@@ -17,7 +17,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<java.version>11</java.version>
+		<java.version>15</java.version>
 		<email.version>1.16.18</email.version>
 		<org.projectlombok.version>1.16.22</org.projectlombok.version>
 	</properties>
@@ -110,12 +110,12 @@
 			<version>1.1.1</version>
 		</dependency>
 
-		<dependency>
+		<!--<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<version>${org.projectlombok.version}</version>
 			<scope>provided</scope>
-		</dependency>
+		</dependency>-->
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
@@ -175,6 +175,15 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+
+				<executions>
+					<execution>
+						<goals>
+							<goal>build-info</goal>
+							<goal>repackage</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
