@@ -1,0 +1,15 @@
+FROM adoptopenjdk/openjdk14:debian as jdk-runtime
+RUN echo $JAVA_HOME && \
+	$JAVA_HOME/bin/jlink     --compress=2     --module-path $JAVA_HOME/jmods     --add-modules java.base,java.logging,java.xml,jdk.unsupported,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.security.sasl,java.instrument,jdk.jdwp.agent,java.sql,java.sql.rowset,java.xml.crypto,java.xml     --output $JAVA_HOME/jvm/jdk14-minimal
+
+FROM debian:stretch-slim
+COPY --from=jdk-runtime  /opt/java/openjdk/jvm/jdk14-minimal /usr/lib/jvm/jdk14-minimal
+RUN ln -s /usr/lib/jvm/jdk14-minimal/bin/java  /usr/bin/java && \
+	apt-get  update && \
+	apt-get -y  upgrade && \
+	apt-get install -y wget htop curl openssl && \
+	rm -rf /var/cache/apt-get/*
+
+
+# to build:
+# docker build . -t spring-boot-runtime:openjdk-14-slim -f Dockerfile_spring_boot_runtime --progress auto

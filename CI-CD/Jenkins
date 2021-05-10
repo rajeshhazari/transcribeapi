@@ -1,56 +1,291 @@
+import groovy.json.JsonSlurper;
+
+def readAppInfoFromJson() {
+    def workspacePath = pwd()
+    def slurper = new JsonSlurper()
+    def json = slurper.parseText(new File("${WORKSPACE}/response.json").text)
+    def status = json.status
+    return status
+}
+
+def runDockerImageWithCommands(image, command, args, version, dir ){
+    def dockerImage = script.docker.image("""${image}:${version}""");
+    dockerImage.pull();
+    dockerImage.inside(' -v ${dir}:/opt/apps/ --entrypoint """'){
+        this.runCommand(command, args)
+    }
+}
+
+def runCommand(cmd, args){
+    def paramsArr = []
+    for (param in paramsArr){
+        paramsArr.add(""" --${param.key}  '${param.value}'""")
+    }
+    def params = paramsArr.join( ' ')
+    script.echo """ running script  ${cmd}  with params  ${params} """
+    script.sh(""" ${cmd}  ${params} """)
+
+}
+
+def checkApiContainerHealthStatus( cid , purge){
+    response=script.sh(" docker inspect --format='{{json .State.Health}}'  ${cid} ")
+    // echo "response code: $http_response"
+    if ($response != "0" ) {
+        println("Container is not healthy");
+        exit 1
+    } else {
+        println("Container is healthy");
+        return true;
+    }
+}
+
+def getEnvContainerIdForName( name , env) {
+    return script.sh(" docker ps -aqf 'name=^${name}-${env}' ");
+}
+
 pipeline {
-    agent {
-        docker {
-            image 'maven:3-alpine'
-            customWorkspace "/opt/test"
-            args '-v $HOME/.m2:/root/.m2'
-            //args '-u tdv --name tdv-test -w /opt/test -v $HOME/.m2:/root/.m2 -v /opt/test:/opt/test:rw,z -v /opt/test@tmp:/opt/test@tmp:rw,z -p 9400:9400 -p 9401:9401 -p 9402:9402 -p 9403:9403 -p 9407:9407 -p 9303:9303 --cpus=2.000 -m=4g xxx.xxx.com/tdv/tdv-test:8.2 tdv.server'
-        }
+    agent any
+    tools {
+        maven 'maven3'
+    }
+    environment{
+        def JAVA_OPTS='-Dspring.profiles.active=dev -Dlogging.level.org.springframework=DEBUG   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
+        def idstring = UUID.randomUUID().toString();
+        id = "tmp-${UUID.randomUUID()}"
+        HEALTHCHECK_URL="api/v1/actuator/health"
+        SOLRHEALTHCHECK_URL="api/v1/actuator/health/solr"
+        DBHEALTHCHECK_URL="api/v1/actuator/health"
+
+
+
+
     }
     parameters {
         string(name: 'BRANCH_NAME', defaultValue: 'branch1', description: 'Branch Name')
+        string(name: 'environment', defaultValue: 'dev', description: 'Environment profile for sping app')
+        string(name: 'openJdkVersion', defaultValue: '14', description: 'OpenJdk Version')
+        booleanParam(name: 'buildSpringBootImage', defaultValue: false,  description: 'Please select to build spring boot docker image.')
+        booleanParam(name: 'DEPLOY',  description: 'Please select to deploy.')
+        choice(name: 'DEPLOY_TO_ENV', choices: ['dev', 'qa', 'prod'], description: 'select and environement for deploying.')
     }
+
     stages {
-        stage{
+        stage ('prepare environment'){
             steps{
-                sh '''
-                   mkdir -pv /opt/apps/  /opt/test/
-                   ls -lrth /opt/apps/   /opt/test/
-                   '''
+                script {
+
+                    last_started = env.STAGE_NAME
+                    cleanWs()
+                    println("idString:: " + idstring + " id:: " + id)
+                    sh """
+
+                           #mkdir -pv /opt/apps/  /opt/test/
+                           ls -lrth /opt/apps/  /opt/
+                            echo 'PATH = ${PATH}'
+                            echo 'M2_HOME = ${M2_HOME}'
+                           """
+                }
             }
         }
         stage('Checkout') {
             steps{
+                println('Branch name::'+params.BRANCH_NAME)
                 checkout scm
+                checkout([$class: 'GitSCM', branches: [[name: '${BRANCH_NAME}'], [name: '*/branch1']], doGenerateSubmoduleConfigurations: false,
+                          extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'RH-Transcribe-app-github-creds', url: 'https://github.com/rajeshhazari/transcribeapi.git']]])
+                sh ' chmod +x ${WORKSPACE}/CI-CD/scripts/*.sh  '
             }
         }
-        stage('Build') {
+        stage("Get latest git tag") {
+            when {
+                expression {
+                    return (params.BRANCH_NAME == 'master')
+                }
+
+            }
+            steps{
+                script{
+                    if (params.BRANCH_NAME == 'master') {
+                        sh 'git fetch --tags'
+                        TAGGED_COMMIT = sh(script: 'git rev-list --branches=master --tags --max-count=1', returnStdout: true).trim()
+                        LATEST_TAG = sh(script: 'git describe --abbrev=0 --tags ${TAGGED_COMMIT}', returnStdout: true).trim()
+                        env.VERSION_NUMBER = sh(script: "echo ${LATEST_TAG} | cut -d 'v' -f 2", returnStdout: true).trim()
+                        echo "VERSION_NUMBER: ${VERSION_NUMBER}"
+                        sh 'echo "VERSION_NUMBER: ${VERSION_NUMBER}"'
+                    }
+                }
+            }
+
+        }
+
+        stage('build-base-dockerimage') {
+            when {
+                expression {
+                    return params.buildSpringBootImage
+                }
+
+            }
             steps {
-                echo "Running ${env.BUILD_ID} on ${env.JENKINS_URL}"
-                sh 'mvn -B -DskipTests clean package'
+                script {
+                    last_started = env.STAGE_NAME
+                    echo 'build base spring boot runtime image.. '
+                    println(" stagename :: "+env.STAGE_NAME);
+                    sh 'ls -lrth CI-CD/Dockerfile_spring_boot_runtime_openjdk	 && cat CI-CD/Dockerfile_spring_boot_runtime_openjdk	'
+                    openJdkImageName = sprintf("%s:openjdk-%s-slim","spring-boot-runtime",params.openJdkVersion);
+                    def image = docker.build(openJdkImageName, " -f CI-CD/Dockerfile_spring_boot_runtime_openjdk	 --progress auto .")
+                }
+            }
+        }
+        stage('Build-lite-Docker-Image') {
+            steps {
+                script {
+                    last_started = env.STAGE_NAME
+
+                    artifactId = readMavenPom().getArtifactId()
+                    versionId = readMavenPom().getVersion()
+
+                    sh """
+                        id -a
+                        echo 'Running ${BUILD_ID} on  JENKINS_URL:: ${JENKINS_URL} artifactId :: ${artifactId}  versionId :: ${versionId} ' 
+                        mvn  -U -DskipTests clean package
+                        mkdir -p ${WORKSPACE}/transcribe-api/target/dependency  
+                        cd ${WORKSPACE}/transcribe-api/target/dependency 
+                        jar -xf ../*.jar
+                        cp ${WORKSPACE}/CI-CD/Dockerfile ${WORKSPACE}/transcribe-api/target/dependency/
+                        cp ${WORKSPACE}/transcribe-api/target/classes/META-INF/build-info.properties  ${WORKSPACE}  
+                        
+                        """
+                    def buildInfoProps = readProperties interpolate: true, file: 'build-info.properties';
+                    mainClass = buildInfoProps['build.app.mainClass']
+                    imageName = buildInfoProps['build.name']
+                    versionId = buildInfoProps['build.version']
+                    println(buildInfoProps)
+                    def image = docker.build("${imageName}:${versionId}-${env.BUILD_ID}", " --build-arg DEPENDENCY=target/dependency  --build-arg ARTIFACTID=${imageName}-${versionId}.jar --build-arg ARTIFACT=${imageName} --build-arg VERSION=${versionId}  --build-arg BUILD_WORKSPACE=${WORKSPACE}   --build-arg MAIN_CLASS=${mainClass}  -f ./transcribe-api/target/dependency/Dockerfile  ./transcribe-api/target/dependency/ ")
+                    println("build image id:: "+image.id)
+                }
             }
         }
         stage('Unit-test') {
             steps {
-                echo 'Testing..'
-                sh 'mvn -B test package'
+                script {
+                    last_started = env.STAGE_NAME
+                    echo 'Testing.. '
+                    println(" stagename :: "+env.STAGE_NAME);
+                    //sh 'mvn -B test package'
+                }
             }
         }
-        stage('Deploy') {
-                when {
-                    environment name: 'DEPLOY_TO', value: 'production'
-                }
-                steps {
-                    echo 'Deploying'
+        stage('Deploy-devappserver'){
+            when{
+                allOf {
+                    environment ignoreCase: true, name: 'DEPLOY_TO_ENV', value: 'dev'
+                    environment name: 'DEPLOY', value: 'true'
+                    //currentBuild.result == null || currentBuild.result == 'SUCCESS'
                 }
             }
+            steps{
+                script{
+                    println("built lite image id:: "+image.id)
+                    last_started = env.STAGE_NAME
+                    def artifactId = readMavenPom().getArtifactId()
+                    def versionId = readMavenPom().getVersion()
+                    def buildInfoProps = readProperties interpolate: true, file: 'build-info.properties';
+                    mainClass = buildInfoProps['build.app.mainClass']
+                    imageName = buildInfoProps['build.name']
+                    versionId = buildInfoProps['build.version']
+                    JAVA_OPTS="-Dspring.profiles.active=dev -Dlogging.level.org.springframework=INFO   -Dlogging.file.path=/opt  -Dapp.io.uploadDir=/opt/apps/temp   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n "
+                    println("Deploying to :: "+environment+"  versionId:: "+versionId +" JAVA_OPTS:: "+JAVA_OPTS +"main class :: "+mainClass + " buildInfoProps:: "+buildInfoProps)
+                    cid = getEnvContainerIdForName(${imageName},${DEPLOY_TO_ENV})
+                    sh """
+                            echo "JAVA_OPTS:: ${JAVA_OPTS} MAIN_CLASS:: ${mainClass}"
+                            echo "stopping the container..."
+                            docker ps -a && docker images && docker stop  ${cid}   && docker container stop ${imageName}-${DEPLOY_TO_ENV}  && docker rm -f ${imageName}-${DEPLOY_TO_ENV} 
+                            docker ps -a && docker images  
+                            docker run --restart=always  -p 8585:8585 --label production_status=development --name=${imageName}-${DEPLOY_TO_ENV}  --label env=dev -e JAVA_OPTS='${JAVA_OPTS}'  -e  MAIN_CLASS='\\"${mainClass}\\"'   -e HEALTHCHECK_URL="${HEALTHCHECK_URL}"   -u app_user  -t ${imageName}:${versionId}-${env.BUILD_ID}  
+                      
+                        """
+
+                }
+
+            }
+        }
+        stage('Deploy-to-qa') {
+            when {
+                allOf {
+                    environment ignoreCase: true, name: 'DEPLOY_TO_ENV', value: 'qa'
+                    environment  name: 'DEPLOY', value: 'true'
+                }
+
+            }
+            steps {
+                script{
+                    last_started = env.STAGE_NAME
+                    def artifactId = readMavenPom().getArtifactId()
+                    def versionId = readMavenPom().getVersion()
+                    def buildInfoProps = readProperties interpolate: true, file: 'build-info.properties';
+                    mainClass = buildInfoProps['build.app.mainClass']
+                    imageName = buildInfoProps['build.name']
+                    versionId = buildInfoProps['build.version']
+                    println("Deploying to "+environment+"versionId:: "+versionId + " buildInfoProps:: "+buildInfoProps)
+                    //TODO ssh to prod server
+                    JAVA_OPTS='-Dspring.profiles.active=qa  -Dlogging.level.org.springframework=WARN  -Dlogging.file.path=/opt  -Dapp.io.uploadDir=/opt/apps/temp -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
+                    println("Deploying to :: "+environment+"  versionId:: "+versionId +" JAVA_OPTS:: "+JAVA_OPTS +"main class :: "+mainClass + " buildInfoProps:: "+buildInfoProps)
+
+                    sh """
+                            #docker run  --privileged   --restart=always  -p 8585:8585 --label production_status=development --label env=${DEPLOY_TO_ENV}  -e JAVA_OPTS=\\"'${JAVA_OPTS}'\\"  -e  ARTIFACTID=${imageName}-${versionId}.jar  -e  ARTIFACT=${imageName}   -u app_user  -w /opt/apps/transcribeapi  -e  VERSION=${versionId}    --label production_status=qa-testing --label env=qa  -e ENV=qa -e production_status=qa-testing    ${imageName}:${versionId}-${env.BUILD_ID}  
+                            echo "JAVA_OPTS:: ${JAVA_OPTS} MAIN_CLASS:: ${mainClass} "
+                            printenv
+                            echo "stopping the container..."
+                            docker ps -a && docker stop  ${imageName}-${DEPLOY_TO_ENV}  && docker container stop ${imageName}-${DEPLOY_TO_ENV} && docker rm -f ${imageName}-${DEPLOY_TO_ENV} && docker ps -a && docker images  
+                            docker run  --privileged   --restart=always  -p 8585:8585 --label production_status=development --label env=${DEPLOY_TO_ENV}  -e JAVA_OPTS=\\"'${JAVA_OPTS}'\\"  -e  ARTIFACTID=${imageName}-${versionId}.jar  -e  ARTIFACT=${imageName}   -u app_user  -w /opt/apps/transcribeapi  -e  VERSION=${versionId}    --label production_status=qa-testing --label env=qa  -e ENV=qa -e production_status=qa-testing    ${imageName}:${versionId}-${env.BUILD_ID}  
+  
+                            
+                    """
+                }
+            }
+        }
+        stage('Deploy-prod') {
+            when {
+                allOf {
+                    environment ignoreCase: true, name: 'DEPLOY_TO_ENV', value: 'prod'
+                    environment name: 'DEPLOY', value: 'true'
+                    //currentBuild.result == null || currentBuild.result == 'SUCCESS'
+                }
+
+            }
+            steps {
+                script{
+                    last_started = env.STAGE_NAME
+                    //TODO ssh to prod server
+                    //TODO install cert
+                    def artifactId = readMavenPom().getArtifactId()
+                    def versionId = readMavenPom().getVersion()
+                    def buildInfoProps = readProperties interpolate: true, file: 'build-info.properties';
+                    mainClass = buildInfoProps['build.app.mainClass']
+                    imageName = buildInfoProps['build.name']
+                    versionId = buildInfoProps['build.version']
+                    JAVA_OPTS='-Dspring.profiles.active=prod -Dlogging.level.org.springframework=WARN  -Dlogging.file.path=/opt  -Dapp.io.uploadDir=/opt/apps/temp   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n '
+                    println("Deploying to "+environment+"versionId:: "+versionId +" JAVA_OPTS:: "+JAVA_OPTS +" buildInfoProps:: "+buildInfoProps)
+                    sh "  docker run --privileged    --restart=always  -p 8585:8585 --label production_status=development --label env=${DEPLOY_TO_ENV}  -e JAVA_OPTS=\"'${JAVA_OPTS}'\"  -e  ARTIFACTID=${imageName}-${versionId}.jar  -e  ARTIFACT=${imageName}  -e  VERSION=${versionId}     --label production_status=beta-testing --label env=prod  -e ENV=prod -e production_status=beta-testing    -t ${imageName}:${versionId}-${env.BUILD_ID}  "
+
+                }
+            }
+        }
+
+
     }
     post {
         always {
-            echo "Do something line sanity tests like acuatator healtcheck"
+            println("Do something line sanity tests like acuatator healtcheck")
         }
         failure {
             //mail to: transcribeappuser@yahoo.com, subject: 'The Pipeline failed '
+            println(" build failed "+env.STAGE_NAME)
         }
     }
+
+}
+
+def getJobName() {
+    return sprintf('%s-%s-%s-04-create_docker_image', project.namePrefix, component.name, environment.namePrefix);
 }

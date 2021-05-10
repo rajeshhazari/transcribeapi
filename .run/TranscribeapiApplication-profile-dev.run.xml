@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="TranscribeapiApplication-profile-dev" type="Application" factoryName="Application">
+    <option name="INCLUDE_PROVIDED_SCOPE" value="true" />
+    <option name="MAIN_CLASS_NAME" value="com.c3transcribe.transcribeapi.TranscribeApiApplication" />
+    <module name="transcribe-api" />
+    <option name="VM_PARAMETERS" value="-Dspring.profiles.active=dev -Dlogging.file.path=${user.home}/temp/logs -Dapp.io.uploadDir=${user.home}/temp/ -Dlogging.level.com.zaxxer.hikari=INFO -Dlogging.level.org.springframework.boot=DEBUG -Dlogging.level.org.springframework.boot.autoconfigure.logging=DEBUG -Dlogging.level.org.springframework.security=DEBUG -Dlogging.level.org.springframework.data=INFO -Dlogging.level.org.springframework.jdbc.core.JdbcTemplate=DEBUG" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
