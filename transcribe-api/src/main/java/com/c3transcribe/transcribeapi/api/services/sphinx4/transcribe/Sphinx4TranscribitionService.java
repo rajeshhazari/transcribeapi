@@ -35,8 +35,8 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
+import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 /**
  * @author rajesh
@@ -53,6 +53,12 @@ public class Sphinx4TranscribitionService {
 	@Autowired	  private Executor asyncExecutor;
 	@Autowired	  private UserTranscriptionsRepository userTranscriptionsRepository;
 	@Autowired	  private AppUsersRepository appUsersRepo;
+	private final int numberOfThreads = Runtime.getRuntime().availableProcessors();
+	private final ExecutorService executorService;
+	
+	public Sphinx4TranscribitionService() {
+		executorService = Executors.newFixedThreadPool(numberOfThreads);
+	}
 	
 	/**
 	 * 
@@ -69,10 +75,10 @@ public class Sphinx4TranscribitionService {
 														   final String userEmail, final @NotNull @NotBlank String sessionId,
 														   final Long size) throws IOException, ExecutionException{
 		
-		TranscriptionResponseDto rdto = transcribeAudio(file,transcriptionReqId);
-		rdto.setToken(token);
-		rdto.setFileName(file.getName());
-		final String transcribedText = rdto.getTranscribedText();
+		TranscriptionResponseDto respDto = transcribeAudio(file,transcriptionReqId);
+		respDto.setToken(token);
+		respDto.setFileName(file.getName());
+		final String transcribedText = respDto.getTranscribedText();
 		asyncExecutor.execute(() -> {
 			UserTranscriptions userTranscriptions = new UserTranscriptions();
 			userTranscriptions.setEmail(userEmail);
@@ -112,7 +118,7 @@ public class Sphinx4TranscribitionService {
 		//return unformatted_transcribe_text;
 		//return extractTranscribedTextFromSpeechRecognizer(recognizer, TranscriptionReqId);
 		//TranscriptionResponseDto rDto = responseDto.
-		return rdto;
+		return respDto;
 	}
 
 
@@ -166,6 +172,34 @@ public class Sphinx4TranscribitionService {
 		
 		return  responseDto;
 	}
+	
+	/**
+	 * Transcribes inputStream with a given transcribeReqId, and save the transcribed text to solr collection.
+	 * audioFile format is required to be of wav format.
+	 * @param inputStream
+	 * @param reqId
+	 * @return
+	 * @throws IOException
+	 * @throws ExecutionException
+	 */
+	public TranscriptionResponseDto transcribeAudio(InputStream inputStream, @NotNull @NotBlank String reqId) throws  IOException, ExecutionException {
+		
+		SimpleAsyncTaskExecutor delegateExecutor =
+				new SimpleAsyncTaskExecutor();
+		StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(sphinxConfiguration);
+		TranscriptionResponseDto rdto = new TranscriptionResponseDto();
+		
+		recognizer.startRecognition(inputStream);
+		
+		//TODO call formatting method/service
+		//return unformatted_transcribe_text;
+		//wordsList = getWordsList(result.getWords());
+		
+		//TODO completable Future to save the transcribe text and times for each occurrence in solr collection
+		TranscriptionResponseDto responseDto = extractTranscribedTextFromSpeechRecognizer(recognizer, reqId);
+		
+		return  responseDto;
+	}
 
 	
 
@@ -195,8 +229,13 @@ public class Sphinx4TranscribitionService {
 	@Async("appAsyncExecutor")
 	private List<String> getWordsList(List<WordResult> words) {
 		List<String> wordsList = new ArrayList<>();
-		words.forEach(ele -> wordsList.add(ele.getWord().toString()));
-		return wordsList;
+		return words.stream()
+				.filter(wordResult -> !wordResult.getWord().isFiller())
+				.map(wordResult -> wordResult.getWord().toString())
+				.collect(Collectors.toList());
+		
+		//words.forEach(ele -> wordsList.add(ele.getWord().toString()));
+		//return wordsList;
 	}
 	
 	/**
@@ -205,10 +244,35 @@ public class Sphinx4TranscribitionService {
 	 * @return
 	 */
 	@Async("appAsyncExecutor")
-	private List<String> getWordsConfidenceDetails(List<WordResult> words) {
+	private String getWordsConfidenceDetails(List<WordResult> words) {
 		List<String> wordsList = new ArrayList<>();
+		/*words.stream().filter(wordResult -> !wordResult.getWord().isFiller())
+				.flatMap(wordResult -> wordResult.getWord())
+				.mapTo*/
+				
 		words.stream().forEach(ele -> wordsList.add(ele.toString()));
-		return wordsList;
+		//Using a reduce and a StringBuilder to pretty-print the words
+		StringBuilder reduced =
+				words.stream()
+						.map(WordResult::getWord)
+						.reduce(new StringBuilder(), (builder, name) -> {
+							if (builder.length() > 0)
+								builder.append(", ");
+							builder.append(name);
+							return builder;
+						}, (left, right) -> left.append(right));
+		reduced.insert(0, "[");
+		reduced.append("]");
+		
+		  /*String result =  words.stream()
+		  						.map(WordResult::getWord)
+		  						.reduce(new StringCombiner(", ", "[", "]"),
+		  									StringCombiner::add,
+		  									StringCombiner::merge)
+		  						.toString();*/
+		//String result = reduced.toString();
+		//return wordsList;
+		return reduced.toString();
 	}
 	
 	
@@ -230,7 +294,7 @@ public class Sphinx4TranscribitionService {
 			unformattedTranscribeText.append(result.getHypothesis());
 			unformattedTranscribeText.append(" ");
 			wordsList = getWordsList(result.getWords());
-			wordConfList = getWordsConfidenceDetails(result.getWords());
+			//wordConfList = getWordsConfidenceDetails(result.getWords());
 			logger.debug("Best 3 hypothesis:");
             for (String s : result.getNbest(3))
             	logger.debug("Hypothesis: {}\n", s);
@@ -240,6 +304,18 @@ public class Sphinx4TranscribitionService {
         recognizer.stopRecognition();
         
         return new TranscriptionResponseDto(unformattedTranscribeText.toString(), reqId, null, false, wordsList,null,null);
+	}
+	
+	
+	private List<Future<?>> submitJobs(Runnable  runnable) {
+		List<Future<?>> futures = new ArrayList<>();
+		/*
+		for (int i = 0; i < numberOfThreads; i++) {
+			futures.add(executorService.submit(runnable));
+		}
+		*/
+		futures.add(executorService.submit(runnable));
+		return futures;
 	}
 }
 

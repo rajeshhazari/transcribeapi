@@ -35,7 +35,7 @@ public class AppInfoController {
     @PreAuthorize("hasAnyRole({'ROLE_ADMIN','ROLE_DEVOPS'})")
     @RequestMapping(value= "/version" , method = RequestMethod.GET, produces = "application/json")
     public @ResponseBody
-    ResponseEntity<BuildProperties> greeting(HttpServletRequest request, HttpServletResponse response) {
+    ResponseEntity<BuildProperties> appInfo(HttpServletRequest request, HttpServletResponse response) {
         return ResponseEntity.ok(buildProperties);
     }
     

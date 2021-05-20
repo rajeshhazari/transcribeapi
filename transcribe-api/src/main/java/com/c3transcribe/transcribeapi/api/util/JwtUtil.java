@@ -25,8 +25,9 @@ public class JwtUtil {
     
     @Value("${app.jwt.secret}")
     private String secretKey;
+    
     @Value("${app.io.sessionTimeout}")
-    private int timeoutinMin;
+    private int timeoutInMin;
     
     private static final Logger logger = getLogger(JwtUtil.class);
     
@@ -135,7 +136,7 @@ public class JwtUtil {
                 .setSubject(subject)
                 .setIssuedAt(Date.from(Instant.now()))
                 .setNotBefore(Date.from(Instant.now()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * timeoutinMin ))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * timeoutInMin ))
                 .signWith(SignatureAlgorithm.HS256, secretKey.getBytes(UTF_8)).compact();
     }
     

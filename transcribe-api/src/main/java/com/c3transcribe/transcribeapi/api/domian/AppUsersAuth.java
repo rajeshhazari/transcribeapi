@@ -6,7 +6,7 @@ import org.springframework.data.relational.core.mapping.Table;
 
 import java.util.Date;
 
-@Table("appusers_auth")
+@Table("APPUSERS_AUTH")
 @Data
 public 	class AppUsersAuth {
     @Column("auth_user_id")
@@ -20,5 +20,11 @@ public 	class AppUsersAuth {
     private String username;
     @Column("updated_time")
     private Date updatedTime;
+    
+    @Column("token")
+    private String token;
+    
+    @Column("token_iat")
+    private  String tokenIssuesAt;
 
 }

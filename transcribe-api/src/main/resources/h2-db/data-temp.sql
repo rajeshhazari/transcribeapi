@@ -8,8 +8,8 @@
 insert into APPUSERS (username, password, active, first_name, last_name, email, zipcode) values ('rajeshhazari', 'admin321', true,'Rajesh', 'Hazari', 'rajeshhazari@gmail.com','27560');
 insert into APPUSERS (username, password, active, first_name, last_name, email, zipcode) values ('rajeshh', '$2a$10$JuqFvWlOf/AIbBvrhvkvfuNuCnnwudxDxTzeuqc3Gr3n6sTLniHsy', true,'rajesh','hazare','rajesh_hazari@yahoo.com','27560');
 
---insert into appusers_auth (userid,username,email,role_id) values (1,'rajeshhazari','rajeshhazari@gmail.com',1);
---insert into appusers_auth (userid,username,email,role_id) values (2,'rajeshh','rajesh_hazari@yahoo.com',3);
+--insert into APPUSERS_AUTH (userid,username,email,role_id) values (1,'rajeshhazari','rajeshhazari@gmail.com',1);
+--insert into APPUSERS_AUTH (userid,username,email,role_id) values (2,'rajeshh','rajesh_hazari@yahoo.com',3);
 
 
 

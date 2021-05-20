@@ -25,6 +25,7 @@ ALTER TABLE TRANSCRIBEFILELOG DROP CONSTRAINT IF EXISTS APP_USERS_TRANSCRIBEFILE
 
 --ALTER TABLE REGISTEREDAPPUSERS DROP CONSTRAINT IF EXISTS FK_REGUSERS_USERNAME_EMAIL;
 DROP TABLE IF EXISTS APPUSERS;
+DROP TABLE IF EXISTS APPUSERS_AUTH;
 DROP TABLE IF EXISTS AUTHORITIES;
 DROP TABLE IF EXISTS USERREGVERIFYLOGDETAILS;
 DROP TABLE IF EXISTS USERREGISTRATIONSLOGDETIALS;
@@ -297,12 +298,17 @@ ALTER TABLE QRTZ_TRIGGERS ADD
 );
 
 
---CREATE TABLE USER(
---   id identity not null auto_increment,
---   username VARCHAR(100) not null,
---   password VARCHAR(50) not null,
---   primary key (id)
--- );
+CREATE TABLE APPUSERS_AUTH(
+   auth_user_id identity not null auto_increment,
+	role_id VARCHAR(25) not null
+	token VARCHAR(100) not null,
+	email VARCHAR(100) not null unique ,
+	username VARCHAR(100) not null ,
+	updated_time timestamp default CURRENT_TIMESTAMP,
+	userid BIGINT NULL,
+	token_iat VARCHAR(100) not null,
+   primary key (auth_user_id)
+ );
 
 
  CREATE TABLE AUTHORITIES (

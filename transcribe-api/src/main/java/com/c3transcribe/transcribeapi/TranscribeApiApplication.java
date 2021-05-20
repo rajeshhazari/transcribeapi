@@ -7,12 +7,14 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jdbc.repository.config.EnableJdbcRepositories;
 
 @SpringBootApplication
 @EnableAutoConfiguration
+@EnableConfigurationProperties
 @EnableJdbcRepositories("com.rajesh.transcribe.transribeapi.api")
 @ComponentScan({"com.rajesh.transcribe.*","com.c3transcribe.core"})
 public class TranscribeApiApplication extends SpringBootServletInitializer  {

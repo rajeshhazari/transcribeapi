@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -41,10 +42,12 @@ public class CustomerContactController {
                             message = "Unable to save you message, Server error!"),
                     @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
             })
+    @Async
     @RequestMapping(value = "/savemsg", method = RequestMethod.PUT, produces = "application/json")
     public ResponseEntity<Boolean> saveMessage(CustomerContactMessagesDto customerContactMessagesDto, HttpServletRequest request, HttpServletResponse response){
         //TODO send an email to c3Transcribeappops@email.com, there is new contact message received.
         //TODO validate the message does not scripts and validate the code is verified and the client is not a bot
+        //TODO use opensource catchpa creation/validation api to filter bot requests
         customerContactMessagesService.saveCustomerMessage(customerContactMessagesDto);
         return new ResponseEntity<Boolean>(Boolean.TRUE, HttpStatus.NO_CONTENT);
     }

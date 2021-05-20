@@ -1,6 +1,7 @@
 package com.c3transcribe.transcribeapi.api.services;
 
 import com.c3transcribe.transcribeapi.api.controller.exceptions.UserAlreadyRegisteredException;
+import com.c3transcribe.transcribeapi.api.domian.AppUsersAuth;
 import com.c3transcribe.transcribeapi.api.domian.AuthoritiesMaster;
 import com.c3transcribe.transcribeapi.api.models.dto.AuthUserProfileDto;
 import com.c3transcribe.transcribeapi.api.models.dto.AuthUsersRole;
@@ -37,6 +38,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.unit.DataSize;
 import org.springframework.web.server.ServerErrorException;
 
@@ -52,19 +54,34 @@ public class JwtUserDetailsService implements UserDetailsService {
     
     private Logger logger = LoggerFactory.getLogger(JwtUserDetailsService.class);
     
-    @Autowired Environment env;
-    @Autowired private PasswordEncoder bcryptEncoder;
-    @Autowired private AppUsersRepository userRepo;
-    @Autowired private RegisteredUsersRepo registeredUsersRepo;
-    @Autowired private AppMailService appEmailServiceImpl;
-    @Autowired private DataSourceHealthIndicator dataSourceHealthIndicator;
-    @Autowired private SecureRandom secureRandom;
-    @Autowired private AuthoritiesMasterRepo authoritiesMasterRepo;
-    @Autowired private AuthenticationManager authenticationManager;
-    @Autowired private MultipartProperties multipartProperties;
+    Environment env;
+    private PasswordEncoder bcryptEncoder;
+    private AppUsersRepository userRepo;
+    private RegisteredUsersRepo registeredUsersRepo;
+    private AppMailService appEmailServiceImpl;
+    private DataSourceHealthIndicator dataSourceHealthIndicator;
+    private SecureRandom secureRandom;
+    private AuthoritiesMasterRepo authoritiesMasterRepo;
+    private AuthenticationManager authenticationManager;
+    private MultipartProperties multipartProperties;
     
     @Value("${spring.servlet.multipart.max-file-size}")
     private DataSize appMaxUplaodLimit;
+    
+    public JwtUserDetailsService(final Environment env, final PasswordEncoder bcryptEncoder,
+                                 final AppUsersRepository userRepo, final RegisteredUsersRepo registeredUsersRepo, final AppMailService appEmailServiceImpl, final DataSourceHealthIndicator dataSourceHealthIndicator, final SecureRandom secureRandom,
+                                 final AuthoritiesMasterRepo authoritiesMasterRepo, final AuthenticationManager authenticationManager, final MultipartProperties multipartProperties) {
+        this.env = env;
+        this.bcryptEncoder = bcryptEncoder;
+        this.userRepo = userRepo;
+        this.registeredUsersRepo = registeredUsersRepo;
+        this.appEmailServiceImpl = appEmailServiceImpl;
+        this.dataSourceHealthIndicator = dataSourceHealthIndicator;
+        this.secureRandom = secureRandom;
+        this.authoritiesMasterRepo = authoritiesMasterRepo;
+        this.authenticationManager = authenticationManager;
+        this.multipartProperties = multipartProperties;
+    }
     
     
 
@@ -99,6 +116,7 @@ public class JwtUserDetailsService implements UserDetailsService {
      * @return @code UserDetails
      * @throws UsernameNotFoundException
      */
+    @Transactional(readOnly = false)
     public UserDetails loadUserByUsername(String email, String password) throws UsernameNotFoundException {
         /*Optional<AppUsers> user = null;
         try{
@@ -159,11 +177,14 @@ public class JwtUserDetailsService implements UserDetailsService {
             throw new BadCredentialsException("INVALID_CREDENTIALS"+e.getMessage(),e);
         }
     }
+    
+    
     /**
      *
      * @param email
      * @return
      */
+    @Transactional
     public AuthUserProfileDto getUserDto(String email) throws UsernameNotFoundException {
         AppUsers user = null;
         AuthUserProfileDto userDto = new AuthUserProfileDto();
@@ -424,7 +445,7 @@ public class JwtUserDetailsService implements UserDetailsService {
      * @param email
      * @return
      */
-    public boolean deleteLogedinJwtToken(final String email, final String jwtToken) {
+    public boolean deleteLoggedInToken(final String email, final String jwtToken) {
         //TODO implement the method
         return false;
     }
@@ -435,8 +456,8 @@ public class JwtUserDetailsService implements UserDetailsService {
      * @param email
      * @return
      */
-    public boolean blackListLogedinJwtToken(final String email, final String jwtToken) {
-        //TODO implement the method
+    public boolean blackListLoggedInToken(final String email, final String jwtToken) {
+        //TODO implement the method to save
         return false;
     }
     
@@ -445,13 +466,16 @@ public class JwtUserDetailsService implements UserDetailsService {
      * @param email
      * @return Boolean
      */
-    public Boolean findIfRequestedEmailMatchesWithAnyOfRegisteredEmails(final String email){
-        final List<AppUsers> appUsersList = userRepo.findAllEmailList(email+'%');
-        if(!appUsersList.isEmpty()){
-            return true;
-        }else {
+    public Boolean findIfEmailIsRegistered(final String email){
+        final List<AppUsers> appUsersList = userRepo.findAllEmailList(email);
+        return  appUsersList.isEmpty() ? false : true;
+        /*
+        if(appUsersList.isEmpty()){
             return false;
+        }else {
+            return true;
         }
+        */
     }
     
     
@@ -493,6 +517,7 @@ public class JwtUserDetailsService implements UserDetailsService {
      * @throws UsernameNotFoundException
      */
     @Override
+    @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(final String email) throws UsernameNotFoundException {
         Optional<AppUsers> user = null;
         try{
@@ -506,4 +531,11 @@ public class JwtUserDetailsService implements UserDetailsService {
         return new User(user.get().getEmail(), user.get().getPassword(), new ArrayList<>());
         
     }
+    
+    /*@Transactional(readOnly = true)
+    public boolean verifyRefreshToken(String email, String refreshToken){
+        final AppUsersAuth aeppUsers = userRepo.findByEmail(email);
+        
+        if(appUsers.)
+    }*/
 }

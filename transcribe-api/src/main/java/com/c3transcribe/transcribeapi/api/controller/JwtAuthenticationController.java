@@ -96,7 +96,7 @@ public class JwtAuthenticationController {
                             message = "Accessing the resource you were trying to reach is forbidden"),
                     @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
             })
-    @RequestMapping(value = "/auth", method = RequestMethod.POST, produces = "application/json")
+    @PostMapping(value = "/auth", produces = "application/json")
     public ResponseEntity<AuthenticationResponseDto> createAuthenticationToken(
             @RequestBody AuthenticationRequestDto authenticationRequestDto,
             HttpServletRequest request,

@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
         description = "Default Profile setting controller. ")
 @RestController
 @RequestMapping("public/profile/settings")
-public class ProfileSettingController {
+public class ProfileSettingsController {
     
     @Autowired
     Environment env;
@@ -36,7 +36,7 @@ public class ProfileSettingController {
     @Value("${spring.servlet.multipart.max-file-size}")
     private String appMaxUplaodLimit;
     
-    private final Logger logger = LoggerFactory.getLogger(ProfileSettingController.class);
+    private final Logger logger = LoggerFactory.getLogger(ProfileSettingsController.class);
     private final ServletConfig servletConfig;
     private AppEmailServiceImpl appEmailServiceImpl;
     private AppUsersRepository appUserRepo;
@@ -44,9 +44,9 @@ public class ProfileSettingController {
     private ModelMapper modelMapper;
 
     @Autowired
-    public ProfileSettingController(ServletConfig config, AppEmailServiceImpl appEmailServiceImpl,
-                                    AppUsersRepository appUserRepo, AuthoritiesMasterRepo authoritiesMasterRepo,
-                                    ModelMapper modelMapper) {
+    public ProfileSettingsController(ServletConfig config, AppEmailServiceImpl appEmailServiceImpl,
+                                     AppUsersRepository appUserRepo, AuthoritiesMasterRepo authoritiesMasterRepo,
+                                     ModelMapper modelMapper) {
         this.servletConfig = config;
         this.appEmailServiceImpl = appEmailServiceImpl;
         this.appUserRepo = appUserRepo;
@@ -57,15 +57,15 @@ public class ProfileSettingController {
     @ApiOperation(value = "Request for change in email.", response = Map.class, httpMethod = "POST")
     @ApiResponses(
             value = {
-                    @ApiResponse(code = 200, message = "Successfully Encrypted."),
-                    @ApiResponse(code = 401, message = "You are not authorized to encrypt."),
+                    @ApiResponse(code = 200, message = "Successfully Changed Email."),
+                    @ApiResponse(code = 401, message = "You are not authorized/user not found."),
                     @ApiResponse(
                             code = 403,
                             message = "Accessing the resource you were trying to reach is forbidden"),
                     @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
             })
     @RequestMapping("/changeEmail")
-    public @ResponseBody    ResponseEntity <Map<String,String>> changeEmail(@RequestBody UserProfileChangeRequestInput authUserProfileDto, HttpServletRequest request, HttpServletResponse response){
+    public @ResponseBody    ResponseEntity <?> changeEmail(@RequestBody UserProfileChangeRequestInput authUserProfileDto, HttpServletRequest request, HttpServletResponse response){
         Map<String, String> responseMap = new ConcurrentHashMap<>();
         return ResponseEntity.ok(responseMap);
     }
@@ -84,7 +84,7 @@ public class ProfileSettingController {
     @RequestMapping(name = "/resetpwd" , method=RequestMethod.POST)
     public @ResponseBody    ResponseEntity <Map<String,String>> resetPassword(@RequestBody UserProfileChangeRequestInput authUserProfileDto, HttpServletRequest request, HttpServletResponse response){
         Map<String, String> responseMap = new ConcurrentHashMap<>();
-        //TODO implement logic to check for email and check if user exists and send email
+        //TODO implement logic to check for email and check if user exists and send reset email
         return ResponseEntity.ok(responseMap);
     }
 

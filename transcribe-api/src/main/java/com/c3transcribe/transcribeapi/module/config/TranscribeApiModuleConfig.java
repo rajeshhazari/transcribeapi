@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.catalina.Context;
 import org.apache.catalina.connector.Connector;
+import org.apache.commons.text.CharacterPredicates;
+import org.apache.commons.text.RandomStringGenerator;
 import org.apache.tomcat.util.descriptor.web.SecurityCollection;
 import org.apache.tomcat.util.descriptor.web.SecurityConstraint;
 import org.modelmapper.ModelMapper;
@@ -153,8 +155,12 @@ public class TranscribeApiModuleConfig {
 	}
 
 	@Bean
-	public ModelMapper modelMapper() {
-		return new ModelMapper();
+	private RandomStringGenerator randomStringGenerator(){
+		RandomStringGenerator randomStringGenerator = new RandomStringGenerator.Builder()
+				.withinRange('0','z')
+				.filteredBy(CharacterPredicates.DIGITS, CharacterPredicates.LETTERS)
+				.build();
+		return randomStringGenerator;
 	}
 	
   /*
