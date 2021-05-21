@@ -44,9 +44,9 @@ import java.util.stream.Collectors;
  */
 
 @Service
-public class Sphinx4TranscribitionService {
+public class Sphinx4TranscriptionService {
 
-	private Logger logger = LoggerFactory.getLogger(Sphinx4TranscribitionService.class);
+	private Logger logger = LoggerFactory.getLogger(Sphinx4TranscriptionService.class);
 
 	@Autowired    private Environment env;
 	@Autowired    private Configuration sphinxConfiguration;
@@ -71,7 +71,7 @@ public class Sphinx4TranscribitionService {
 	 * @return
 	 * @throws Exception
 	 */
-	public TranscriptionResponseDto transcribeAudioforText(File file, String transcriptionReqId, final String token,
+	public TranscriptionResponseDto transcribeAudioForText(File file, String transcriptionReqId, final @NotNull @NotBlank  String token,
 														   final String userEmail, final @NotNull @NotBlank String sessionId,
 														   final Long size) throws IOException, ExecutionException{
 		
@@ -83,11 +83,12 @@ public class Sphinx4TranscribitionService {
 			UserTranscriptions userTranscriptions = new UserTranscriptions();
 			userTranscriptions.setEmail(userEmail);
 			userTranscriptions.setFileName(file.getName());
-			//TODO get unique user id or some cookie id
+			//TODO get unique user id or some session cookie id -- needs to be implemented
 			StringUtils.firstNonEmpty(sessionId," ");
 			userTranscriptions.setSessionId("1234");
 			userTranscriptions.setTranscriptionReqId(Long.parseLong(transcriptionReqId));
-			//TODO get supported format from formatting service and use
+			//TODO get supported/requested/default format from formatting service and use -- needs to be implemented.
+			
 			userTranscriptions.setTranscribeResAvailableFormat("text/plain");
 			userTranscriptions.setTranscribed(true);
 			userTranscriptions.setDownloaded(false);
@@ -97,8 +98,12 @@ public class Sphinx4TranscribitionService {
 				userTranscriptions.setUserid(appUsers.get().getUserid());
 				//TODO create TranscribeFileLog object to save or create TranscribeFileLog Trigger
 			} else {
-				throw new UserNotFoundException("Username not found for this Transcription request with Email: "+userEmail);
+				userTranscriptions.setTranscribed(false);
+				userTranscriptions.setTranscribed(false);
+				logger.error("Username not found for this transcription request with Email {}",userEmail);
+				throw new UserNotFoundException("Username not found for this transcription request with Email: "+userEmail);
 			}
+			//TODO make this as callable
 			TranscribeFileLog transcribeFileLog = new TranscribeFileLog();
 			transcribeFileLog.setFileName(file.getName());
 			transcribeFileLog.setTReqId(Long.parseLong(transcriptionReqId));

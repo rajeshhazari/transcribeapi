@@ -1,16 +1,16 @@
 package com.c3transcribe.transcribeapi.api.controller.sphinx.transribe;
 
+import com.c3transcribe.core.utils.EncryptUtils;
+import com.c3transcribe.transcribeapi.api.services.sphinx4.transcribe.Sphinx4TranscribitionService;
 import com.c3transcribe.transcribeapi.api.controller.AppStreamingIOServiceUtils;
 import com.c3transcribe.transcribeapi.api.models.AppError;
 import com.c3transcribe.transcribeapi.api.models.dto.sphinx.TranscriptionResponseDto;
-import com.c3transcribe.transcribeapi.api.services.sphinx4.transcribe.Sphinx4TranscribitionService;
 import com.c3transcribe.transcribeapi.api.util.JwtUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.val;
-import org.apache.commons.text.RandomStringGenerator;
 import org.apache.logging.log4j.core.util.UuidUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +43,7 @@ import java.nio.file.NotDirectoryException;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -59,7 +60,7 @@ public class Sphinx4TranscriptionController {
     Environment env;
     Sphinx4TranscribitionService tService;
     JwtUtil jwtUtil;
-    RandomStringGenerator randomStringGenerator;
+    SecureRandom secureRandom;
     @Value("${app.io.uploadDir}")
     private String uploadDir;
     private AppStreamingIOServiceUtils appStreamingIOServiceUtils;
@@ -69,12 +70,12 @@ public class Sphinx4TranscriptionController {
     public Sphinx4TranscriptionController(Environment env,
                                           Sphinx4TranscribitionService tService,
                                           JwtUtil jwtUtil,
-                                          RandomStringGenerator randomStringGenerator, AppStreamingIOServiceUtils appStreamingIOServiceUtils
+                                          SecureRandom secureRandom, AppStreamingIOServiceUtils appStreamingIOServiceUtils
     ) {
         this.env = env;
         this.tService = tService;
         this.jwtUtil = jwtUtil;
-        this.randomStringGenerator = randomStringGenerator;
+        this.secureRandom = secureRandom;
         this.appStreamingIOServiceUtils = appStreamingIOServiceUtils;
         
     }
@@ -97,17 +98,15 @@ public class Sphinx4TranscriptionController {
             @ApiResponse(code = 403, message = "forbidden!!!"),
             @ApiResponse(code = 400, message = "Bad request"),
             @ApiResponse(code = 404, message = "not found!!!")})
-    @RequestMapping(value = "/transcribeReqId", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = "/transcribeReqId", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity getTranscribeReqId(HttpServletRequest req, HttpServletResponse res) throws NoSuchAlgorithmException {
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         res.addCookie(new Cookie("session", req.getSession().getId()));
         Map<String, Object> resp = new HashMap<String, Object>();
-        //resp.put("reqId", EncryptUtils.randomString(20, null));
-        resp.put("reqId", randomStringGenerator.generate(10,20));
+        resp.put("reqid", EncryptUtils.randomString(20, null));
         final String uid = UuidUtil.getTimeBasedUuid().toString();
-        //resp.put("uid", uid);
+        resp.put("uid", uid);
         logger.debug("new Transcription requested: email {} and id: {} ", userEmail, uid);
-        //TODO save this active requestId for email in a new table to get metrics of requests that are not completed
         return new ResponseEntity(resp,HttpStatus.OK);
     }
     
@@ -123,11 +122,11 @@ public class Sphinx4TranscriptionController {
      */
     @ApiOperation(value = "Get Transcription response from the Audio/mp3/wav file ", response = TranscriptionResponseDto.class, tags = "getTranscription")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success|OK"),
+            @ApiResponse(code = 200, message = "Suceess|OK"),
             @ApiResponse(code = 401, message = "not authorized!"),
             @ApiResponse(code = 403, message = "forbidden!!!"),
             @ApiResponse(code = 404, message = "not found!!!")})
-    @PostMapping(path = "/transcribe", produces = MediaType.APPLICATION_JSON_VALUE, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE, MediaType.APPLICATION_JSON_UTF8_VALUE})
+    @PostMapping(path = "/transcribe", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE, MediaType.APPLICATION_JSON_UTF8_VALUE})
     public ResponseEntity<TranscriptionResponseDto> getTranscription(
             @RequestParam("reqId") @NotNull @NotBlank final String reqId,
             //@RequestParam("file") MultipartFile[] file) throws IOException {
@@ -135,18 +134,18 @@ public class Sphinx4TranscriptionController {
     ) throws IOException {
         String token = req.getHeader("token");
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        logger.debug("File transcribe request received from email : {} fname: name {} with size: {} ", userEmail, file.getOriginalFilename(), file.getSize());
+        logger.debug("Upload: name {} and size: {} ", file.getOriginalFilename(), file.getSize());
         //getFileChunkFromStream(file);
         TranscriptionResponseDto response = new TranscriptionResponseDto();
         if(file.isEmpty()){
-            //TranscribeReqFileMetadata tReqFileMetadata = getFileMetadata(file)
+            //TranscribeReqFileMetadata transcribeReqFileMetadata = getFileMetadata(file)
             res.setStatus(HttpStatus.BAD_REQUEST.value());
             res.flushBuffer();
             AppError error = new AppError(HttpStatus.BAD_REQUEST,"File size is zero OR File is empty!");
             response.setError(error);
             return new ResponseEntity<TranscriptionResponseDto>(response, HttpStatus.BAD_REQUEST);
         }
-        // MetaData metadata = objectMapper.readValue(metaData, MetaData.class);
+        // MetaData document = objectMapper.readValue(metaData, MetaData.class);
         response.setTrancriptionId(reqId);
         response.setFileName(file.getOriginalFilename());
         HttpHeaders httpHeaders = new HttpHeaders();
@@ -156,7 +155,7 @@ public class Sphinx4TranscriptionController {
         if (Objects.isNull(file)) {
             res.setStatus(HttpStatus.BAD_REQUEST.value());
             res.flushBuffer();
-            AppError error = new AppError(HttpStatus.BAD_REQUEST,"Uploaded file received as null!");
+            AppError error = new AppError(HttpStatus.BAD_REQUEST,"Uploaded file recevied as null!");
             response.setError(error);
             return new ResponseEntity<TranscriptionResponseDto>(response, HttpStatus.BAD_REQUEST);
         } else if (!Objects.isNull(file) && !file.isEmpty()) {
