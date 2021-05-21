@@ -44,9 +44,9 @@ import java.util.stream.Collectors;
  */
 
 @Service
-public class Sphinx4TranscriptionService {
+public class Sphinx4TranscribtionService {
 
-	private Logger logger = LoggerFactory.getLogger(Sphinx4TranscriptionService.class);
+	private Logger logger = LoggerFactory.getLogger(Sphinx4TranscribtionService.class);
 
 	@Autowired    private Environment env;
 	@Autowired    private Configuration sphinxConfiguration;
@@ -54,9 +54,9 @@ public class Sphinx4TranscriptionService {
 	@Autowired	  private UserTranscriptionsRepository userTranscriptionsRepository;
 	@Autowired	  private AppUsersRepository appUsersRepo;
 	private final int numberOfThreads = Runtime.getRuntime().availableProcessors();
-	private final ExecutorService executorService;
+	private  ExecutorService executorService;
 	
-	public Sphinx4TranscribitionService() {
+	public void Sphinx4TranscribitionService() {
 		executorService = Executors.newFixedThreadPool(numberOfThreads);
 	}
 	

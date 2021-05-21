@@ -1,10 +1,10 @@
 package com.c3transcribe.transcribeapi.api.controller.sphinx.transribe;
 
 import com.c3transcribe.core.utils.EncryptUtils;
-import com.c3transcribe.transcribeapi.api.services.sphinx4.transcribe.Sphinx4TranscribitionService;
 import com.c3transcribe.transcribeapi.api.controller.AppStreamingIOServiceUtils;
 import com.c3transcribe.transcribeapi.api.models.AppError;
 import com.c3transcribe.transcribeapi.api.models.dto.sphinx.TranscriptionResponseDto;
+import com.c3transcribe.transcribeapi.api.services.sphinx4.transcribe.Sphinx4TranscribtionService;
 import com.c3transcribe.transcribeapi.api.util.JwtUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -58,7 +58,7 @@ import java.util.concurrent.ExecutionException;
 public class Sphinx4TranscriptionController {
     
     Environment env;
-    Sphinx4TranscribitionService tService;
+    Sphinx4TranscribtionService tService;
     JwtUtil jwtUtil;
     SecureRandom secureRandom;
     @Value("${app.io.uploadDir}")
@@ -68,7 +68,7 @@ public class Sphinx4TranscriptionController {
     private Logger logger = LoggerFactory.getLogger(Sphinx4TranscriptionController.class);
     
     public Sphinx4TranscriptionController(Environment env,
-                                          Sphinx4TranscribitionService tService,
+                                          Sphinx4TranscribtionService tService,
                                           JwtUtil jwtUtil,
                                           SecureRandom secureRandom, AppStreamingIOServiceUtils appStreamingIOServiceUtils
     ) {
@@ -163,7 +163,7 @@ public class Sphinx4TranscriptionController {
             // rather than user to wait until all of the transcription is completed, which may take some time
             File convFile = appStreamingIOServiceUtils.convertMultipartFileToFile(file,uploadDir);
             try {
-                response = tService.transcribeAudioforText(convFile, reqId, token, userEmail, req.getSession().getId(), file.getSize());
+                response = tService.transcribeAudioForText(convFile, reqId, token, userEmail, req.getSession().getId(), file.getSize());
             } catch (NumberFormatException | ExecutionException e) {
                 AppError error = new AppError(HttpStatus.INTERNAL_SERVER_ERROR,"Exception occurred while transcribe from service");
                 response.setError(error);
