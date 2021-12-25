@@ -21,10 +21,12 @@
             <artifactId>transcribe-core</artifactId>
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
+        <!--
+        removed the property as runtime as there could be instance where someone wants to test this with embedded database
+        -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <scope>runtime</scope>
         </dependency>
 
         <dependency>

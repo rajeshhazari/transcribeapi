@@ -1,6 +1,6 @@
 # NgApp
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 6.2.9.
+This webapp when compiled and run gives UI for this product, generated with [Angular CLI](https://github.com/angular/angular-cli) version 6.2.9.
 
 ## Development server
 
