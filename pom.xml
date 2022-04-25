@@ -20,6 +20,7 @@
 			<id>rajeshhazari</id>
 			<name>Rajesh Hazari</name>
 			<email>rajeshhazari@gmail.com</email>
+			<url></url>
 		</developer>
 	</developers>
 
@@ -34,7 +35,7 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<tomcat.version>9.0.33</tomcat.version>
 		<email.version>1.16.18</email.version>
-		<solr.version>8.5.1</solr.version>
+		<solr.version>8.9.0</solr.version>
 		<org.projectlombok.version>1.18.12</org.projectlombok.version>
 	</properties>
 
@@ -55,10 +56,6 @@
 				<exclusion>
 					<groupId>org.springframework.data</groupId>
 					<artifactId>spring-data-neo4j</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.springframework.data</groupId>
-					<artifactId>spring-data-releasetrain</artifactId>
 				</exclusion>
 				<exclusion>
 					<groupId>org.springframework.data</groupId>

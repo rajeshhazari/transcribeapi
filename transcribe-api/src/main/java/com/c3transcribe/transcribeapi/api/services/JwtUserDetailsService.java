@@ -198,7 +198,7 @@ public class JwtUserDetailsService implements UserDetailsService {
         logger.debug("user retrived:: {}  for user {}",user ,email );
         if (Objects.nonNull(user)) {
             BeanUtils.copyProperties(user,userDto);
-            userDto.setLastLoggedin(user.getLastModified());
+            userDto.lastLogged(user.getLastModified());
         }
         if (user.getUsername().isEmpty()) {
             throw new UsernameNotFoundException("There is some problem with your account, please contact support team to resolve issue with your account: " + email);
@@ -274,7 +274,7 @@ public class JwtUserDetailsService implements UserDetailsService {
      * @return
      */
     public AppUsers save(AppUsers regUser) {
-        regUser.setPassword(bcryptEncoder.encode(regUser.getPassword()));
+        regUser.password();
         
         logger.debug("New User added - username:: {} adn email:: ",regUser.getUsername() , regUser.getEmail());
         return userRepo.save(regUser);

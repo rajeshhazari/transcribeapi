@@ -34,7 +34,10 @@ public class ProfileSettingsController {
     Environment env;
 
     @Value("${spring.servlet.multipart.max-file-size}")
-    private String appMaxUplaodLimit;
+    private String appMaxUploadLimit;
+    
+    @Value("${app.io.uploadFolder}")
+    private String appUploadFolder;
     
     private final Logger logger = LoggerFactory.getLogger(ProfileSettingsController.class);
     private final ServletConfig servletConfig;

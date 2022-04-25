@@ -2,16 +2,16 @@ package com.c3transcribe.core.utils;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-@Getter
-@Setter
+@Getter @Setter @Slf4j
 public class ReusableBufferedInputStream extends BufferedInputStream {
-    @Value("${app.io.readbuffer.size.default: 32768}")
+    @Value("${app.io.read-buffer.size.default: 32768}")
     private int BUFFER_SIZE ;
 
     private byte[] buffer = null;

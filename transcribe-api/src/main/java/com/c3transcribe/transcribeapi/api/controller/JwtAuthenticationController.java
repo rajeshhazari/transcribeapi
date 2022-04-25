@@ -379,30 +379,5 @@ public class JwtAuthenticationController {
     }
     
     
-    @ApiOperation(value = "Request for to update user profile .", response = Boolean.class, httpMethod = "POST")
-    @ApiResponses(
-            value = {
-                    @ApiResponse(code = 200, message = "Successfully Send User profile."),
-                    @ApiResponse(code = 401, message = "You are not authorized to encrypt."),
-                    @ApiResponse(
-                            code = 403,
-                            message = "Accessing the resource you were trying to reach is forbidden"),
-                    @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")
-            })
-    @PostMapping(value = "/profile", produces = "application/json")
-    public ResponseEntity<Boolean> updateProfile(
-            @RequestParam("email") @Validated String email,
-            HttpServletRequest request, HttpServletResponse response,
-            @RequestAttribute AuthUserProfileDto authUserProfileDto
-    ) {
-        
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User authorizedUser = (User) authentication.getPrincipal();
-        AppUsers appUsers = new AppUsers();
-        BeanUtils.copyProperties(authUserProfileDto, appUsers);
-        Boolean updateStatus = jwtUserDetailsService.save(appUsers) != null ? Boolean.TRUE : Boolean.FALSE;
-        HttpStatus status = authUserProfileDto != null ?
-                HttpStatus.OK : HttpStatus.NOT_FOUND;
-        return new ResponseEntity<Boolean>(updateStatus, status);
-    }
+   
 }
