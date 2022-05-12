@@ -1,7 +1,7 @@
-### **transcription Api**
+### **Open Transcription Api**
 
-This is Rest api app to transcribe audio files return the response in Json format. 
-This app uses sphinx4 (https://github.com/cmusphinx/sphinx4) to transcribe audio files to text.
+This is basic api to transcribe audio files return the transcription response in Json format. 
+This app uses sphinx4 framework (https://github.com/cmusphinx/sphinx4) to transcribe audio files to text.
 
 **_Terms of Use_**
 
@@ -11,7 +11,7 @@ And also, spread the word, tell your friends about us.
 
 @Linked in : https://www.linkedin.com/in/rajesh-hazari-a4b08415/
 
-@PayPal : rajeshhazari
+By me a coffe @PayPal : rajeshhazari
  
 Project Build:
 
