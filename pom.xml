@@ -28,6 +28,7 @@
 		<module>transcribe-core</module>
 		<module>transcribe-api</module>
 		<module>transcribe-webui</module>
+		<module>transcribe-db</module>
 	</modules>
 
 	<properties>

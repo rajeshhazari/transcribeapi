@@ -1,0 +1,56 @@
+//docker exec -it postgres-test psql -U postgres
+  pipeline {
+ agent {
+     docker {
+         image 'postgres:alpine'
+         customWorkspace "/opt/test"
+         label 'transcribeapp_postgres-db'
+
+     }
+ }
+ options {
+ timestamps()
+
+ }
+ parameters {
+     booleanParam(name: 'createDb', defaultValue: false, description: 'create db')
+     choice(name: 'Environment', choices: ['dev', 'qa', 'prod'], description: 'Choose an Environment')
+     string(name: 'POSTGRES_DB', defaultValue: 'transcribeapp_db', description: 'Database Name')
+     string(name: 'POSTGRES_USER', defaultValue: 'devappuser', description: 'database user')
+     password(name: 'POSTGRES_PASSWORD', defaultValue: 'devapp321' , description: 'Database password ')
+ }
+ stages {
+ stage('echo-selections') {
+     steps {
+         echo "createDb : ${params.createDB}"
+         echo "Choice: ${params.Environment}"
+         echo "DB Name: ${params.POSTGRES_DB}"
+         echo "DB User: ${params.POSTGRES_USER}"
+         }
+     }
+     stage('Checkout') {
+         steps{
+             checkout scm
+         }
+     }
+     stage('start db container'){
+       steps{
+       echo " createDB: ${createDb}"
+
+       if(createDb){
+             sh '''
+                 docker ps -a
+                 docker run --name transcribeapp_pg-container-db  --rm -P -p 0.0.0.0:6432:5432 -v postgres-data:/media/apps4/postgres/data -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD}  -e POSTGRES_USER=${POSTGRES_USER}  -d postgres:alpine
+             '''
+         } else {
+             sh '''
+                 docker run --name transcribeapp_pg-container-db  --rm -P -p 0.0.0.0:6432:5432 -v postgres-data:/media/apps4/postgres/data -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} -e POSTGRES_DB=${POSTGRES_DB}  -e POSTGRES_USER=${POSTGRES_USER}  -d postgres:alpine
+                 docker ps
+                 docker container ls
+             '''
+         }
+       }
+
+     }
+ }
+}

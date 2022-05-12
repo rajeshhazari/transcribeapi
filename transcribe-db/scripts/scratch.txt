@@ -1,0 +1,5 @@
+
+docker exec  transcribeapp_db_dev_-db  psql -U devuser -d transcribeapp_db  -c 'DROP DATABASE "nextcloud-db"'
+
+docker exec  transcribeapp_db_dev_-db  psql -U devuser -d transcribeapp_db  -c 'CREATE DATABASE "nextcloud-db"'
+
