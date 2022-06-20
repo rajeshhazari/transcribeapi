@@ -25,11 +25,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.concurrent.Executor;
 
 /** @author rajesh */
 @Configuration
@@ -47,9 +49,12 @@ public class TranscribeApiModuleConfig {
 	@Value("${server.http.port}")
 	private int httpPort;
 	
-	@Value("${server.servlet.contextPath}")
+	@Value("${server.servlet.contextPath:api/v1}")
 	private String context;
-
+	
+	@Value("${app.sphinx4.basePath:resource:/transcribe/models/en-us}")
+	private String sphinx4BasePath;
+	
 	private DataSourceHealthIndicator dataSourceHealthIndicator;
 
   /*@Bean
@@ -175,6 +180,7 @@ public class TranscribeApiModuleConfig {
 				.build();
 		return randomStringGenerator;
 	}
+	
 	
   /*
   @Bean

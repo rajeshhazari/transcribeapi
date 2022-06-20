@@ -50,5 +50,7 @@ public class AppUsers {
 	@Column(value = "registered_date")
 	private LocalDateTime lastModified;
 	
+	@Column(value = "verification_code")
+	private String verificationCode;
 	
 }

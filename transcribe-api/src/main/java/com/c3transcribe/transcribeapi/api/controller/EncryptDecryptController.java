@@ -283,7 +283,7 @@ public class EncryptDecryptController {
             response.setData(hdigest);
         }else{
             AppError appError = new AppError(HttpStatus.NO_CONTENT,"Either File can't be read or the file is Empty!");
-            response.setError(appError);
+            response.setAppError(appError);
             return new ResponseEntity(response, HttpStatus.NO_CONTENT);
         }
         return new ResponseEntity(response, HttpStatus.OK);

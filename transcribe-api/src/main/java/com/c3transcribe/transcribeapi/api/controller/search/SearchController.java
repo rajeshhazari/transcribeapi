@@ -1,7 +1,7 @@
 package com.c3transcribe.transcribeapi.api.controller.search;
 
 import com.c3transcribe.transcribeapi.api.models.dto.search.SearchResultDto;
-import com.c3transcribe.transcribeapi.api.services.solr.manager.SolrSearchService;
+import com.c3transcribe.transcribeapi.api.services.search.manager.SolrSearchService;
 import com.c3transcribe.transcribeapi.api.models.SearchRequest;
 import io.swagger.annotations.Api;
 import javax.servlet.http.HttpServletRequest;

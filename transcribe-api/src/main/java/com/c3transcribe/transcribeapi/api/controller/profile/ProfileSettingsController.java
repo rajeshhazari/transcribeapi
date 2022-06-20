@@ -115,7 +115,7 @@ public class ProfileSettingsController {
         AppUsers user = jwtUserDetailsService.getUserByEmailAndInactive(decodedEmail);
         if(Objects.nonNull(user)) {
             if (user.getEmail().equalsIgnoreCase(decodedEmail)) {
-                List<RegisteredUserVerifyLogDetials> registeredUserVerifyLogDetialsList = registeredUserRepo.findByEmailAndCode(user.getEmail(),Integer.parseInt(code));
+                List<RegUserVerifyLogDetails> registeredUserVerifyLogDetialsList = registeredUserRepo.findByEmailAndCode(user.getEmail(),Integer.parseInt(code));
 
                 if(Objects.nonNull(registeredUserVerifyLogDetialsList) && registeredUserVerifyLogDetialsList.isEmpty() ){
 

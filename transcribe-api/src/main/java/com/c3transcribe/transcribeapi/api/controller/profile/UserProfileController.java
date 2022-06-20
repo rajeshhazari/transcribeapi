@@ -2,7 +2,7 @@ package com.c3transcribe.transcribeapi.api.controller.profile;
 
 import com.c3transcribe.transcribeapi.api.domian.AppUsers;
 import com.c3transcribe.transcribeapi.api.models.dto.AuthUserProfileDto;
-import com.c3transcribe.transcribeapi.api.services.JwtUserDetailsService;
+import com.c3transcribe.transcribeapi.api.services.auth.JwtUserDetailsService;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;

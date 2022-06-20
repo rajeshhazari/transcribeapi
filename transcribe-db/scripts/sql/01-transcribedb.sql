@@ -41,7 +41,7 @@ DROP TABLE IF EXISTS APPUSERS CASCADE;
 DROP TABLE IF EXISTS APPUSERS_AUTH CASCADE;
 DROP TABLE IF EXISTS AUTHORITIES_MASTER cascade;
 DROP TABLE IF EXISTS USERREGVERIFYLOGDETAILS;
-DROP TABLE IF EXISTS USERREGISTRATIONSLOGDETIALS;
+DROP TABLE IF EXISTS USERREGISTRATIONS_UPDATE_LOG;
 DROP TABLE IF EXISTS APPUSERS_TRANSCRIPTIONS CASCADE;
 DROP TABLE IF EXISTS TRANSCRIBEFILELOG;
 DROP TABLE IF EXISTS REGISTEREDAPPUSERS;
@@ -62,7 +62,6 @@ DROP SEQUENCE IF EXISTS payment_payment_id_seq;
 DROP TABLE  IF EXISTS  SPRING_SESSION CASCADE;
 DROP TABLE IF EXISTS SPRING_SESSION_ATTRIBUTES CASCADE;
 
-DROP TABLE IF EXISTS REGISTEREDAPPUSERS_ACTIVITY_LOG;
 DROP TABLE IF EXISTS CUSTOMERCONTACTMESSAGES;
 DROP TABLE IF EXISTS APPUSERS_UPDATE_LOG CASCADE;
 
@@ -281,7 +280,8 @@ CREATE INDEX IDX_QRTZ_FT_TG
 ALTER TABLE APPUSERS ADD
 CONSTRAINT APPUSERS_USERNAME_EMAIL_KEY UNIQUE (userid,username,email);
 
-
+-- Table to store all updates, delete and inserts in APP_USERS table
+-- Refer to function  process_users_profile_audit
 CREATE TABLE APPUSERS_UPDATE_LOG(
     id bigserial PRIMARY KEY,
     operation   char(1)   NOT NULL,
@@ -313,22 +313,10 @@ CREATE TABLE REGISTEREDAPPUSERS(
 );
 
 
-CREATE TABLE REGISTEREDAPPUSERS_ACTIVITY_LOG(
-  id bigserial PRIMARY KEY,
-  user_id int not null,
-  username text not null,
-  email text not null,
-  token text,
-   last_loggedin timestamp default CURRENT_TIMESTAMP
-);
-
-
-ALTER TABLE REGISTEREDAPPUSERS_ACTIVITY_LOG ADD CONSTRAINT FK_REGUSERS_USERNAME_EMAIL foreign key (user_id,username,email) references APPUSERS(userid,username,email);
 
 
 
-
-CREATE TABLE AUTHOrities_MASTER (
+CREATE TABLE AUTHORITIES_MASTER (
  id serial PRIMARY KEY ,
  role_id VARCHAR(50) unique,
  roledesc VARCHAR(400),
@@ -337,6 +325,8 @@ CREATE TABLE AUTHOrities_MASTER (
 );
 
 
+-- Table to store logged in users and their jwt tokens after successful login
+-- this table can be used as log table for all valid jet tokens issues by system for any used at any given time
 
 CREATE TABLE APPUSERS_AUTH (
  auth_user_id bigserial not null PRIMARY KEY,
@@ -345,15 +335,41 @@ CREATE TABLE APPUSERS_AUTH (
  email text not null,
  role_id VARCHAR(50) not null,
  updated_time timestamp default CURRENT_TIMESTAMP,
-
+ token VARCHAR(500) not null,
+ token_expiry DATE not null,
+ token_claim VARCHAR(50) not null,
+ token_iat VARCHAR(500) not null,
  CONSTRAINT FK_APPUSERS_AUTH_AUTHORITIES_MASTER FOREIGN KEY (role_id) REFERENCES AUTHORITIES_MASTER (role_id),
  CONSTRAINT FK_APPUSERS_AUTH_APPUSER foreign key (userid,username,email) references APPUSERS(userid,username,email)
 );
 
 
+-- History table to track all of the history auth tokens and users auth activity for any given date
+-- Ideally there will be many DB views that can be created to get user activity for any given date
+-- for ex: the user last loggedin , users recently changed passwords or emails.
+-- Here change of email is under assumption that user name can be different from email while registering.
+-- If user name and email are same then we may have to change teh DB schema for accordingly
+-- and change of email usecase would be only for change of email for communications
+
+CREATE TABLE HIST_APPUSERS_AUTH (
+ hist_date DATE default CURRENT_DATE,
+ auth_user_id bigserial not null PRIMARY KEY,
+ userid bigserial not null,
+ username text,
+ email text not null,
+ role_id VARCHAR(50) not null,
+ updated_time timestamp default CURRENT_TIMESTAMP,
+ token VARCHAR(500) not null,
+ token_expiry DATE not null,
+ token_claim VARCHAR(50) not null,
+ token_iat VARCHAR(500) not null,
+ CONSTRAINT FK_APPUSERS_AUTH_AUTHORITIES_MASTER FOREIGN KEY (role_id) REFERENCES AUTHORITIES_MASTER (role_id),
+ CONSTRAINT FK_APPUSERS_AUTH_APPUSER foreign key (userid,username,email) references APPUSERS(userid,username,email)
+);
+
 --ALTER TABLE APPUSERS_AUTH ADD CONSTRAINT FK_AUTHROTIES_APPUSER foreign key (userid,username,email) references APPUSERS(userid,username,email);
 
-CREATE TABLE USERREGISTRATIONSLOGDETIALS (
+CREATE TABLE USERREGISTRATIONS_UPDATE_LOG (
   id bigserial PRIMARY KEY,
   username text not null,
   firstName text not null,
@@ -406,7 +422,27 @@ ALTER TABLE APPUSERS_TRANSCRIPTIONS ADD CONSTRAINT FK_Users_Transcriptions_users
   ( userid, username,   email  ) REFERENCES APPUSERS(  userid, username, email  );
 
 
-  CREATE TABLE TRANSCRIBEFILELOG (
+
+-- Table to save transcriptions request remote details
+
+  CREATE TABLE APPUSERS_TRANSCRIPTIONS_REQUEST_METADATA (
+    id identity not null auto_increment,
+    transcription_req_id VARCHAR(100) not null,
+    remote_host_ip VARCHAR(100),
+    remote_host_agent VARCHAR(100),
+    primary key (id)
+  );
+
+  ALTER TABLE APPUSERS_TRANSCRIPTIONS_REQUEST_METADATA ADD
+    CONSTRAINT FK_APPUSERS_TRANSCRIPTIONS_REQUEST_METADATA FOREIGN KEY
+    (
+      transcription_req_id
+    ) REFERENCES APPUSERS_TRANSCRIPTIONS(
+      transcription_req_id
+    );
+
+
+  CREATE TABLE TRANSCRIBE_FILELOG (
   tflog_id bigserial PRIMARY KEY,
   email text,
   file_name text,
@@ -417,10 +453,6 @@ ALTER TABLE APPUSERS_TRANSCRIPTIONS ADD CONSTRAINT FK_Users_Transcriptions_users
   created_at timestamp DEFAULT now() NOT NULL,
   FOREIGN KEY (log_id, transcription_req_id,email) REFERENCES APPUSERS_TRANSCRIPTIONS (log_id,transcription_req_id,email)
 );
-
-
---CREATE TRIGGER REGISTEREDAPPUSERS_ACTIVITY_LOG_trigger
---    AFTER INSERT ON APPUSERS   REFERENCING NEW TABLE AS X          FOR EACH ROW
 
 
 
@@ -437,7 +469,7 @@ ALTER TABLE APPUSERS_TRANSCRIPTIONS ADD CONSTRAINT FK_Users_Transcriptions_users
 
 
 
-CREATE TABLE CUSTOMERCONTACTMESSAGES (
+CREATE TABLE CUSTOMER_CONTACT_MESSAGES (
   id  bigserial PRIMARY KEY,
   email VARCHAR(100),
   firstName VARCHAR(100),

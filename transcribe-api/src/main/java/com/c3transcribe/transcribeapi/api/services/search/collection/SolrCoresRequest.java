@@ -1,4 +1,4 @@
-package com.c3transcribe.transcribeapi.api.services.solr.collection;
+package com.c3transcribe.transcribeapi.api.services.search.collection;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

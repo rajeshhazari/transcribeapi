@@ -6,15 +6,14 @@ import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.Instant;
-import java.util.Date;
 
 @Table("USERREGVERIFYLOGDETAILS")
 @Data @AllArgsConstructor @NoArgsConstructor
-public class RegisteredUserVerifyLogDetials {
+public class RegUserVerifyLogDetails {
     
     @Id
     @Column("id")
-    public Integer ID;
+    public Integer id;
     @NonNull
     public String username;
     @NonNull

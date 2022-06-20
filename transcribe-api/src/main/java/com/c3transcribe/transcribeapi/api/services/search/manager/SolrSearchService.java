@@ -2,7 +2,7 @@
  * Created by rhazari on 2/25/14.
  */
 
-package com.c3transcribe.transcribeapi.api.services.solr.manager;
+package com.c3transcribe.transcribeapi.api.services.search.manager;
 
 
 import com.c3transcribe.transcribeapi.api.models.dto.sphinx.TranscriptionResponseDto;
@@ -119,7 +119,7 @@ public class SolrSearchService {
         if (updateResponse.getStatus() == 0) {
             status = Boolean.TRUE;
         } else {
-            logger.error("Problem while indexing response in solr server {}  :: msg :: {} transcriptionReqId:: {} ", updateResponse.getRequestUrl(), updateResponse.getResponse(), responseDto.getTrancriptionId());
+            logger.error("Problem while indexing response in solr server {}  :: msg :: {} transcriptionReqId:: {} ", updateResponse.getRequestUrl(), updateResponse.getResponse(), responseDto.getTranscriptionId());
         }
         return status;
     }

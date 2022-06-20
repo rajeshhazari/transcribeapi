@@ -146,7 +146,7 @@ public class Sphinx4TranscriptionController {
             return new ResponseEntity<TranscriptionResponseDto>(response, HttpStatus.BAD_REQUEST);
         }
         // MetaData document = objectMapper.readValue(metaData, MetaData.class);
-        response.setTrancriptionId(reqId);
+        response.setTranscriptionId(reqId);
         response.setFileName(file.getOriginalFilename());
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add("Accept", "application/json");

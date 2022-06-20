@@ -6,7 +6,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
 @Data @AllArgsConstructor @NoArgsConstructor
-@Table("CUSTOMERCONTACTMESSAGES")
+@Table("CUSTOMER_CONTACT_MESSAGES")
 public class  CustomerContactMessages{
     
     @Id

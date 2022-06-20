@@ -37,7 +37,7 @@
 		<tomcat.version>9.0.33</tomcat.version>
 		<email.version>1.16.18</email.version>
 		<solr.version>8.9.0</solr.version>
-		<org.projectlombok.version>1.18.12</org.projectlombok.version>
+		<lombok.version>1.18.20</lombok.version>
 	</properties>
 
 	<dependencies>
@@ -116,18 +116,17 @@
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<version>${org.projectlombok.version}</version>
-			<scope>provided</scope>
+			<version>${lombok.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
-			<version>1.2.3</version>
+			<version>1.2.6</version>
 		</dependency>
 
 
 		<!--
-		Sphinx4 dependencies
+		Sphinx4 dependencies. These dependencies are added using mvn install file://
 		-->
 
 		<dependency>

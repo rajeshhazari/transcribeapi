@@ -1,8 +1,9 @@
-package com.c3transcribe.transcribeapi.api.services;
+package com.c3transcribe.transcribeapi.api.services.auth;
 
 import com.c3transcribe.transcribeapi.api.controller.exceptions.UserAlreadyRegisteredException;
-import com.c3transcribe.transcribeapi.api.domian.AppUsersAuth;
+import com.c3transcribe.transcribeapi.api.domian.AppUsers;
 import com.c3transcribe.transcribeapi.api.domian.AuthoritiesMaster;
+import com.c3transcribe.transcribeapi.api.domian.RegUserVerifyLogDetails;
 import com.c3transcribe.transcribeapi.api.models.dto.AuthUserProfileDto;
 import com.c3transcribe.transcribeapi.api.models.dto.AuthUsersRole;
 import com.c3transcribe.transcribeapi.api.models.dto.RegisterUserRequest;
@@ -11,17 +12,13 @@ import com.c3transcribe.transcribeapi.api.repository.AppUsersRepository;
 import com.c3transcribe.transcribeapi.api.repository.AuthoritiesMasterRepo;
 import com.c3transcribe.transcribeapi.api.repository.RegisteredUsersRepo;
 import com.c3transcribe.transcribeapi.api.repository.exceptions.UserNotFoundException;
-import com.c3transcribe.transcribeapi.api.domian.AppUsers;
-import com.c3transcribe.transcribeapi.api.domian.RegisteredUserVerifyLogDetials;
+import com.c3transcribe.transcribeapi.api.services.AppMailService;
+import com.c3transcribe.transcribeapi.api.util.ApiMultipartProperties;
 import com.c3transcribe.transcribeapi.api.util.SystemConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.jdbc.DataSourceHealthIndicator;
-import org.springframework.boot.autoconfigure.web.servlet.MultipartProperties;
 import org.springframework.core.env.Environment;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DuplicateKeyException;
@@ -44,69 +41,50 @@ import org.springframework.web.server.ServerErrorException;
 
 import javax.annotation.PostConstruct;
 import javax.mail.MessagingException;
-import java.security.SecureRandom;
-import java.util.*;
+import javax.validation.Valid;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 import static com.c3transcribe.transcribeapi.api.util.SystemConstants.*;
 
 @Service
 public class JwtUserDetailsService implements UserDetailsService {
     
-    private Logger logger = LoggerFactory.getLogger(JwtUserDetailsService.class);
+    private final Logger logger = LoggerFactory.getLogger(JwtUserDetailsService.class);
     
     Environment env;
-    private PasswordEncoder bcryptEncoder;
     private AppUsersRepository userRepo;
     private RegisteredUsersRepo registeredUsersRepo;
     private AppMailService appEmailServiceImpl;
-    private DataSourceHealthIndicator dataSourceHealthIndicator;
-    private SecureRandom secureRandom;
     private AuthoritiesMasterRepo authoritiesMasterRepo;
     private AuthenticationManager authenticationManager;
-    private MultipartProperties multipartProperties;
+    private ApiMultipartProperties multipartProperties;
     
     @Value("${spring.servlet.multipart.max-file-size}")
     private DataSize appMaxUplaodLimit;
     
     public JwtUserDetailsService(final Environment env, final PasswordEncoder bcryptEncoder,
-                                 final AppUsersRepository userRepo, final RegisteredUsersRepo registeredUsersRepo, final AppMailService appEmailServiceImpl, final DataSourceHealthIndicator dataSourceHealthIndicator, final SecureRandom secureRandom,
-                                 final AuthoritiesMasterRepo authoritiesMasterRepo, final AuthenticationManager authenticationManager, final MultipartProperties multipartProperties) {
+                                 final AppUsersRepository userRepo, final RegisteredUsersRepo registeredUsersRepo, final AppMailService appEmailServiceImpl,
+                                 final AuthoritiesMasterRepo authoritiesMasterRepo, final AuthenticationManager authenticationManager, final ApiMultipartProperties multipartProperties) {
         this.env = env;
-        this.bcryptEncoder = bcryptEncoder;
         this.userRepo = userRepo;
         this.registeredUsersRepo = registeredUsersRepo;
         this.appEmailServiceImpl = appEmailServiceImpl;
-        this.dataSourceHealthIndicator = dataSourceHealthIndicator;
-        this.secureRandom = secureRandom;
         this.authoritiesMasterRepo = authoritiesMasterRepo;
         this.authenticationManager = authenticationManager;
         this.multipartProperties = multipartProperties;
     }
     
     
-
-    /*@Autowired
-    public JwtUserDetailsService (PasswordEncoder bcryptEncoder,
-                                  AppUsersRepository userRepo,
-                                  RegisteredUsersRepo registeredUsersRepo,
-                                  AppMailService appEmailService,
-                                  DataSourceHealthIndicator dataSourceHealthIndicator,
-                                  SecureRandom secureRandom){
-        this.bcryptEncoder = bcryptEncoder;
-        this.userRepo = userRepo;
-        this.registeredUsersRepo = registeredUsersRepo;
-        this.appEmailServiceImpl = appEmailService;
-        this.dataSourceHealthIndicator = dataSourceHealthIndicator;
-        this.secureRandom = secureRandom;
-    }*/
-    
     /*@Autowired
     private SessionRegistry sessionRegistry;*/
 
     @PostConstruct
-    public void init(){
+    /*public void init(){
      Health dbHealth = dataSourceHealthIndicator.getHealth(true);
-    }
+    }*/
 
 
     /**
@@ -117,7 +95,7 @@ public class JwtUserDetailsService implements UserDetailsService {
      * @throws UsernameNotFoundException
      */
     @Transactional(readOnly = false)
-    public UserDetails loadUserByUsername(String email, String password) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(@Valid final String  email, String password) throws UsernameNotFoundException {
         /*Optional<AppUsers> user = null;
         try{
             user = Optional.ofNullable(userRepo.findByEmail(email));
@@ -135,9 +113,7 @@ public class JwtUserDetailsService implements UserDetailsService {
         }*/
     
         Optional<AppUsers> user = Optional.ofNullable(userRepo.findByEmail(email));
-        if (user == null) {
-            throw new UsernameNotFoundException("User not found with username: " + email);
-        } else  if (user.isEmpty() || !user.isPresent()) {
+        if (user.isEmpty() || !user.isPresent()) {
             throw new UsernameNotFoundException("User not found with username: " + email);
         }else if (user.isPresent() && user.get().getUsername().isEmpty()) {
             throw new UsernameNotFoundException("There is some problem with your account, please contact us to resolve your issue: " + email);
@@ -198,7 +174,8 @@ public class JwtUserDetailsService implements UserDetailsService {
         logger.debug("user retrived:: {}  for user {}",user ,email );
         if (Objects.nonNull(user)) {
             BeanUtils.copyProperties(user,userDto);
-            userDto.lastLogged(user.getLastModified());
+            // TODO get the correct time from DB
+            userDto.setLastLoggedin(user.getLastModified());
         }
         if (user.getUsername().isEmpty()) {
             throw new UsernameNotFoundException("There is some problem with your account, please contact support team to resolve issue with your account: " + email);
@@ -207,15 +184,15 @@ public class JwtUserDetailsService implements UserDetailsService {
         }
     
         List<AuthUsersRole> roles = new ArrayList<>();
-        user.getAppUsersAuthList()
+        AuthorityUtils.NO_AUTHORITIES
                 .stream()
                 .forEach(appUsersAuth -> {
                     AuthUsersRole authUsersRole = new AuthUsersRole();
                     BeanUtils.copyProperties(appUsersAuth, authUsersRole);
                     roles.add(authUsersRole);
                 });
-        multipartProperties.getMaxFileSize();
-        userDto.setSystemSupportedFileTypes(String.valueOf(multipartProperties.getMaxFileSize().toMegabytes()));
+        userDto.setSystemMaxUploadFileSizeMb(String.valueOf(multipartProperties.getMaxFileSize().toMegabytes()));
+        userDto.setSystemSupportedFileTypes(multipartProperties.getSupportedMimeTypes());
         userDto.setAuthUsersRolesList(roles);
         return userDto;
         
@@ -274,8 +251,6 @@ public class JwtUserDetailsService implements UserDetailsService {
      * @return
      */
     public AppUsers save(AppUsers regUser) {
-        regUser.password();
-        
         logger.debug("New User added - username:: {} adn email:: ",regUser.getUsername() , regUser.getEmail());
         return userRepo.save(regUser);
     }
@@ -335,11 +310,11 @@ public class JwtUserDetailsService implements UserDetailsService {
                 appUsers.setEmail(emailRegReq);
                 BeanUtils.copyProperties(registerUserRequest, appUsers);
                 userRepo.save(appUsers);
-                RegisteredUserVerifyLogDetials newUser = new RegisteredUserVerifyLogDetials();
+                RegUserVerifyLogDetails newUser = new RegUserVerifyLogDetails();
                 newUser.setEmail(emailRegReq);
                 newUser.setUsername(registerUserRequest.getUsername());
                 newUser = registeredUsersRepo.save(newUser);
-                appEmailServiceImpl.sendMailWithEmailChangeToken( emailRegReq,null);
+                appEmailServiceImpl.sendMailWithEmailChangeToken(newUser, emailRegReq);
             } else {
                 userRegReqResponseDto.setErrorMessage(USER_REGISITRATION_SYSTEM_ERROR_MSG);
                 logger.debug(USER_REGISITRATION_SYSTEM_ERROR_MSG + " %s ", emailRegReq);
@@ -371,11 +346,11 @@ public class JwtUserDetailsService implements UserDetailsService {
             logger.debug("Suspicious Alert:: Wrong email or wrong token manipulation email:: %s token :: %s ", email, code);
             result =  false;
         }
-        List<RegisteredUserVerifyLogDetials> registeredUserVerifyLogDetialsList =  registeredUsersRepo.findByEmailAndCode(email, Integer.parseInt(code));
-        RegisteredUserVerifyLogDetials registeredUserVerifyLogDetials = registeredUserVerifyLogDetialsList.stream().filter(user -> user.isVerified()).findFirst().get();
-        if(registeredUserVerifyLogDetials.isVerificationEmailSent() && registeredUserVerifyLogDetials.isVerified()){
+        List<RegUserVerifyLogDetails> regUserVerifyLogDetailsList =  registeredUsersRepo.findByEmailAndCode(email, Integer.parseInt(code));
+        RegUserVerifyLogDetails regUserVerifyLogDetails = regUserVerifyLogDetailsList.stream().filter(user -> user.isVerified()).findFirst().get();
+        if(regUserVerifyLogDetails.isVerificationEmailSent() && regUserVerifyLogDetails.isVerified()){
             result = true;
-        } else if(registeredUserVerifyLogDetials.isVerificationEmailSent() && !registeredUserVerifyLogDetials.isVerified()){
+        } else if(regUserVerifyLogDetails.isVerificationEmailSent() && !regUserVerifyLogDetails.isVerified()){
             logger.warn("Email is is already verified.{}", email);
             //TODO handle other usecase  like multiple submission or more.
             return true;
@@ -393,9 +368,9 @@ public class JwtUserDetailsService implements UserDetailsService {
         if(!isEmailRegistered(email)){
             return false;
         } else {
-            List<RegisteredUserVerifyLogDetials> registeredUserVerifyLogDetialsList = registeredUsersRepo.findByEmail(email);
-            if (!registeredUserVerifyLogDetialsList.isEmpty()) {
-                RegisteredUserVerifyLogDetials regUser = registeredUserVerifyLogDetialsList.stream().findFirst().get();
+            List<RegUserVerifyLogDetails> regUserVerifyLogDetailsList = registeredUsersRepo.findByEmail(email);
+            if (!regUserVerifyLogDetailsList.isEmpty()) {
+                RegUserVerifyLogDetails regUser = regUserVerifyLogDetailsList.stream().findFirst().get();
                 isVerified = regUser.isVerified();
             } else {
                 isVerified = false;
