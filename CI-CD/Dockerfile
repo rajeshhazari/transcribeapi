@@ -14,7 +14,7 @@
 #    --output /jdk-minimal
 #-Djava.security.egd=file:/dev/./urandom 
 
-From spring-boot-runtime:openjdk-14-slim
+From spring-boot-runtime:openjdk-slim
 
 
 # to check for open ports in the container: docker run <container id> netstat -tan
@@ -22,10 +22,6 @@ From spring-boot-runtime:openjdk-14-slim
 #RUN echo "$SSH_KEY" > /root/.ssh/id_rsa
 ENV JAVA_OPTS=""
 ENV MAIN_CLASS=""
-ARG UID=1001
-ARG USERNAME=app_user
-ARG GROUPNAME=devops
-ARG GID=1000
 ARG DEPENDENCY=target/dependency
 
 #find /usr/share/ca-certificates/mozilla/ -name "*.crt" -type f -exec  $JAVA_HOME/bin/keytool -importcert  -cacerts  -storepass changeit -noprompt  -file '{}' -alias '{}' \; && \

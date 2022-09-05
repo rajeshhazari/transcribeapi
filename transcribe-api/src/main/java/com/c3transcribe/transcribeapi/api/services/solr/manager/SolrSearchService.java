@@ -1,10 +1,11 @@
 /**
- * Created by rhazari on 2/25/14.
+ * Created by rhazari on 2/25/2022.
  */
 
 package com.c3transcribe.transcribeapi.api.services.solr.manager;
 
 
+import com.c3transcribe.transcribeapi.api.models.dto.search.SearchResultDto;
 import com.c3transcribe.transcribeapi.api.models.dto.sphinx.TranscriptionResponseDto;
 import com.c3transcribe.transcribeapi.api.models.SearchRequest;
 import com.c3transcribe.transcribeapi.api.models.dto.TranscribedRespSolrInputDoc;
@@ -34,6 +35,7 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AutoPopulatingList;
 
@@ -43,10 +45,11 @@ public class SolrSearchService {
     private final BeanUtilsBean beanUtilsBean2 = BeanUtilsBean2.getInstance();
     @Autowired
     public SolrClient solrClient;
-    private final UpdateRequest updateRequest = null;
-    private final SolrRequest solrRequest = null;
+    @Autowired
+    private Environment environment;
     @Value("${solr.transcribeapiapp.colName}")
     private String solrCollectionName;
+
 
     /**
      * @param collection
@@ -61,7 +64,7 @@ public class SolrSearchService {
     }
 
     /**
-     * deletes list of the documents for solr sfor a given collection
+     * deletes list of the documents for solr for a given collection based on its id field
      *
      * @throws SolrServerException
      * @throws IOException
@@ -182,7 +185,7 @@ public class SolrSearchService {
      * @param searchRequest
      * @return
      */
-    public List<SolrDocument> getSolrDocList(final Optional<String> solrColName, final SearchRequest searchRequest) {
+    public List<SolrDocument> getSolrDocList(final Optional<String> solrColName, final SearchRequest searchRequest) throws SolrServerException, IOException{
         SolrQuery solrQuery = new SolrQuery();
         List<SolrDocument> solrDocumentList = new ArrayList<>();
         solrQuery.add("fileName", searchRequest.getFileName());
@@ -190,19 +193,27 @@ public class SolrSearchService {
         if(solrColName.isPresent()){
             colName = solrColName.orElse(solrCollectionName);
         }
-        try {
+
 
             QueryResponse response = solrClient.query(colName, solrQuery);
             solrDocumentList = response.getResults();
-        } catch (SolrServerException e) {
-            e.printStackTrace();
-            logger.error("SolrServer error:: ", e.getMessage());
-
-        } catch (IOException ioException) {
-            ioException.printStackTrace();
-            logger.error("IOException occured error:: ", ioException.getMessage());
-        }
         return solrDocumentList;
+    }
+
+    /**
+     *
+     * @param solrCollName
+     * @param searchRequest
+     * @return
+     * @throws SolrServerException
+     * @throws IOException
+     */
+    public SearchResultDto getTranscribeFilesMetadataSearchResults (String solrCollName,SearchRequest searchRequest ) throws SolrServerException, IOException {
+        SearchResultDto searchResultDto = new SearchResultDto();
+        final String collName = Optional.of(solrCollName).orElse(solrCollectionName);
+        final List<SolrDocument> solrDocumentList = getSolrDocList(Optional.of(collName),searchRequest );
+
+        return  searchResultDto;
     }
     
     
@@ -212,10 +223,11 @@ public class SolrSearchService {
      * @return
      * @throws JSONException 
      */
-    public SolrInputDocument createPageSolrDoc(JSONObject pageJsonObject) throws JSONException {
+    public SolrInputDocument createTranscribeRespSolrDoc(JSONObject pageJsonObject) throws JSONException {
 
         SolrInputDocument doc = new SolrInputDocument();
         doc.addField("id", pageJsonObject.get("id"));
+        doc.addField("name", pageJsonObject.get("name"));
         doc.addField("title", pageJsonObject.get("title"));
         doc.addField("body", pageJsonObject.get("body"));
         doc.addField("url", pageJsonObject.get("url"));
@@ -232,17 +244,17 @@ public class SolrSearchService {
      * This method connects to the Solr server and indexes page content using
      * Solrj api. This is used by bulk update handler (servlet)
      *
-     * @param Takes Json array and iterates over each object and index to solr
+     * @param indexPageData Json array and iterates over each object and index to solr
      * @return boolean true if it indexes successfully to solr server, else
      * false.
      */
     public boolean indexPagesToSolr(JSONArray indexPageData, String  colName) throws JSONException, SolrServerException,
             IOException {
-
+        boolean status = false;
         if (null != indexPageData) {
             for (int i = 0; i < indexPageData.length(); i++) {
                 JSONObject pageJsonObject = indexPageData.getJSONObject(i);
-                SolrInputDocument doc = createPageSolrDoc(pageJsonObject);
+                SolrInputDocument doc = createTranscribeRespSolrDoc(pageJsonObject);
                 solrClient.add(doc);
             }
             return true;

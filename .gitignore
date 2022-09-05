@@ -32,3 +32,4 @@ build/
 *.wav
 *.mp3
 logs/**
+/external-libs/
