@@ -34,10 +34,7 @@ public class ProfileSettingsController {
     Environment env;
 
     @Value("${spring.servlet.multipart.max-file-size}")
-    private String appMaxUploadLimit;
-    
-    @Value("${app.io.uploadFolder}")
-    private String appUploadFolder;
+    private String appMaxUplaodLimit;
     
     private final Logger logger = LoggerFactory.getLogger(ProfileSettingsController.class);
     private final ServletConfig servletConfig;
@@ -115,7 +112,7 @@ public class ProfileSettingsController {
         AppUsers user = jwtUserDetailsService.getUserByEmailAndInactive(decodedEmail);
         if(Objects.nonNull(user)) {
             if (user.getEmail().equalsIgnoreCase(decodedEmail)) {
-                List<RegUserVerifyLogDetails> registeredUserVerifyLogDetialsList = registeredUserRepo.findByEmailAndCode(user.getEmail(),Integer.parseInt(code));
+                List<RegisteredUserVerifyLogDetials> registeredUserVerifyLogDetialsList = registeredUserRepo.findByEmailAndCode(user.getEmail(),Integer.parseInt(code));
 
                 if(Objects.nonNull(registeredUserVerifyLogDetialsList) && registeredUserVerifyLogDetialsList.isEmpty() ){
 

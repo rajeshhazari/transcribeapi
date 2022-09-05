@@ -20,7 +20,6 @@ import org.springframework.data.jdbc.repository.config.AbstractJdbcConfiguration
 import org.springframework.data.relational.core.mapping.Embedded;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
 import java.sql.Clob;
@@ -32,7 +31,6 @@ import static org.apache.calcite.linq4j.tree.Primitive.asList;
 @EnableAutoConfiguration(exclude = {
         SolrAutoConfiguration.class,
         SolrHealthContributorAutoConfiguration.class})
-@EnableTransactionManagement
 public class AppDataSourceAggregateAndSolrConfiguration  {
         //extends AbstractJdbcConfiguration {
     
@@ -91,8 +89,7 @@ public class AppDataSourceAggregateAndSolrConfiguration  {
     
     @Bean
     public DataSourceHealthIndicator dataSourceHealthIndicator() {
-        String DEFAULT_QUERY = "SELECT 1";
-        return new DataSourceHealthIndicator(dataSource,DEFAULT_QUERY);
+        return new DataSourceHealthIndicator(dataSource);
     }
     
     /*@Override

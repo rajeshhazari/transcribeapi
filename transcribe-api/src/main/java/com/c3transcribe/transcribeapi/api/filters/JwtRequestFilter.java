@@ -1,6 +1,6 @@
 package com.c3transcribe.transcribeapi.api.filters;
 
-import com.c3transcribe.transcribeapi.api.services.auth.JwtUserDetailsService;
+import com.c3transcribe.transcribeapi.api.services.JwtUserDetailsService;
 import com.c3transcribe.transcribeapi.api.util.JwtUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;

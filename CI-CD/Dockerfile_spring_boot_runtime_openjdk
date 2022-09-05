@@ -1,41 +1,16 @@
-#FROM adoptopenjdk/openjdk17:debian as jdk-runtime
-FROM eclipse-temurin:17-jdk-focal
-# target JDK installation names
-ENV JDK_VERSION="17"
-ENV OPT="/opt/java/openjdk/jvm/"
-ENV JKD_DIR_NAME="jdk-${JDK_VERSION}"
-ENV JAVA_HOME="${OPT}/${JKD_DIR_NAME}"
-ENV JAVA_MINIMAL="${OPT}/java-minimal"
+FROM maven:3-openjdk-18-slim
+RUN mkdir /usr/src/
+COPY . /usr/src/
+WORKDIR /usr/src/
+RUN mvn clean package -DskipTests
 
+FROM adoptopenjdk/openjdk18:debian as jdk-runtime
 RUN echo $JAVA_HOME && \
-	#$JAVA_HOME/bin/jlink     --compress=2     --module-path $JAVA_HOME/jmods     --add-modules java.base,java.logging,java.xml,jdk.unsupported,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.security.sasl,java.instrument,jdk.jdwp.agent,java.sql,java.sql.rowset,java.xml.crypto,java.xml     --output $JAVA_HOME/jvm/jdk14-minimal
-
-	RUN jlink \
-        --verbose \
-        --add-modules \
-            java.base,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument \
-            # java.naming - javax/naming/NamingException
-            # java.desktop - java/beans/PropertyEditorSupport
-            # java.management - javax/management/MBeanServer
-            # java.security.jgss - org/ietf/jgss/GSSException
-            # java.instrument - java/lang/instrument/IllegalClassFormatException
-        --compress 2 \
-        --strip-debug \
-        --no-header-files \
-        --no-man-pages \
-        --output "$JAVA_MINIMAL"
-
+	$JAVA_HOME/bin/jlink     --compress=2     --module-path $JAVA_HOME/jmods     --add-modules java.base,java.logging,java.xml,jdk.unsupported,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.security.sasl,java.instrument,jdk.jdwp.agent,java.sql,java.sql.rowset,java.xml.crypto,java.xml     --output $JAVA_HOME/jvm/jdk-minimal
 
 FROM debian:stretch-slim
-#Example docker file info  gist:
-#
-#
-#
-#
-#
-
-COPY --from=jdk-runtime  $JAVA_MINIMAL /usr/lib/jvm/jdk-minimal
-RUN ln -s $JAVA_MINIMAL/bin/java  /usr/bin/java && \
+COPY --from=jdk-runtime  /opt/java/openjdk/jvm/jdk-minimal /usr/lib/jvm/jdk-minimal
+RUN ln -s /usr/lib/jvm/jdk-minimal/bin/java  /usr/bin/java && \
 	apt-get  update && \
 	apt-get -y  upgrade && \
 	apt-get install -y wget htop curl openssl && \
@@ -43,4 +18,4 @@ RUN ln -s $JAVA_MINIMAL/bin/java  /usr/bin/java && \
 
 
 # to build:
-# docker build . -t spring-boot-runtime:openjdk-17-slim -f Dockerfile_spring_boot_runtime --progress auto
+# docker build . -t spring-boot-runtime:openjdk-18-slim -f Dockerfile_spring_boot_runtime --progress auto

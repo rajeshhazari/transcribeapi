@@ -25,13 +25,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.concurrent.Executor;
 
 /** @author rajesh */
 @Configuration
@@ -49,12 +47,9 @@ public class TranscribeApiModuleConfig {
 	@Value("${server.http.port}")
 	private int httpPort;
 	
-	@Value("${server.servlet.contextPath:api/v1}")
+	@Value("${server.servlet.contextPath}")
 	private String context;
-	
-	@Value("${app.sphinx4.basePath:resource:/transcribe/models/en-us}")
-	private String sphinx4BasePath;
-	
+
 	private DataSourceHealthIndicator dataSourceHealthIndicator;
 
   /*@Bean
@@ -129,19 +124,6 @@ public class TranscribeApiModuleConfig {
 	public ObjectMapper getObjectMapper() {
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-		/**
-		 * var builder = Jackson2ObjectMapperBuilder.json();
-		 *         builder.serializationInclusion(JsonInclude.Include.NON_EMPTY);
-		 *         builder.featuresToDisable(
-		 *                 SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,
-		 *                 SerializationFeature.FAIL_ON_EMPTY_BEANS,
-		 *                 DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES,
-		 *                 DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-		 *         builder.featuresToEnable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
-		 *         builder.modulesToInstall(JavaTimeModule.class);
-		 *
-		 *         return builder.build();
-		 */
 		return mapper;
 	}
 	
@@ -180,7 +162,6 @@ public class TranscribeApiModuleConfig {
 				.build();
 		return randomStringGenerator;
 	}
-	
 	
   /*
   @Bean

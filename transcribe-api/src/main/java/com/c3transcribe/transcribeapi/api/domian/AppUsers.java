@@ -1,36 +1,23 @@
 package com.c3transcribe.transcribeapi.api.domian;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.MappedCollection;
 import org.springframework.data.relational.core.mapping.Table;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.List;
 
-/*public class AppUsers (
-	
-	@Id Long userid,  String username, @Column(value = "first_name") String firstName, @Column(value = "last_name")
-	 String lastName,   String email,	@Column(value = "phone_number") String phoneNumber, boolean active, boolean disabled, boolean verified,
-	 boolean locked, String zipcode, String password , @Column(value = "registered_date")
-	 LocalDateTime registeredDate, 	@Column(value = "registered_date")
-	 LocalDateTime lastModified,
-	@MappedCollection(idColumn="userid", keyColumn="userid") List<AppUsersAuth> appUsersAuthList ){
-	
-	public AppUsers() {
-		this(null, null,null ,null ,null ,null ,false ,false ,
-				false,false ,null ,null ,null ,null ,null );
-	}
-}*/
+@Table("APPUSERS")
+@Data @AllArgsConstructor @NoArgsConstructor
+public class AppUsers implements Serializable {
 
-@Builder
-@Table("APPUSERS") @AllArgsConstructor
-@NoArgsConstructor  @Data
-public class AppUsers {
-	@Id
-	private  Long userid;
+	private @Id
+	Long userid;
 	private String username;
 	@Column(value = "first_name")
 	private String firstName;
@@ -49,8 +36,9 @@ public class AppUsers {
 	private LocalDateTime registeredDate;
 	@Column(value = "registered_date")
 	private LocalDateTime lastModified;
-	
-	@Column(value = "verification_code")
-	private String verificationCode;
-	
+
+	@MappedCollection(idColumn="userid", keyColumn="userid")
+	private List<AppUsersAuth> appUsersAuthList ;
+
 }
+

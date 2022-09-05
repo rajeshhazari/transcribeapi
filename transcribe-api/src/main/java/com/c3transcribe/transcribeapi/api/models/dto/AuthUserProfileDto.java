@@ -3,9 +3,7 @@
  */
 package com.c3transcribe.transcribeapi.api.models.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,11 +12,9 @@ import java.util.List;
  * @author rajesh
  *
  */
-@Data @AllArgsConstructor @NoArgsConstructor
-//public class AuthUserProfileDto extends BaseResponseDto{
-// Lombok does not infer default constructor from record class
-// This class is used to send to ui layer after successfull auth to UI or any consumer
-public class AuthUserProfileDto {
+@Data @AllArgsConstructor
+@NoArgsConstructor
+public class AuthUserProfileDto extends BaseResponseDto{
 
 	private String username;
 	private String email;
@@ -38,7 +34,7 @@ public class AuthUserProfileDto {
 	private LocalDateTime registeredDate;
 	private LocalDateTime lastLoggedin;
 	private List<AuthUsersRole> authUsersRolesList;
-	private List<String> systemSupportedFileTypes;
+	private String systemSupportedFileTypes;
 	private String systemMaxUploadFileSizeMb;
 	private Integer availableFilesCount;
 	
