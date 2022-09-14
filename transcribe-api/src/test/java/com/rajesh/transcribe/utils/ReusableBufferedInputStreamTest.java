@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.runner.RunWith;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThatObject;
@@ -27,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThatObject;
  * @author rajesh
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@RunWith(SpringRunner.class)
 public class ReusableBufferedInputStreamTest {
 
     Configuration configuration = new Configuration();

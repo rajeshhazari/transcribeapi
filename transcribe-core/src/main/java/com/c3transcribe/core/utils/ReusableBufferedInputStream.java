@@ -11,7 +11,7 @@ import java.io.InputStream;
 @Getter
 @Setter
 public class ReusableBufferedInputStream extends BufferedInputStream {
-    @Value("${app.io.readbuffer.size.default: 32768}")
+    @Value("${app.io.readBuffer.size.default: 32768}")
     private int BUFFER_SIZE ;
 
     private byte[] buffer = null;
