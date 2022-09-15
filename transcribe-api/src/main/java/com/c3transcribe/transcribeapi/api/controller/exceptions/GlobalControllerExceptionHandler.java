@@ -1,7 +1,6 @@
 package com.c3transcribe.transcribeapi.api.controller.exceptions;
 
 import com.c3transcribe.transcribeapi.api.models.AppError;
-import com.c3transcribe.transcribeapi.api.services.exceptions.EmailNotFoundException;
 import io.jsonwebtoken.security.SignatureException;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpHeaders;
@@ -55,7 +54,7 @@ public class GlobalControllerExceptionHandler {
     @ExceptionHandler(MessagingException.class)
     public ResponseEntity<?> emailExceptions(MessagingException ex, HttpRequest request) {
         AppError errorDetails = new AppError(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), Instant.now());
-        
+        errorDetails.setHttpStatus(HttpStatus.BAD_REQUEST);
         return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
     }
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -63,8 +62,9 @@ public class GlobalControllerExceptionHandler {
             (
                     MethodArgumentNotValidException ex,
                     HttpHeaders headers, HttpStatus status, WebRequest request)     {
-        AppError errorDetails = new AppError(HttpStatus.BAD_REQUEST,
-                ex.getMessage());
+        AppError errorDetails = new AppError(HttpStatus.BAD_REQUEST.value(),
+                ex.getMessage(), Instant.now());
+        errorDetails.setHttpStatus(HttpStatus.BAD_REQUEST);
         return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
     }
     
@@ -74,30 +74,37 @@ public class GlobalControllerExceptionHandler {
                     SignatureException ex,
                     HttpHeaders headers, HttpStatus status, WebRequest request)     {
         AppError errorDetails = new AppError(HttpStatus.BAD_REQUEST.value(),
-                "Invalid token: "+ex.getMessage(), Instant.now());
+                ex.getMessage(), Instant.now());
+        errorDetails.setHttpStatus(HttpStatus.BAD_REQUEST);
         return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(RuntimeException.class)
     public final ResponseEntity<AppError> handleAllRuntimeApiExceptions(RuntimeException ex) {
-        AppError errorDetails = new AppError(HttpStatus.INTERNAL_SERVER_ERROR,
-                ex.getMessage());
+        AppError errorDetails = new AppError(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                ex.getMessage(), Instant.now());
+        errorDetails.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        errorDetails.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         ex.printStackTrace();
         return new ResponseEntity<AppError>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(AuthenticationCredentialsNotFoundException.class)
-    public final ResponseEntity<AppError> handleAuthenticationCredentialsNotFoundApiExceptions(AuthenticationCredentialsNotFoundException ex) {
-        AppError errorDetails = new AppError(HttpStatus.INTERNAL_SERVER_ERROR,
-                ex.getMessage());
+    public final ResponseEntity<AppError> handleAuthtenticationCredentialsNotFoundApiExceptions(AuthenticationCredentialsNotFoundException ex) {
+        AppError errorDetails = new AppError(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                ex.getMessage(), Instant.now());
+        errorDetails.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        errorDetails.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         ex.printStackTrace();
         return new ResponseEntity<AppError>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
-    public final ResponseEntity<AppError> handleBadCredentialsNotFoundApiExceptions(BadCredentialsException ex, HttpServletRequest request) {
-        AppError errorDetails = new AppError(HttpStatus.BAD_REQUEST,
-                ex.getMessage());
+    public final ResponseEntity<AppError> handleBadCredentialsNotFoundApiExceptions(BadCredentialsException ex) {
+        AppError errorDetails = new AppError(HttpStatus.BAD_REQUEST.value(),
+                ex.getMessage(), Instant.now());
+        errorDetails.setCode(HttpStatus.BAD_REQUEST.value());
+        errorDetails.setHttpStatus(HttpStatus.BAD_REQUEST);
         ex.printStackTrace();
         return new ResponseEntity<AppError>(errorDetails, HttpStatus.BAD_REQUEST);
     }
@@ -105,30 +112,26 @@ public class GlobalControllerExceptionHandler {
     public final ResponseEntity<AppError> handleMalformedURLException(MalformedURLException ex, HttpServletRequest request) {
         String requestUri = request.getRequestURI();
         String fileName = request.getParameter("name");
-        AppError errorDetails = new AppError(HttpStatus.BAD_REQUEST,
-                ex.getMessage());
+        AppError errorDetails = new AppError(HttpStatus.BAD_REQUEST.value(),
+                ex.getMessage(), Instant.now());
+        errorDetails.setCode(HttpStatus.BAD_REQUEST.value());
+        errorDetails.setHttpStatus(HttpStatus.BAD_REQUEST);
         ex.printStackTrace();
         return new ResponseEntity<AppError>(errorDetails, HttpStatus.BAD_REQUEST);
     }
     
     @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity handleMaxSizeException(MaxUploadSizeExceededException ex, HttpRequest request) {
+    public ResponseEntity handleMaxSizeException(Exception ex) {
         logger.warn(ex.getMessage());
         AppError errorDetails = new AppError(HttpStatus.PAYLOAD_TOO_LARGE.value(), ex.getMessage(), Instant.now());
         return new ResponseEntity<AppError>(errorDetails, HttpStatus.PAYLOAD_TOO_LARGE);
     }
     
     @ExceptionHandler(MultipartException.class)
-    public ResponseEntity handleMultiPartException(MultipartException ex, HttpRequest request) {
+    public ResponseEntity handleMultiPartException(Exception ex) {
         logger.warn(ex.getMessage());
         AppError errorDetails = new AppError(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), Instant.now());
         return new ResponseEntity<AppError>(errorDetails, HttpStatus.BAD_REQUEST);
-    }
-    
-    @ExceptionHandler(EmailNotFoundException.class)
-    public ResponseEntity<?> emailNotFoundException(EmailNotFoundException ex, HttpRequest request) {
-        AppError errorDetails = new AppError(HttpStatus.BAD_REQUEST.value(), "Entered Email is not found or not valid:"+ex.getMessage(), Instant.now());
-        return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
     }
     
     

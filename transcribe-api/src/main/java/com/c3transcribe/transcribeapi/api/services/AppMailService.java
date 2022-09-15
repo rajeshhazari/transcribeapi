@@ -1,8 +1,7 @@
 package com.c3transcribe.transcribeapi.api.services;
 
 
-import com.c3transcribe.transcribeapi.api.domian.RegUserVerifyLogDetails;
-import com.c3transcribe.transcribeapi.api.services.exceptions.EmailNotFoundException;
+import com.c3transcribe.transcribeapi.api.domian.RegisteredUserVerifyLogDetials;
 
 import javax.mail.MessagingException;
 import javax.validation.constraints.Email;
@@ -14,26 +13,24 @@ import javax.validation.constraints.NotBlank;
 public interface AppMailService {
     
     
-    public boolean sendEmailForUserRegistration(String email) throws MessagingException;
-    
     /**
      * This method sends an e-mail with an email change token.
      *  @param email E-mail address of the recipient
      * @param token E-mail change token
      * @return
      */
-    RegUserVerifyLogDetails sendMailWhenEmailChangeReqestedWithToken(
-            String orgEmail, String newEmail,
-             final String token
-    ) throws MessagingException, EmailNotFoundException;
+    RegisteredUserVerifyLogDetials sendMailWithEmailChangeToken(
+            @NotBlank @Email final String email,
+            @NotBlank final String token
+    ) throws MessagingException;
     
     /**
      * This method sends an e-mail with an email change token.
      *  @param email E-mail address of the recipient
      * @return
      */
-    RegUserVerifyLogDetails sendMailWithEmailChangeWithOutToken(
-            String orgEmail, String newEmail) throws MessagingException, EmailNotFoundException;
+    RegisteredUserVerifyLogDetials sendMailWithEmailChangeToken(
+            @NotBlank @Email final String email) throws MessagingException;
     
     /**
      *
@@ -42,14 +39,13 @@ public interface AppMailService {
      * @param token
      * @return
      */
-    RegUserVerifyLogDetails sendMailWithEmailChangeToken(
-            RegUserVerifyLogDetails regUser,
-            @NotBlank @Email String email,
-            @NotBlank String token
-    ) throws MessagingException;
-    RegUserVerifyLogDetails sendMailWithEmailChangeToken(
-            RegUserVerifyLogDetails regUser,
-            @NotBlank @Email String email) throws EmailNotFoundException, MessagingException;
+    RegisteredUserVerifyLogDetials sendMailWithEmailChangeToken(RegisteredUserVerifyLogDetials regUser,
+                                                                @NotBlank @Email String email,
+                                                                @NotBlank String token
+    );
+    
+    RegisteredUserVerifyLogDetials sendMailWithEmailChangeToken(RegisteredUserVerifyLogDetials regUser,
+                                                                @NotBlank @Email String email);
     /**
      * This method sends an e-mail with a new password.
      *
@@ -69,5 +65,5 @@ public interface AppMailService {
             @NotBlank final String username
     );
     
-    public boolean  sendConfEmailForEmailChange(final String orgEmail, String newEmail) throws MessagingException, EmailNotFoundException ;
+    public boolean  sendConfEmail(String email) throws MessagingException;
 }

@@ -32,4 +32,4 @@ build/
 *.wav
 *.mp3
 logs/**
-.run
+/external-libs/

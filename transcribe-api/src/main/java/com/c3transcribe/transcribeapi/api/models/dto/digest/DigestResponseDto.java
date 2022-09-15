@@ -1,6 +1,5 @@
 package com.c3transcribe.transcribeapi.api.models.dto.digest;
 
-import com.c3transcribe.transcribeapi.api.models.AppError;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.c3transcribe.transcribeapi.api.models.dto.BaseResponseDto;
 import lombok.*;
@@ -9,9 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class DigestResponseDto {
-        //extends BaseResponseDto {
+public class DigestResponseDto extends BaseResponseDto {
     private String data;
     private String algorithm;
-    private AppError appError;
 }

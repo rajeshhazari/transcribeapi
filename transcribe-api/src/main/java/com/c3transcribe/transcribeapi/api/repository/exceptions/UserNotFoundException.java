@@ -3,6 +3,9 @@ package com.c3transcribe.transcribeapi.api.repository.exceptions;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 public class UserNotFoundException extends UsernameNotFoundException {
+	// ~ Constructors
+	// ===================================================================================================
+
 	/**
 	 * Constructs a <code>UsernameNotFoundException</code> with the specified message.
 	 *

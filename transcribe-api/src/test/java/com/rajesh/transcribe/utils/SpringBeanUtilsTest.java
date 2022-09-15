@@ -26,7 +26,7 @@ public class SpringBeanUtilsTest {
     
             Assert.assertEquals(appUsers,authUserProfileDto);
     
-            Assert.assertTrue(appUsers.email().equalsIgnoreCase(authUserProfileDto.email()));
+            Assert.assertTrue(appUsers.getEmail().equalsIgnoreCase(authUserProfileDto.getEmail()));
             
             
             

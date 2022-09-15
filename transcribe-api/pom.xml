@@ -9,10 +9,12 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <properties>
-        <transcribe-core.version>${project.version}</transcribe-core.version>
+        <transcribe-core.version>1.0.0-SNAPSHOT</transcribe-core.version>
         <java.version>17</java.version>
-        <fork>true</fork>
-        <app.mainClass>com.c3transcribe.transcribeapi.TranscribeApiApplication</app.mainClass>
+        <maven.build.timestamp.format>yyyymmddhhmm</maven.build.timestamp.format>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.jar.plugin.version>3.2.0</maven.jar.plugin.version>
+        <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
     </properties>
     <artifactId>transcribe-api</artifactId>
     <version>1.0.0-SNAPSHOT</version>
@@ -23,16 +25,18 @@
             <artifactId>transcribe-core</artifactId>
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
+        <!--
+        removed the property as runtime as there could be instance where someone wants to test this with embedded database
+        -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <scope>runtime</scope>
         </dependency>
 
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.2.12</version>
+            <version>42.4.1</version>
         </dependency>
 
         <!-- jwt dependencies -->
@@ -99,7 +103,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>${app.mainClass}</mainClass>
+                    <mainClass>com.c3transcribe.transcribeapi.TranscribeApiApplication</mainClass>
                 </configuration>
                 <executions>
                     <execution>
@@ -111,10 +115,10 @@
                             <additionalProperties>
                                 <encoding.source>UTF-8</encoding.source>
                                 <encoding.reporting>UTF-8</encoding.reporting>
-                                <source>${maven.compiler.source}</source>
-                                <target>${maven.compiler.target}</target>
+                                <java.source>${maven.compiler.source}</java.source>
+                                <java.target>${maven.compiler.target}</java.target>
                                 <solr.version>${solr.version}</solr.version>
-                                <app.mainClass>${app.mainClass}</app.mainClass>
+                                <app.mainClass>com.c3transcribe.transcribeapi.TranscribeApiApplication</app.mainClass>
                             </additionalProperties>
                         </configuration>
                     </execution>
@@ -127,35 +131,25 @@
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
-                    <!--                    <release>16</release>-->
-                    <fork>true</fork>
-                    <compilerArgs>
-                        <arg>--enable-preview</arg>
-                        <arg>-Xlint:all</arg>
-                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
-                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
-                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
-                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
-                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
-                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
-                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
-                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
-                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
-                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED</arg>
-                    </compilerArgs>
-                    <!--for unmappable characters in classes-->
-                    <encoding>UTF-8</encoding>
-                    <showDeprecation>true</showDeprecation>
-                    <showWarnings>true</showWarnings>
-                    <!--for lombok annotations to resolve-->
-                    <!--contradictory to maven, intelliJ fails with this-->
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>${lombok.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
+                    <release>17</release>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.3.0</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <doclint>none</doclint>
+                    <quiet>true</quiet>
                 </configuration>
             </plugin>
         </plugins>

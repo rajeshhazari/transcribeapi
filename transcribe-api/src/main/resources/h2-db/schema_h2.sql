@@ -28,7 +28,7 @@ DROP TABLE IF EXISTS APPUSERS;
 DROP TABLE IF EXISTS APPUSERS_AUTH;
 DROP TABLE IF EXISTS AUTHORITIES;
 DROP TABLE IF EXISTS USERREGVERIFYLOGDETAILS;
-DROP TABLE IF EXISTS USERREGISTRATIONS_UPDATE_LOG;
+DROP TABLE IF EXISTS USERREGISTRATIONSLOGDETIALS;
 DROP TABLE IF EXISTS CUSTOMERCONTACTMESSAGES;
 DROP TABLE IF EXISTS APPUSERS_TRANSCRIPTIONS;
 DROP TABLE IF EXISTS TRANSCRIBEFILELOG;
@@ -294,7 +294,6 @@ ALTER TABLE QRTZ_TRIGGERS ADD
   locked boolean default false,
   registered_date timestamp default CURRENT_TIMESTAMP,
   last_modified timestamp default CURRENT_TIMESTAMP,
-  verification_code VARCHAR(100) not null,
   primary key (userid)
 );
 
@@ -302,41 +301,12 @@ ALTER TABLE QRTZ_TRIGGERS ADD
 CREATE TABLE APPUSERS_AUTH(
    auth_user_id identity not null auto_increment,
 	role_id VARCHAR(25) not null
+	token VARCHAR(100) not null,
 	email VARCHAR(100) not null unique ,
 	username VARCHAR(100) not null ,
-	token VARCHAR(500) not null,
-	token_expiry DATE not null,
-    token_claim VARCHAR(50) not null,
-    token_iat VARCHAR(500) not null,
-
 	updated_time timestamp default CURRENT_TIMESTAMP,
-	userid BIGINT not null,
-	token_iat VARCHAR(500) not null,
-   primary key (auth_user_id)
- );
-
-
--- History table to track all of the history auth tokens and users auth activity for any given date
--- Ideally there will be many DB views that can be created to get user activity for any given date
--- for ex: the user last loggedin , users recently changed passwords or emails.
--- Here change of email is under assumption that user name can be different from email while registering.
--- If user name and email are same then we may have to change teh DB schema for accordingly
--- and change of email usecase would be only for change of email for communications
-
-CREATE TABLE HIST_APPUSERS_AUTH(
-	hist_date DATE default CURRENT_DATE,
-    auth_user_id identity not null auto_increment,
-	role_id VARCHAR(25) not null
-	email VARCHAR(100) not null unique ,
-	username VARCHAR(100) not null ,
-	token VARCHAR(500) not null,
-	token_expiry DATE not null,
-    token_claim VARCHAR(50) not null,
-    token_iat VARCHAR(500) not null,
-
-	updated_time timestamp default CURRENT_TIMESTAMP,
-	userid BIGINT not null,
-	token_iat VARCHAR(500) not null,
+	userid BIGINT NULL,
+	token_iat VARCHAR(100) not null,
    primary key (auth_user_id)
  );
 
@@ -364,9 +334,7 @@ CREATE TABLE USERREGVERIFYLOGDETAILS (
   primary key (id)
 );
 
-
--- This table is specifically for saving user account details updates
-CREATE TABLE USER_REGISTRATIONS_UPDATE_LOG (
+CREATE TABLE USERREGISTRATIONSLOGDETIALS (
   id identity not null auto_increment,
   username VARCHAR(100) not null,
   firstName VARCHAR(50) not null,
@@ -393,6 +361,7 @@ CREATE TABLE APPUSERS_TRANSCRIPTIONS (
   transcribe_res_type VARCHAR(20) default 'application/json',
   file_name VARCHAR(100) not null,
   session_id VARCHAR(100) not null,
+  userid Long,
   transcribed boolean default false,
   downloaded boolean default false,
   transcribe_res_available_format VARCHAR(20) default 'application/json',
@@ -421,25 +390,7 @@ ALTER TABLE APPUSERS_TRANSCRIPTIONS ADD
     email
   );
 
--- Table to save transcriptions request remote details
-
-  CREATE TABLE APPUSERS_TRANSCRIPTIONS_REQUEST_METADATA (
-    id identity not null auto_increment,
-    transcription_req_id VARCHAR(100) not null,
-    remote_host_ip VARCHAR(100),
-    remote_host_agent VARCHAR(100),
-    primary key (id)
-  );
-
-  ALTER TABLE APPUSERS_TRANSCRIPTIONS_REQUEST_METADATA ADD
-    CONSTRAINT FK_APPUSERS_TRANSCRIPTIONS_REQUEST_METADATA FOREIGN KEY
-    (
-      transcription_req_id
-    ) REFERENCES APPUSERS_TRANSCRIPTIONS(
-      transcription_req_id
-    );
-
-  CREATE TABLE TRANSCRIBE_FILELOG (
+  CREATE TABLE TRANSCRIBEFILELOG (
   tflog_id identity not null auto_increment,
   email VARCHAR(100),
   file_name VARCHAR(256),
@@ -453,7 +404,7 @@ ALTER TABLE APPUSERS_TRANSCRIPTIONS ADD
   CONSTRAINT APP_USERS_TRANSCRIBEFILELOG_FK FOREIGN KEY (log_id, transcription_req_id,email) REFERENCES APPUSERS_TRANSCRIPTIONS (log_id,transcription_req_id,email) ON DELETE CASCADE
 );
 
-CREATE TABLE CUSTOMER_CONTACT_MESSAGES (
+CREATE TABLE CUSTOMERCONTACTMESSAGES (
   id identity not null auto_increment,
   email VARCHAR(100),
   firstName VARCHAR(100),
@@ -487,17 +438,6 @@ CREATE TABLE USER_SESSIONS_ATTRIBUTES (
  
 CREATE INDEX USER_SESSIONS_ATTRIBUTES_IX1 ON USER_SESSIONS_ATTRIBUTES (SESSION_PRIMARY_ID);
 
-CREATE TABLE APPUSERS_ADDRESS (
-    address_id identity not null auto_increment,
-    address1 VARCHAR(200) NOT NULL,
-    address2 VARCHAR(200) ,
-    city text VARCHAR(50) ,
-    city_id smallint NOT NULL,
-    postal_code VARCHAR(50),
-    phone VARCHAR(50) NOT NULL,
-     primary key (id)
-    last_updated timestamp default CURRENT_TIMESTAMP
-);
 
   
 COMMIT;
