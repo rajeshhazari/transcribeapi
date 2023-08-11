@@ -2,6 +2,7 @@ package com.c3transcribe.transcribeapi.api.filesio;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -15,22 +16,28 @@ import static java.nio.file.StandardCopyOption.*;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
- * A {@code FileVisitor} that copies a file-tree ("cp -r")
+ * A {@code DirFileTreeVisitor} that copies a file-tree ("cp -r")
  */
 
 @Service
-  public class TreeCopierVisitor implements FileVisitor<Path> {
+  public class DirFileTreeVisitor implements FileVisitor<Path> {
 
-    private static final Logger logger = LoggerFactory.getLogger(TreeCopierVisitor.class);
+    private static final Logger logger = LoggerFactory.getLogger(DirFileTreeVisitor.class);
 
-    private final Path source;
-    private final Path target;
-    private final boolean prompt;
-    private final boolean preserve;
+    private  Path source;
+    private  Path target;
+    private  boolean prompt;
+    private  boolean preserve;
 
-    TreeCopierVisitor(Path source, Path target, boolean prompt, boolean preserve) {
+    public DirFileTreeVisitor(Path source, Path target, boolean prompt, boolean preserve) {
         this.source = source;
         this.target = target;
+        this.prompt = prompt;
+        this.preserve = preserve;
+    }
+
+    public DirFileTreeVisitor(Path source, boolean prompt, boolean preserve) {
+        this.source = source;
         this.prompt = prompt;
         this.preserve = preserve;
     }

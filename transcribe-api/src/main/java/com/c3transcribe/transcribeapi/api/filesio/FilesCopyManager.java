@@ -55,7 +55,7 @@ public class FilesCopyManager {
     private static final Logger logger = LoggerFactory.getLogger(FilesCopyManager.class);
 
     @Autowired
-    TreeCopierVisitor treeCopierVisitor;
+    DirFileTreeVisitor dirFileTreeVisitor;
 
 
 
@@ -83,14 +83,14 @@ public class FilesCopyManager {
             if (!arg.startsWith("-"))
                 break;
             if (arg.length() < 2)
-                usage();
+                //usage();
             for (int i=1; i<arg.length(); i++) {
                 char c = arg.charAt(i);
                 switch (c) {
                     case 'r' : recursive = true; break;
                     case 'i' : prompt = true; break;
                     case 'p' : preserve = true; break;
-                    default : usage();
+                    default : logger.error("unknow optio");
                 }
             }
             argi++;
@@ -99,7 +99,8 @@ public class FilesCopyManager {
         // remaining arguments are the source files(s) and the target location
         int remaining = args.length - argi;
         if (remaining < 2)
-            usage();
+            //usage();
+            logger.error("not correct args");
         Path[] source = new Path[remaining-1];
         int i=0;
         while (remaining > 1) {
@@ -122,7 +123,7 @@ public class FilesCopyManager {
                     if (finalRecursive) {
                         // follow links when copying files
                         EnumSet<FileVisitOption> opts = EnumSet.of(FileVisitOption.FOLLOW_LINKS);
-                        TreeCopierVisitor tc = new TreeCopierVisitor(path, dest, finalPrompt, finalPreserve);
+                        DirFileTreeVisitor tc = new DirFileTreeVisitor(path, dest, finalPrompt, finalPreserve);
                         try {
                             Files.walkFileTree(path, opts, Integer.MAX_VALUE, tc);
                         } catch (IOException e) {
@@ -133,7 +134,7 @@ public class FilesCopyManager {
                         if (Files.isDirectory(path)) {
                             logger.warn(" {} is a directory ", path);
                         } else {
-                            treeCopierVisitor.copyFileWithPreserveOrOverWrite(path, dest, finalPrompt, finalPreserve);
+                            dirFileTreeVisitor.copyFileWithPreserveOrOverWrite(path, dest, finalPrompt, finalPreserve);
                         }
                     }
                 }
