@@ -1,15 +1,11 @@
 /**
  * 
  */
-package com.c3trTranscribe.springboot.test.repository.config;
+package com.rajesh.transcribe.repository.config;
 
+import com.c3transcribe.transcribeapi.TranscribeApiApplication;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.c3transcribe.transcribeapi.TranscribeApiApplication;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.concurrent.Executor;
-import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +13,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.test.context.ContextConfiguration;
+
+import javax.sql.DataSource;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.concurrent.Executor;
 
 /**
  * @author rajesh
@@ -68,7 +69,7 @@ public class TranscriptionModuleConfigTest  {
         return new DataSourceTransactionManager(getH2DataSource());
 	}*/
 	
-	@Bean
+	/*@Bean
 	public edu.cmu.sphinx.api.Configuration getAudioTranscribeConfiguration() {
 		edu.cmu.sphinx.api.Configuration configuration = new edu.cmu.sphinx.api.Configuration();
 
@@ -77,7 +78,7 @@ public class TranscriptionModuleConfigTest  {
         configuration.setLanguageModelPath("resource:/transcribe/models/en-us/en-us.lm.bin");
         return configuration;
 	}
-
+*/
 	
 
 	@Bean(name = "secureRandom")
@@ -92,7 +93,7 @@ public class TranscriptionModuleConfigTest  {
 	        executor.setCorePoolSize(5);
 	        executor.setMaxPoolSize(5);
 	        executor.setQueueCapacity(100);
-	        executor.setThreadNamePrefix("AsynchThread-");
+	        executor.setThreadNamePrefix("api-asyncThread-");
 	        executor.initialize();
 	        return executor;
 	    }

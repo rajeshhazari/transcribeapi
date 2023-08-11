@@ -1,4 +1,4 @@
-package transribeapi.config;
+package com.rajesh.transcribe.config;
 
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;

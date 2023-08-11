@@ -1,4 +1,4 @@
-package transribeapi.repositories;
+package com.rajesh.transcribe.repositories;
 
 import com.c3transcribe.transcribeapi.TranscribeApiApplication;
 import com.c3transcribe.transcribeapi.api.repository.AppUsersRepository;

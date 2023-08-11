@@ -1,4 +1,4 @@
-package transribeapi.PasswordEncodeTest;
+package com.rajesh.transcribe.PasswordEncodeTest;
 
 
 import org.junit.jupiter.api.Test;

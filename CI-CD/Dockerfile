@@ -27,14 +27,14 @@ ARG DEPENDENCY=target/dependency
 #find /usr/share/ca-certificates/mozilla/ -name "*.crt" -type f -exec  $JAVA_HOME/bin/keytool -importcert  -cacerts  -storepass changeit -noprompt  -file '{}' -alias '{}' \; && \
 #  $JAVA_HOME/bin/keytool -list -keystore $JAVA_HOME/lib/security/cacerts --storepass changeit
 
-ENV APP_HOME /opt
+ENV APP_HOME /usr/apps
 
 RUN  export JAVA_HOME=$(which java) && \
      echo $PATH $JAVA_HOME && \
      export PATH=$PATH:$JAVA_HOME/bin &&\
      addgroup -gid $GID  $GROUPNAME  && \
      useradd -m -r -g $GROUPNAME $USERNAME && \
-     mkdir -p /opt/apps/transcribeapi && \
+     mkdir -p /usr/apps/transcribeapi && \
 	 mkdir -p $APP_HOME/configs && \
      mkdir -p $APP_HOME/logs && \
      mkdir -p $APP_HOME/apps/temp && \
@@ -46,7 +46,7 @@ RUN  export JAVA_HOME=$(which java) && \
 
 USER $USERNAME
 
-WORKDIR $APP_HOME/apps/
+WORKDIR $APP_HOME
 
 
 # JMX
@@ -62,8 +62,8 @@ COPY ./org $APP_HOME/apps/transcribeapi/org
 #RUN cp $APP_HOME/apps/transcribeapi/classes/sample.jks $APP_HOME/apps/transcribeapi/classes/sample.cert
 #ENTRYPOINT ["sh", "-c", "$JAVA_OPTS -Djava.security.egd=file:/dev/urandom -jar app.jar "]
 HEALTHCHECK --interval=5s --timeout=5s   CMD curl -k --fail https://localhost:8585/api/v1/actuator/health || exit 1
-ENTRYPOINT ["sh", "-c",  "java  -cp  /opt/apps/transcribeapi:/opt/apps/transcribeapi/lib/*:/opt/apps/transcribeapi/classes:/opt/apps/transcribeapi/org    $JAVA_OPTS   -Djava.security.egd=file:/dev/urandom   $MAIN_CLASS " ]
+ENTRYPOINT ["sh", "-c",  "java  -cp  /usr/apps/transcribeapi:/usr/apps/transcribeapi/lib/*:/usr/apps/transcribeapi/classes:/usr/apps/transcribeapi/org    $JAVA_OPTS   -Djava.security.egd=file:/dev/urandom   $MAIN_CLASS " ]
 
 #docker build -t <image_tag> . && docker run -p 8585:8585 <image_tag>
 #docker build -t <image_tag> . && docker run -p 8585:8585 -p 5005:5005 --env JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005  --env JAVA_OPTS=-Dlogging.level.org.springframework=DEBUG <image_tag>
-#docker build -t <image_tag> . && docker run -p 8080:8080 -v /opt/spring-boot/test/config:$APP_HOME/apps/configs:ro <image_tag>
+#docker build -t <image_tag> . && docker run -p 8080:8080 -v /usr/spring-boot/test/config:$APP_HOME/apps/configs:ro <image_tag>

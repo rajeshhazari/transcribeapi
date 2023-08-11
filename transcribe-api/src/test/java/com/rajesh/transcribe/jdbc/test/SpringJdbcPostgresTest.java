@@ -1,4 +1,4 @@
-package transribeapi.jdbc.test;
+package com.rajesh.transcribe.jdbc.test;
 
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Assertions;
@@ -12,7 +12,7 @@ import javax.sql.DataSource;
 import static org.apache.logging.log4j.LogManager.getLogger;
 
 @SpringBootTest
-@Profile("dev-test")
+@Profile("int-test")
 public class SpringJdbcPostgresTest {
     private static final Logger logger = getLogger(SpringJdbcPostgresTest.class);
     
